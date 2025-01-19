@@ -7,7 +7,7 @@ export const schema = {
       description TEXT,
       category TEXT NOT NULL,
       timeFrame TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active',
+      status TEXT NOT NULL DEFAULT 'not-started',
       progress INTEGER DEFAULT 0,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -16,14 +16,13 @@ export const schema = {
   milestones: `
     CREATE TABLE IF NOT EXISTS milestones (
       id TEXT PRIMARY KEY,
-      goalId TEXT NOT NULL,
+      userId TEXT NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
       date TEXT NOT NULL,
       completed BOOLEAN DEFAULT FALSE,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (goalId) REFERENCES goals(id) ON DELETE CASCADE
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `
 };

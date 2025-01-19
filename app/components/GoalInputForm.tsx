@@ -26,8 +26,8 @@ export default function GoalInputForm({ onSubmit }: GoalInputFormProps) {
     setFormData({
       title: '',
       description: '',
-      category: 'health',
-      timeFrame: 'short-term',
+      category: 'HEALTH',
+      timeFrame: 'SHORT_TERM',
     });
   };
 

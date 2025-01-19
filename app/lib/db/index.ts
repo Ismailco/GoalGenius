@@ -136,6 +136,9 @@ export async function getMilestones(userId: string): Promise<Milestone[]> {
     title: String(result.title),
     description: String(result.description || ''),
     date: String(result.date),
+    completed: Boolean(result.completed),
+    createdAt: String(result.createdAt),
+    updatedAt: String(result.updatedAt),
   }));
 }
 
@@ -150,6 +153,9 @@ export async function getMilestone(id: string): Promise<Milestone | null> {
     title: String(result.title),
     description: String(result.description || ''),
     date: String(result.date),
+    completed: Boolean(result.completed),
+    createdAt: String(result.createdAt),
+    updatedAt: String(result.updatedAt),
   };
 }
 

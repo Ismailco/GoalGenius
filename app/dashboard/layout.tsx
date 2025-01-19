@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import UserProfile from "@/app/components/UserProfile";
+import Navbar from "../components/Navbar";
 
 export default async function DashboardLayout({
   children,
@@ -15,14 +16,7 @@ export default async function DashboardLayout({
 
   return (
     <div>
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            AI Life Coach
-          </h1>
-          <UserProfile />
-        </div>
-      </header>
+      <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>

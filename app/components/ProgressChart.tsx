@@ -5,10 +5,14 @@ import { Goal, GoalCategory } from '@/app/types';
 
 export default function ProgressChart() {
   const [categoryProgress, setCategoryProgress] = useState<Record<GoalCategory, number>>({
-    health: 0,
-    career: 0,
-    learning: 0,
-    relationships: 0,
+    HEALTH: 0,
+    CAREER: 0,
+    LEARNING: 0,
+    RELATIONSHIPS: 0,
+    PERSONAL: 0,
+    PROFESSIONAL: 0,
+    FINANCIAL: 0,
+    EDUCATIONAL: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,17 +41,25 @@ export default function ProgressChart() {
 
   const calculateCategoryProgress = (goals: Goal[]) => {
     const categoryCounts: Record<GoalCategory, number> = {
-      health: 0,
-      career: 0,
-      learning: 0,
-      relationships: 0,
+      HEALTH: 0,
+      CAREER: 0,
+      LEARNING: 0,
+      RELATIONSHIPS: 0,
+      PERSONAL: 0,
+      PROFESSIONAL: 0,
+      FINANCIAL: 0,
+      EDUCATIONAL: 0,
     };
 
     const categoryTotals: Record<GoalCategory, number> = {
-      health: 0,
-      career: 0,
-      learning: 0,
-      relationships: 0,
+      HEALTH: 0,
+      CAREER: 0,
+      LEARNING: 0,
+      RELATIONSHIPS: 0,
+      PERSONAL: 0,
+      PROFESSIONAL: 0,
+      FINANCIAL: 0,
+      EDUCATIONAL: 0,
     };
 
     goals.forEach((goal) => {
@@ -56,10 +68,14 @@ export default function ProgressChart() {
     });
 
     const averageProgress: Record<GoalCategory, number> = {
-      health: 0,
-      career: 0,
-      learning: 0,
-      relationships: 0,
+      HEALTH: 0,
+      CAREER: 0,
+      LEARNING: 0,
+      RELATIONSHIPS: 0,
+      PERSONAL: 0,
+      PROFESSIONAL: 0,
+      FINANCIAL: 0,
+      EDUCATIONAL: 0,
     };
 
     Object.keys(categoryCounts).forEach((category) => {

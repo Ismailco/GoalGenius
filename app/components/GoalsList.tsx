@@ -1,74 +1,73 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Goal } from '@/app/types';
+import GoalActions from './GoalActions';
+import EditGoalDialog from './EditGoalDialog';
+import { Progress } from '@/components/ui/progress';
 
-export default function GoalsList() {
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface GoalsListProps {
+  goals: Goal[];
+}
 
-  useEffect(() => {
-    fetchGoals();
-  }, []);
+export default function GoalsList({ goals }: GoalsListProps) {
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
-  const fetchGoals = async () => {
+  const handleEdit = async (goal: Goal) => {
+    setEditingGoal(goal);
+  };
+
+  const handleDelete = async (goalId: string) => {
     try {
-      const response = await fetch('/api/goals');
+      const response = await fetch(`/api/goals/${goalId}`, {
+        method: 'DELETE',
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to fetch goals');
+        throw new Error('Failed to delete goal');
       }
-      const data = await response.json();
-      // Ensure data is an array
-      setGoals(Array.isArray(data) ? data : []);
+
+      // Refresh the page or update the goals list
+      window.location.reload();
     } catch (error) {
-      console.error('Error fetching goals:', error);
-      setError('Failed to load goals');
-      setGoals([]);
-    } finally {
-      setLoading(false);
+      console.error('Error deleting goal:', error);
     }
   };
 
-  if (loading) {
-    return <div className="animate-pulse">Loading goals...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
   return (
     <div className="space-y-4">
-      {goals.length === 0 ? (
-        <p className="text-gray-500">No goals yet. Add your first goal!</p>
-      ) : (
-        goals.map((goal) => (
-          <div
-            key={goal.id}
-            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">{goal.title}</h3>
-              <span className="text-sm px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                {goal.category}
-              </span>
+      {goals.map((goal) => (
+        <div
+          key={goal.id}
+          className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h3 className="font-medium text-gray-900">{goal.title}</h3>
+              <p className="text-sm text-gray-500">{goal.description}</p>
             </div>
-            <p className="text-gray-600 mt-2">{goal.description}</p>
-            <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-indigo-600 h-2 rounded-full"
-                  style={{ width: `${goal.progress}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-sm text-gray-500">{goal.timeFrame}</span>
-                <span className="text-sm text-gray-500">{goal.progress}%</span>
-              </div>
+            <GoalActions
+              goal={goal}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
+          <div className="mt-4">
+            <Progress value={goal.progress} className="h-2" />
+            <div className="flex justify-between mt-1">
+              <span className="text-sm text-gray-500">{goal.category}</span>
+              <span className="text-sm text-gray-500">{goal.progress}%</span>
             </div>
           </div>
-        ))
+        </div>
+      ))}
+
+      {editingGoal && (
+        <EditGoalDialog
+          goal={editingGoal}
+          open={!!editingGoal}
+          onOpenChange={(open) => !open && setEditingGoal(null)}
+        />
       )}
     </div>
   );

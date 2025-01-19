@@ -1,6 +1,6 @@
-export type TimeFrame = 'short-term' | 'medium-term' | 'long-term';
-export type GoalCategory = 'health' | 'career' | 'learning' | 'relationships';
-export type GoalStatus = 'not-started' | 'in-progress' | 'completed';
+export type GoalCategory = 'PERSONAL' | 'PROFESSIONAL' | 'HEALTH' | 'FINANCIAL' | 'EDUCATIONAL' | 'CAREER' | 'LEARNING' | 'RELATIONSHIPS';
+export type TimeFrame = 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
+export type GoalStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface Milestone {
   id: string;
@@ -8,6 +8,9 @@ export interface Milestone {
   title: string;
   description: string;
   date: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Goal {
