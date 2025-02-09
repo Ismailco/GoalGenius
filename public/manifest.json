@@ -39,6 +39,12 @@
 			"purpose": "any maskable"
 		}
 	],
+	"splash_screen": {
+		"image": "/splash.svg",
+		"background_color": "#1e293b",
+		"resize_mode": "contain",
+		"dark_image": "/splash.svg"
+	},
 	"orientation": "portrait",
 	"categories": ["productivity", "lifestyle"],
 	"prefer_related_applications": false

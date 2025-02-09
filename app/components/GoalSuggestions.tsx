@@ -152,11 +152,11 @@ export default function GoalSuggestions() {
       });
     } catch (error) {
       setAlert({
-        show: true,
-        title: 'Error',
-        message: 'Failed to add goal. Please try again.',
-        type: 'error'
-      });
+				show: true,
+				title: 'Error',
+				message: error instanceof Error ? error.message : 'Failed to add goal. Please try again.',
+				type: 'error',
+			});
     }
   };
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Note } from '@/app/types';
 import { createNote, updateNote } from '@/app/lib/storage';
-import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
+import { validateAndSanitizeInput, ValidationResult } from '@/app/lib/validation';
 import validator from 'validator';
 
 interface CreateNoteModalProps {

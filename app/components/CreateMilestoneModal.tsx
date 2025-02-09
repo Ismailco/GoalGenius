@@ -12,7 +12,7 @@ interface CreateMilestoneModalProps {
 }
 
 export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilestoneModalProps) {
-  const { showModal, hideModal } = useModal();
+  const { hideModal } = useModal();
   const [selectedGoal, setSelectedGoal] = useState<Goal | undefined>(initialGoal);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [alert, setAlert] = useState<{
@@ -56,7 +56,7 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
       setAlert({
         show: true,
         title: 'Error',
-        message: 'Failed to create milestone. Please try again.',
+        message: error instanceof Error ? error.message : 'Failed to create milestone. Please try again.',
         type: 'error'
       });
     }

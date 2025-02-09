@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Todo } from '@/app/types';
 import { createTodo, updateTodo } from '@/app/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
-import validator from 'validator';
 
 interface CreateTodoModalProps {
   isOpen: boolean;

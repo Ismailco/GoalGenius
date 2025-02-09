@@ -9,7 +9,7 @@ export default function GoalsList() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
+  // const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
   const [alert, setAlert] = useState<{
     show: boolean;
     title: string;

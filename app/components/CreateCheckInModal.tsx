@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { CheckIn } from '@/app/types';
 import { createCheckIn, updateCheckIn } from '@/app/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
-import validator from 'validator';
 
 interface CreateCheckInModalProps {
   isOpen: boolean;

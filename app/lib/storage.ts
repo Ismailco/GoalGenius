@@ -4,8 +4,8 @@ import { sanitizeForStorage } from '@/app/lib/validation';
 import validator from 'validator';
 
 // Helper function to sanitize data before storage
-const sanitizeData = (data: Record<string, any>): Record<string, any> => {
-  const sanitized: Record<string, any> = {};
+const sanitizeData = <T extends Record<string, unknown>>(data: T): T => {
+  const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
     if (Array.isArray(value)) {
       sanitized[key] = value.map(item => typeof item === 'string' ? sanitizeForStorage(item) : item);
@@ -15,12 +15,12 @@ const sanitizeData = (data: Record<string, any>): Record<string, any> => {
       sanitized[key] = value;
     }
   }
-  return sanitized;
+  return sanitized as T;
 };
 
 // Helper function to unescape data when retrieving
-const unescapeData = (data: Record<string, any>): Record<string, any> => {
-  const unescaped: Record<string, any> = {};
+const unescapeData = <T extends Record<string, unknown>>(data: T): T => {
+  const unescaped: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
     if (Array.isArray(value)) {
       unescaped[key] = value.map(item => typeof item === 'string' ? validator.unescape(item) : item);
@@ -30,7 +30,7 @@ const unescapeData = (data: Record<string, any>): Record<string, any> => {
       unescaped[key] = value;
     }
   }
-  return unescaped;
+  return unescaped as T;
 };
 
 const STORAGE_KEYS = {
@@ -44,7 +44,7 @@ const STORAGE_KEYS = {
 export function getGoals(): Goal[] {
   if (typeof window === 'undefined') return [];
   const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
-  return goals.map((goal: Goal) => unescapeData(goal) as Goal);
+  return goals.map((goal: Record<string, unknown>) => unescapeData(goal));
 }
 
 export function getGoal(id: string): Goal | null {
@@ -67,7 +67,7 @@ export function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>): 
     progress: sanitizedGoal.progress,
   };
   localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...goals, newGoal]));
-  return unescapeData(newGoal) as Goal;
+  return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
 }
 
 export function updateGoal(id: string, updates: Partial<Goal>): Goal {
@@ -80,7 +80,7 @@ export function updateGoal(id: string, updates: Partial<Goal>): Goal {
     return goal;
   });
   localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
-  return unescapeData(updatedGoals.find(g => g.id === id)!) as Goal;
+  return unescapeData(updatedGoals.find(g => g.id === id)! as unknown as Record<string, unknown>) as unknown as Goal;
 }
 
 export function deleteGoal(id: string): boolean {
@@ -94,7 +94,7 @@ export function getMilestones(): Milestone[] {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem(STORAGE_KEYS.MILESTONES);
   const milestones = stored ? JSON.parse(stored) : [];
-  return milestones.map((milestone: Milestone) => unescapeData(milestone) as Milestone);
+  return milestones.map((milestone: Record<string, unknown>) => unescapeData(milestone));
 }
 
 export function getMilestone(id: string): Milestone | null {
@@ -115,7 +115,7 @@ export function createMilestone(milestone: Omit<Milestone, 'id'>): Milestone {
 
   milestones.push(newMilestone);
   localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
-  return unescapeData(newMilestone) as Milestone;
+  return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
 }
 
 export function updateMilestone(id: string, updates: Partial<Milestone>): Milestone {
@@ -132,7 +132,7 @@ export function updateMilestone(id: string, updates: Partial<Milestone>): Milest
 
   milestones[index] = updatedMilestone;
   localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
-  return unescapeData(updatedMilestone) as Milestone;
+  return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
 }
 
 export function deleteMilestone(id: string): boolean {
@@ -144,7 +144,7 @@ export function deleteMilestone(id: string): boolean {
 
 export function getNotes(): Note[] {
   const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
-  return notes.map((note: Note) => unescapeData(note) as Note);
+  return notes.map((note: Record<string, unknown>) => unescapeData(note));
 }
 
 export function getNote(id: string): Note | null {
@@ -165,7 +165,7 @@ export function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): 
     isPinned: sanitizedNote.isPinned || false,
   };
   localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify([...notes, newNote]));
-  return unescapeData(newNote) as Note;
+  return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
 }
 
 export function updateNote(id: string, updates: Partial<Note>): Note {
@@ -178,7 +178,7 @@ export function updateNote(id: string, updates: Partial<Note>): Note {
     return note;
   });
   localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
-  return unescapeData(updatedNotes.find(n => n.id === id)!) as Note;
+  return unescapeData(updatedNotes.find(n => n.id === id)! as unknown as Record<string, unknown>) as unknown as Note;
 }
 
 export function deleteNote(id: string): boolean {
@@ -191,7 +191,7 @@ export function deleteNote(id: string): boolean {
 export function getTodos(): Todo[] {
   if (typeof window === 'undefined') return [];
   const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
-  return todos.map((todo: Todo) => unescapeData(todo) as Todo);
+  return todos.map((todo: Record<string, unknown>) => unescapeData(todo));
 }
 
 export function getTodo(id: string): Todo | null {
@@ -215,7 +215,7 @@ export function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | '
   };
 
   localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify([...todos, newTodo]));
-  return unescapeData(newTodo) as Todo;
+  return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
 }
 
 export function updateTodo(id: string, updates: Partial<Todo>): Todo {
@@ -228,7 +228,7 @@ export function updateTodo(id: string, updates: Partial<Todo>): Todo {
     return todo;
   });
   localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(updatedTodos));
-  return unescapeData(updatedTodos.find(t => t.id === id)!) as Todo;
+  return unescapeData(updatedTodos.find(t => t.id === id)! as unknown as Record<string, unknown>) as unknown as Todo;
 }
 
 export function deleteTodo(id: string): boolean {
@@ -247,7 +247,7 @@ export function toggleTodoComplete(id: string): Todo {
 export function getCheckIns(): CheckIn[] {
   if (typeof window === 'undefined') return [];
   const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
-  return checkIns.map((checkIn: CheckIn) => unescapeData(checkIn) as CheckIn);
+  return checkIns.map((checkIn: Record<string, unknown>) => unescapeData(checkIn));
 }
 
 export function getCheckIn(id: string): CheckIn | null {
@@ -277,7 +277,7 @@ export function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'updat
   };
 
   localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify([...checkIns, newCheckIn]));
-  return unescapeData(newCheckIn) as CheckIn;
+  return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
 }
 
 export function updateCheckIn(id: string, updates: Partial<CheckIn>): CheckIn {
@@ -290,7 +290,7 @@ export function updateCheckIn(id: string, updates: Partial<CheckIn>): CheckIn {
     return checkIn;
   });
   localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(updatedCheckIns));
-  return unescapeData(updatedCheckIns.find(c => c.id === id)!) as CheckIn;
+  return unescapeData(updatedCheckIns.find(c => c.id === id)! as unknown as Record<string, unknown>) as unknown as CheckIn;
 }
 
 export function deleteCheckIn(id: string): boolean {

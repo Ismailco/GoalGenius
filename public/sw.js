@@ -1,72 +1,98 @@
-const CACHE_NAME = 'goalgenius-v1';
+const CACHE_VERSION = '1';
+const CACHE_NAMES = {
+  static: `static-v${CACHE_VERSION}`,
+  dynamic: `dynamic-v${CACHE_VERSION}`,
+  offline: `offline-v${CACHE_VERSION}`
+};
 
 // Modified offline modal with online check
 const OFFLINE_MODAL_HTML = `
 <div id="offline-modal" style="display: none;">
-    <style>
-        #offline-modal {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            max-width: 400px;
-            background: rgba(0, 0, 0, 0.95);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            backdrop-filter: blur(10px);
-            z-index: 9999;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    </style>
-    <div style="display: flex; align-items: start; gap: 12px;">
-        <div style="font-size: 20px;">📡</div>
-        <div>
-            <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">You're offline</h3>
-            <p style="margin: 0 0 12px 0; font-size: 14px; color: #cccccc; line-height: 1.5;">
-                Some content may be unavailable. We'll keep you updated when you're back online.
-            </p>
-            <button onclick="this.closest('#offline-modal').remove()" style="
-                background: #3b82f6;
-                border: none;
-                color: white;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 13px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            ">Dismiss</button>
-        </div>
-    </div>
+  <style>
+    #offline-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1px 12px 1px 12px;
+      background: rgb(239, 68, 68);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      z-index: 9999;
+      text-align: center;
+      transition: all 0.3s ease;
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    #offline-modal.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    #offline-modal.online {
+      background: rgb(34, 197, 94);
+    }
+    #offline-modal .content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    #offline-modal .icon {
+      font-size: 16px;
+    }
+    #offline-modal .message {
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+  <div class="content">
+    <div class="icon">📡</div>
+    <div class="message">You're offline</div>
+  </div>
 </div>
 <script>
 (function checkConnectivity() {
+    const modal = document.getElementById('offline-modal');
+    let hideTimeout;
+    let wasOffline = false; // Track previous connection state
+
     function updateOfflineStatus() {
-        const modal = document.getElementById('offline-modal');
-        if (!navigator.onLine && modal) {
+        if (!modal) return;
+
+        clearTimeout(hideTimeout);
+
+        if (!navigator.onLine) {
+            wasOffline = true; // Mark that we were offline
             modal.style.display = 'block';
-        } else if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('online');
+            modal.querySelector('.message').textContent = "You're offline";
+            modal.classList.add('visible');
+        } else if (wasOffline) { // Only show online banner if we were previously offline
+            modal.style.display = 'block';
+            modal.classList.add('online');
+            modal.querySelector('.message').textContent = "You're back online";
+            modal.classList.add('visible');
+
+            // Hide after 2 seconds when online
+            hideTimeout = setTimeout(() => {
+                modal.classList.remove('visible');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    wasOffline = false; // Reset the offline state
+                }, 300); // Wait for transition to complete
+            }, 2000);
         }
     }
 
     window.addEventListener('online', updateOfflineStatus);
     window.addEventListener('offline', updateOfflineStatus);
 
-    // Initial check
-    updateOfflineStatus();
+    // Initial check - only show if we're offline
+    if (!navigator.onLine) {
+        updateOfflineStatus();
+    }
 })();
 </script>
 `;
@@ -150,9 +176,13 @@ const OFFLINE_PAGE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// Initial assets to cache
-const PRECACHE_ASSETS = [
+// Assets that should be cached immediately (app shell)
+const APP_SHELL = [
   '/',
+  '/dashboard',
+  '/checkins',
+  '/notes',
+  '/todos',
   '/manifest.json',
   '/favicon.svg',
   '/favicon.ico',
@@ -161,30 +191,166 @@ const PRECACHE_ASSETS = [
   '/favicon-48x48.png',
   '/favicon-64x64.png',
   '/favicon-128x128.png',
-  '/favicon-256x256.png'
+  '/favicon-256x256.png',
+  '/_next/static/**/*'
 ];
 
-// Helper to detect RSC requests
-const isRSCRequest = (request) => {
-  return request.url.includes('_rsc') ||
-         request.headers.get('RSC') ||
-         request.headers.get('Next-Router-State-Tree');
+// Helper functions
+const isNavigationRequest = (request) => {
+  // Check if it's a navigation AND if it's a GET request (refreshes are GET)
+  return request.mode === 'navigate' && request.method === 'GET';
 };
-
-// Helper to detect static files
 const isStaticAsset = (url) => {
-  return url.pathname.startsWith('/_next/static') ||
-         url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico)$/);
+  const parsedUrl = new URL(url);
+  return parsedUrl.pathname.startsWith('/_next/static') ||
+         parsedUrl.pathname.startsWith('/_next/data') ||
+         parsedUrl.pathname.startsWith('/_next/image') ||
+         parsedUrl.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico)$/);
+};
+const isAPIRequest = (request) => {
+  const url = new URL(request.url);
+  return url.pathname.startsWith('/api/');
+};
+const isAuthRequest = (request) => {
+  const url = new URL(request.url);
+  return url.pathname.includes('/auth/') || // For Clerk
+         url.hostname.includes('clerk.dev'); // For Clerk's domain
 };
 
-// Install event - cache initial assets
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
-    })
+// Cache strategies
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+
+  if (navigator.onLine) {
+    const networkResponsePromise = fetch(request)
+      .then(async (networkResponse) => {
+        if (networkResponse.ok) {
+          await cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // If network fails, return cached response
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        throw new Error('No cached response available');
+      });
+
+    // Return cached response immediately if available, otherwise wait for network
+    return cachedResponse || networkResponsePromise;
+  }
+
+  // If offline and we have a cached response, return it
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  throw new Error('No cached response available and offline');
+}
+
+async function networkFirst(request, cacheName) {
+  if (navigator.onLine) {
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        const cache = await caches.open(cacheName);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    } catch (error) {
+      const cache = await caches.open(cacheName);
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      throw error;
+    }
+  } else {
+    // If offline, try cache first
+    const cache = await caches.open(cacheName);
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw new Error('Offline and no cached response available');
+  }
+}
+
+// Background sync queue
+const syncQueue = new Set();
+
+// Helper function to cache all Next.js chunks
+async function cacheNextJsChunks(cache) {
+  try {
+    const mainResponse = await fetch('/_next/static/chunks/main.js');
+    if (mainResponse.ok) {
+      await cache.put('/_next/static/chunks/main.js', mainResponse.clone());
+
+      // Extract and cache all chunk URLs from the main bundle
+      const mainText = await mainResponse.text();
+      const chunkUrls = Array.from(mainText.matchAll(/"(\/_next\/static\/chunks\/[^"]+)"/g))
+        .map(match => match[1]);
+
+      // Cache each chunk
+      await Promise.all(
+        chunkUrls.map(async (url) => {
+          try {
+            const response = await fetch(url);
+            if (response.ok) {
+              await cache.put(url, response.clone());
+            }
+          } catch (error) {
+            console.warn('Failed to cache chunk:', url, error);
+          }
+        })
+      );
+    }
+  } catch (error) {
+    console.warn('Failed to cache Next.js chunks:', error);
+  }
+}
+
+// Helper function to inject offline modal into HTML
+async function injectOfflineModal(response) {
+  const html = await response.text();
+  const modifiedHtml = html.replace(
+    /<\/body>/i,
+    `${OFFLINE_MODAL_HTML}</body>`
   );
+  const headers = new Headers(response.headers);
+  headers.set('Content-Type', 'text/html; charset=utf-8');
+  return new Response(modifiedHtml, { headers });
+}
+
+// Install event - cache app shell and handle Next.js static files
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    Promise.all([
+      caches.open(CACHE_NAMES.static).then(async (cache) => {
+        // Cache the basic app shell first
+        await cache.addAll(APP_SHELL.filter(url => !url.includes('**')));
+
+        // Then try to cache any existing Next.js static files
+        try {
+          const existingStaticFiles = await fetch('/_next/static/chunks/manifest.json')
+            .then(res => res.json())
+            .then(manifest => Object.values(manifest).flat())
+            .catch(() => []);
+
+          await cache.addAll(existingStaticFiles);
+        } catch (error) {
+          console.warn('Could not cache all Next.js static files:', error);
+        }
+      }),
+      caches.open(CACHE_NAMES.offline).then((cache) => {
+        return cache.put('/offline', new Response(OFFLINE_PAGE_HTML, {
+          headers: { 'Content-Type': 'text/html' }
+        }));
+      })
+    ])
+  );
+  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
@@ -194,7 +360,8 @@ self.addEventListener('activate', (event) => {
       caches.keys().then((keys) => {
         return Promise.all(
           keys.map((key) => {
-            if (key !== CACHE_NAME) {
+            const [type, version] = key.split('-v');
+            if (version !== CACHE_VERSION) {
               return caches.delete(key);
             }
           })
@@ -205,168 +372,212 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event
+// Fetch event - handle different types of requests
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
+  const request = event.request;
 
-  // Skip RSC requests
-  if (isRSCRequest(event.request)) {
-    return;
-  }
-
-  // Handle API requests
-  if (event.request.url.includes('/api/')) {
+  // Don't cache auth requests
+  if (isAuthRequest(request)) {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (response.ok) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request)
-            .then(cachedResponse => {
-              return cachedResponse || new Response(
-                JSON.stringify({ error: 'You are offline' }),
-                {
-                  status: 503,
-                  headers: { 'Content-Type': 'application/json' },
-                }
-              );
-            });
+      navigator.onLine ?
+        fetch(request) :
+        new Response(JSON.stringify({ error: 'Authentication not available offline' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
         })
     );
     return;
   }
 
-  // Handle navigation requests
-  if (event.request.mode === 'navigate') {
+  // API requests - network first
+  if (isAPIRequest(request)) {
     event.respondWith(
-      caches.match(event.request)
-        .then(cachedResponse => {
-          if (cachedResponse) {
-            // If we have a cached version, return it with the offline modal
-            return cachedResponse.text().then(text => {
-              // Insert the offline modal and its script before the closing body tag
-              const modifiedText = text.replace(
-                '</body>',
-                `${OFFLINE_MODAL_HTML}</body>`
-              );
-              return new Response(modifiedText, {
-                headers: cachedResponse.headers
-              });
-            });
-          }
-
-          // If no cached version, try network
-          return fetch(event.request)
-            .then(response => {
-              if (response.ok) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then((cache) => {
-                    cache.put(event.request, responseToCache);
-                  });
-              }
-              return response;
-            })
-            .catch(() => {
-              // If network fails and no cache, show full offline page
-              return new Response(OFFLINE_PAGE_HTML, {
-                headers: {
-                  'Content-Type': 'text/html; charset=utf-8'
-                }
-              });
-            });
-        })
-    );
-    return;
-  }
-
-  // Handle static assets
-  if (isStaticAsset(new URL(event.request.url))) {
-    event.respondWith(
-      caches.match(event.request)
-        .then(cachedResponse => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          return fetch(event.request)
-            .then(response => {
-              if (response.ok) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then((cache) => {
-                    cache.put(event.request, responseToCache);
-                  });
-              }
-              return response;
-            });
-        })
-    );
-    return;
-  }
-
-  // Default fetch behavior for other requests
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (response.ok) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request)
-          .then(response => {
-            return response || new Response('', { status: 408 });
+      networkFirst(request, CACHE_NAMES.dynamic).catch(() => {
+        // If offline, queue for sync and return offline response
+        if (request.method !== 'GET') {
+          syncQueue.add({
+            request: request.clone(),
+            timestamp: Date.now()
           });
+        }
+        return new Response(
+          JSON.stringify({ error: 'You are offline' }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
       })
-  );
-});
-
-// Handle messages from clients
-self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') {
-    self.skipWaiting();
+    );
+    return;
   }
+
+  // Static assets - stale while revalidate with better offline handling
+  if (isStaticAsset(request.url)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAMES.static);
+        const cachedResponse = await cache.match(request);
+
+        if (cachedResponse) {
+          // If we have it cached, return it immediately
+          if (navigator.onLine) {
+            // Update cache in background if online
+            fetch(request)
+              .then(async (networkResponse) => {
+                if (networkResponse.ok) {
+                  await cache.put(request, networkResponse.clone());
+                }
+              })
+              .catch(() => {/* ignore network errors */});
+          }
+          return cachedResponse;
+        }
+
+        // If not cached and online, try network and cache
+        if (navigator.onLine) {
+          try {
+            const networkResponse = await fetch(request);
+            if (networkResponse.ok) {
+              await cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          } catch (error) {
+            // Network error, try to return any cached version
+            const cachedVersion = await cache.match(request);
+            if (cachedVersion) return cachedVersion;
+
+            // If it's a JS chunk, return an empty JS file to prevent errors
+            if (request.url.endsWith('.js')) {
+              return new Response(
+                `(self.webpackChunk = self.webpackChunk || []).push([[0], {}, function(){}]);`,
+                {
+                  headers: {
+                    'Content-Type': 'application/javascript',
+                    'Cache-Control': 'no-store'
+                  }
+                }
+              );
+            }
+            throw error;
+          }
+        }
+
+        // If offline and not cached, handle gracefully
+        if (request.url.endsWith('.js')) {
+          return new Response(
+            `(self.webpackChunk = self.webpackChunk || []).push([[0], {}, function(){}]);`,
+            {
+              headers: {
+                'Content-Type': 'application/javascript',
+                'Cache-Control': 'no-store'
+              }
+            }
+          );
+        }
+
+        throw new Error('Static asset not available offline');
+      })()
+    );
+    return;
+  }
+
+  // Navigation requests - check both caches, then network with offline fallback
+  if (isNavigationRequest(request)) {
+    event.respondWith(
+      (async () => {
+        // Try to get from both caches
+        const staticCache = await caches.open(CACHE_NAMES.static);
+        const dynamicCache = await caches.open(CACHE_NAMES.dynamic);
+
+        // Check static cache first (pre-cached routes)
+        let cachedResponse = await staticCache.match(request);
+
+        // If not in static cache, check dynamic cache
+        if (!cachedResponse) {
+          cachedResponse = await dynamicCache.match(request);
+        }
+
+        if (cachedResponse) {
+          // If we have it cached, return it and update cache in background only if online
+          if (navigator.onLine) {
+            fetch(request).then(async (networkResponse) => {
+              if (networkResponse.ok) {
+                const modifiedResponse = await injectOfflineModal(networkResponse.clone());
+                await dynamicCache.put(request, modifiedResponse);
+                // Cache all related chunks when a page is visited
+                await cacheNextJsChunks(staticCache);
+              }
+            }).catch(() => {/* ignore network errors */});
+          }
+          return injectOfflineModal(cachedResponse);
+        }
+
+        // If not in either cache, try network if online
+        if (navigator.onLine) {
+          try {
+            const networkResponse = await fetch(request);
+            if (networkResponse.ok) {
+              const modifiedResponse = await injectOfflineModal(networkResponse.clone());
+              await dynamicCache.put(request, modifiedResponse);
+              // Cache all related chunks when a new page is visited
+              await cacheNextJsChunks(staticCache);
+              return injectOfflineModal(networkResponse);
+            }
+            return networkResponse;
+          } catch (error) {
+            // Network error, fall through to offline page
+          }
+        }
+
+        // If offline or network failed, show offline page from cache
+        const offlineCache = await caches.open(CACHE_NAMES.offline);
+        const offlinePage = await offlineCache.match('/offline');
+        return offlinePage || new Response(OFFLINE_PAGE_HTML, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      })()
+    );
+    return;
+  }
+
+  // Default - stale while revalidate
+  event.respondWith(staleWhileRevalidate(request, CACHE_NAMES.dynamic));
 });
 
-// Background sync for failed requests
+// Background sync
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-goals') {
+  if (event.tag === 'sync-pending-changes' && navigator.onLine) {
     event.waitUntil(
-      // Implement your sync logic here
-      // This could be retrying failed POST/PUT requests
-      Promise.resolve()
+      Promise.all(
+        Array.from(syncQueue).map(async ({ request }) => {
+          try {
+            await fetch(request);
+            syncQueue.delete(request);
+          } catch (error) {
+            console.error('Background sync failed:', error);
+          }
+        })
+      )
     );
   }
 });
 
-// Push notification handling
+// Push notifications
 self.addEventListener('push', (event) => {
   if (event.data) {
+    const data = event.data.json();
     const options = {
-      body: event.data.text(),
+      body: data.message,
       icon: '/favicon.svg',
       badge: '/favicon.svg',
+      data: data.data,
+      actions: data.actions,
       vibrate: [100, 50, 100],
     };
 
     event.waitUntil(
-      self.registration.showNotification('GoalGenius', options)
+      self.registration.showNotification(data.title || 'GoalGenius', options)
     );
   }
 });

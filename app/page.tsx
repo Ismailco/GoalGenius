@@ -90,26 +90,26 @@ export default function HomePage() {
             >
               <h1 className="text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-6">
                 Transform Your Goals into Reality
-                </h1>
+              </h1>
               <p className="text-xl text-gray-300 mb-8">
                 Track your progress, celebrate milestones, and achieve your dreams with GoalGenius - your personal growth companion.
-                </p>
+              </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link
-                      href="/dashboard"
+                <Link
+                  href="/dashboard"
                   className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
                   aria-label="Get Started with GoalGenius"
-                    >
-                      Get Started
+                >
+                  Get Started
                   <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
-                    </Link>
+                </Link>
                 <Link
                   href="/docs"
                   className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-white/10 hover:bg-white/20 transform hover:scale-105 transition-all duration-200"
-                    >
-                      Learn More
+                >
+                  Learn More
                   <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
@@ -138,11 +138,11 @@ export default function HomePage() {
                   <p className="text-gray-400 mt-2">{stat.label}</p>
                 </AnimatedSection>
               ))}
-        </div>
-      </div>
+            </div>
+          </div>
         </section>
 
-      {/* Features Section */}
+        {/* Features Section */}
         <section id="features" className="relative py-20 bg-slate-900/50" aria-label="features">
           <div className="container mx-auto px-4">
             <AnimatedSection
@@ -225,7 +225,7 @@ export default function HomePage() {
                 </AnimatedSection>
               ))}
             </div>
-                  </div>
+          </div>
         </section>
 
         {/* Testimonials Section */}
@@ -264,7 +264,7 @@ export default function HomePage() {
           </div>
         </section>
 
-      {/* CTA Section */}
+        {/* CTA Section */}
         <section className="relative py-20" aria-label="call to action">
           <div className="container mx-auto px-4">
             <AnimatedSection
@@ -281,16 +281,16 @@ export default function HomePage() {
               <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                 Join thousands of users who are already achieving their goals with GoalGenius.
               </p>
-                <Link
-                  href="/dashboard"
+              <Link
+                href="/dashboard"
                 className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
                 aria-label="Get Started Now with GoalGenius"
-                >
-                  Get Started Now
+              >
+                Get Started Now
                 <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-                </Link>
+              </Link>
             </AnimatedSection>
           </div>
         </section>

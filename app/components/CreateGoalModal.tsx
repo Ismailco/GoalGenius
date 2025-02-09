@@ -37,11 +37,11 @@ export default function CreateGoalModal() {
       window.location.reload();
     } catch (error) {
       setAlert({
-        show: true,
-        title: 'Error',
-        message: 'Failed to create goal. Please try again.',
-        type: 'error'
-      });
+				show: true,
+				title: 'Error',
+				message: error instanceof Error ? error.message : 'Failed to create goal. Please try again.',
+				type: 'error',
+			});
     }
   };
 

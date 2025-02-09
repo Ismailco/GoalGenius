@@ -1,7 +1,9 @@
 'use client';
 
 import { ModalProvider } from '../providers/ModalProvider';
+import { NotificationProvider } from '../providers/NotificationProvider';
 import ServiceWorkerProvider from '../providers/ServiceWorkerProvider';
+import NotificationContainer from './NotificationContainer';
 
 export default function Providers({
   children,
@@ -10,9 +12,12 @@ export default function Providers({
 }) {
   return (
     <ServiceWorkerProvider>
-      <ModalProvider>
-        {children}
-      </ModalProvider>
+      <NotificationProvider>
+        <ModalProvider>
+          {children}
+          <NotificationContainer />
+        </ModalProvider>
+      </NotificationProvider>
     </ServiceWorkerProvider>
   );
 }
