@@ -8,26 +8,26 @@ const CACHE_NAMES = {
 // Modified offline modal with online check
 const OFFLINE_MODAL_HTML = `
 <div id="offline-modal" style="display: none;">
-  <style>
-    #offline-modal {
-      position: fixed;
+    <style>
+        #offline-modal {
+            position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       padding: 1px 12px 1px 12px;
       background: rgb(239, 68, 68);
-      color: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      z-index: 9999;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            z-index: 9999;
       text-align: center;
       transition: all 0.3s ease;
       transform: translateY(-100%);
-      opacity: 0;
-    }
+                opacity: 0;
+            }
     #offline-modal.visible {
       transform: translateY(0);
-      opacity: 1;
-    }
+                opacity: 1;
+            }
     #offline-modal.online {
       background: rgb(34, 197, 94);
     }
@@ -45,12 +45,12 @@ const OFFLINE_MODAL_HTML = `
     #offline-modal .message {
       font-size: 14px;
       font-weight: 500;
-    }
-  </style>
+        }
+    </style>
   <div class="content">
     <div class="icon">📡</div>
     <div class="message">You're offline</div>
-  </div>
+    </div>
 </div>
 <script>
 (function checkConnectivity() {
@@ -79,7 +79,7 @@ const OFFLINE_MODAL_HTML = `
             hideTimeout = setTimeout(() => {
                 modal.classList.remove('visible');
                 setTimeout(() => {
-                    modal.style.display = 'none';
+            modal.style.display = 'none';
                     wasOffline = false; // Reset the offline state
                 }, 300); // Wait for transition to complete
             }, 2000);
@@ -91,7 +91,7 @@ const OFFLINE_MODAL_HTML = `
 
     // Initial check - only show if we're offline
     if (!navigator.onLine) {
-        updateOfflineStatus();
+    updateOfflineStatus();
     }
 })();
 </script>
@@ -176,13 +176,12 @@ const OFFLINE_PAGE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// Assets that should be cached immediately (app shell)
-const APP_SHELL = [
+// Public routes that should be cached
+const PUBLIC_ROUTES = [
   '/',
-  '/dashboard',
-  '/checkins',
-  '/notes',
-  '/todos',
+  '/docs',
+  '/sign-in',
+  '/sign-up',
   '/manifest.json',
   '/favicon.svg',
   '/favicon.ico',
@@ -194,6 +193,17 @@ const APP_SHELL = [
   '/favicon-256x256.png',
   '/_next/static/**/*'
 ];
+
+// Protected routes that require auth
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/checkins',
+  '/notes',
+  '/todos'
+];
+
+// Combined app shell for caching
+const APP_SHELL = [...PUBLIC_ROUTES];
 
 // Helper functions
 const isNavigationRequest = (request) => {
@@ -214,7 +224,17 @@ const isAPIRequest = (request) => {
 const isAuthRequest = (request) => {
   const url = new URL(request.url);
   return url.pathname.includes('/auth/') || // For Clerk
-         url.hostname.includes('clerk.dev'); // For Clerk's domain
+         url.pathname.includes('/__clerk') || // For Clerk handshake
+         url.pathname.includes('handshake') || // For Clerk handshake
+         url.hostname.includes('clerk.dev') || // For Clerk's domain
+         url.hostname.includes('clerk.com') || // For Clerk's domain
+         url.hostname.includes('clerk.accounts.dev'); // For Clerk's accounts domain
+};
+
+// Helper function to check if route is protected
+const isProtectedRoute = (url) => {
+  const pathname = new URL(url).pathname;
+  return PROTECTED_ROUTES.some(route => pathname.startsWith(route));
 };
 
 // Cache strategies
@@ -376,17 +396,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
 
-  // Don't cache auth requests
+  // Pass through all auth requests directly to network
   if (isAuthRequest(request)) {
-    event.respondWith(
-      navigator.onLine ?
-        fetch(request) :
-        new Response(JSON.stringify({ error: 'Authentication not available offline' }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        })
-    );
-    return;
+    return fetch(request);
   }
 
   // API requests - network first
@@ -401,13 +413,13 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return new Response(
-          JSON.stringify({ error: 'You are offline' }),
-          {
-            status: 503,
+                JSON.stringify({ error: 'You are offline' }),
+                {
+                  status: 503,
             headers: { 'Content-Type': 'application/json' }
-          }
-        );
-      })
+                }
+              );
+        })
     );
     return;
   }
@@ -419,7 +431,7 @@ self.addEventListener('fetch', (event) => {
         const cache = await caches.open(CACHE_NAMES.static);
         const cachedResponse = await cache.match(request);
 
-        if (cachedResponse) {
+          if (cachedResponse) {
           // If we have it cached, return it immediately
           if (navigator.onLine) {
             // Update cache in background if online
@@ -486,7 +498,45 @@ self.addEventListener('fetch', (event) => {
   if (isNavigationRequest(request)) {
     event.respondWith(
       (async () => {
-        // Try to get from both caches
+        // Check if it's a protected route
+        if (isProtectedRoute(request.url)) {
+          // Try to get auth status from request headers or cookies
+          const authHeader = request.headers.get('Authorization');
+          const hasAuth = authHeader && authHeader.startsWith('Bearer ');
+
+          if (!hasAuth && navigator.onLine) {
+            // Redirect to sign-in if not authenticated
+            return Response.redirect('/sign-in?redirect=' + encodeURIComponent(request.url), 302);
+          }
+
+          if (!hasAuth && !navigator.onLine) {
+            // If offline and not authenticated, show offline auth required page
+            return new Response(
+              `<!DOCTYPE html>
+              <html>
+                <head>
+                  <title>Authentication Required</title>
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <style>${OFFLINE_STYLES}</style>
+                </head>
+                <body>
+                  <div class="offline-container">
+                    <div class="icon">🔒</div>
+                    <h1>Authentication Required</h1>
+                    <p>Please sign in to access this page. You must be online to authenticate.</p>
+                    <button class="retry-button" onclick="window.location.href='/sign-in'">Sign In</button>
+                  </div>
+                </body>
+              </html>`,
+              {
+                headers: { 'Content-Type': 'text/html' },
+                status: 401
+              }
+            );
+          }
+        }
+
+        // Continue with existing navigation request handling
         const staticCache = await caches.open(CACHE_NAMES.static);
         const dynamicCache = await caches.open(CACHE_NAMES.dynamic);
 
@@ -498,7 +548,7 @@ self.addEventListener('fetch', (event) => {
           cachedResponse = await dynamicCache.match(request);
         }
 
-        if (cachedResponse) {
+          if (cachedResponse) {
           // If we have it cached, return it and update cache in background only if online
           if (navigator.onLine) {
             fetch(request).then(async (networkResponse) => {
@@ -581,3 +631,21 @@ self.addEventListener('push', (event) => {
     );
   }
 });
+
+// Add auth check interval
+setInterval(async () => {
+  if (navigator.onLine) {
+    try {
+      const response = await fetch('/api/auth/check');
+      if (!response.ok) {
+        // Clear protected route caches if auth is invalid
+        const cache = await caches.open(CACHE_NAMES.dynamic);
+        for (const route of PROTECTED_ROUTES) {
+          await cache.delete(route);
+        }
+      }
+    } catch (error) {
+      console.warn('Auth check failed:', error);
+    }
+  }
+}, 5 * 60 * 1000); // Check every 5 minutes

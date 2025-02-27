@@ -46,7 +46,7 @@ export default function Header() {
 	}, []);
 
 	// Don't show header on home page
-	if (pathname === '/') return null;
+	// if (pathname === '/' || pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/docs') return null;
 
 	const navItems = [
 		{ name: 'Dashboard', href: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -55,10 +55,26 @@ export default function Header() {
 		{ name: 'Notes', href: '/notes', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
 	];
 
-	return (
-		<>
-			<header className="sm:border-b sm:border-white/10 bg-slate-900 lg:bg-transparent z-[997]">
+
+	if (pathname === '/' || pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/docs') {
+		return (
+			<>
+				<header className="sm:border-b sm:border-white/10 bg-slate-900 lg:bg-transparent z-[997]">
 				<div className="max-w-7xl mx-auto px-4 pt-3 pb-0 sm:py-3 sm:px-4">
+					<div className="flex justify-between items-center">
+						<div className="flex items-center">
+							<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
+						</div>
+					</div>
+				</div>
+			</header>
+		</>
+	)
+	} else {
+		return (
+			<>
+				<header className="sm:border-b sm:border-white/10 bg-slate-900 lg:bg-transparent z-[997]">
+					<div className="max-w-7xl mx-auto px-4 pt-3 pb-0 sm:py-3 sm:px-4">
 					<div className="flex justify-between items-center">
 						{/* Mobile Layout */}
 						<div className="flex items-center justify-between w-full sm:hidden">
@@ -154,4 +170,4 @@ export default function Header() {
 			</div>
 		</>
 	);
-}
+}};

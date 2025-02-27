@@ -3,6 +3,7 @@
 import { ModalProvider } from '../providers/ModalProvider';
 import { NotificationProvider } from '../providers/NotificationProvider';
 import ServiceWorkerProvider from '../providers/ServiceWorkerProvider';
+import { ErrorBoundary } from './ErrorBoundary';
 import NotificationContainer from './NotificationContainer';
 
 export default function Providers({
@@ -11,13 +12,15 @@ export default function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <ServiceWorkerProvider>
-      <NotificationProvider>
-        <ModalProvider>
-          {children}
-          <NotificationContainer />
-        </ModalProvider>
-      </NotificationProvider>
-    </ServiceWorkerProvider>
+    <ErrorBoundary>
+      <ServiceWorkerProvider>
+        <NotificationProvider>
+          <ModalProvider>
+            {children}
+            <NotificationContainer />
+          </ModalProvider>
+        </NotificationProvider>
+      </ServiceWorkerProvider>
+    </ErrorBoundary>
   );
 }

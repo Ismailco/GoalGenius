@@ -21,7 +21,7 @@ export default function UserProfile({ isMobile = false, isMenuButton = false }: 
       {!isMenuButton && (
         <div className="ml-3">
           <p className="text-sm font-medium text-white">Guest User</p>
-          <p className="text-xs text-gray-400">guest@goalgenius.app</p>
+          <p className="text-xs text-gray-400">guest@goalgenius.soultware.com</p>
         </div>
       )}
     </div>

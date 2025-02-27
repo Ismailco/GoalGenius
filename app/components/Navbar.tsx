@@ -7,7 +7,7 @@ export default function Navbar() {
   const pathname = usePathname();
 
   // Don't show navbar on home page
-  if (pathname === '/') return null;
+  if (pathname === '/' || pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/docs') return null;
 
   const navItems = [
     {

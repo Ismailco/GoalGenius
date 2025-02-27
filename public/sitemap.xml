@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://goalgenius.app</loc>
+    <loc>https://goalgenius.soultware.com</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://goalgenius.app/features</loc>
+    <loc>https://goalgenius.soultware.com/features</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://goalgenius.app/about</loc>
+    <loc>https://goalgenius.soultware.com/about</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://goalgenius.app/privacy</loc>
+    <loc>https://goalgenius.soultware.com/privacy</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://goalgenius.app/terms</loc>
+    <loc>https://goalgenius.soultware.com/terms</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

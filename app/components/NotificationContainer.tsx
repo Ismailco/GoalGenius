@@ -31,8 +31,16 @@ export default function NotificationContainer() {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50">
-      <div className="absolute top-0 right-0 flex flex-col gap-2 p-4 max-h-screen overflow-hidden">
+    <div
+      className="fixed inset-0 pointer-events-none z-50"
+      role="region"
+      aria-label="Notifications"
+    >
+      <div
+        className="absolute top-0 right-0 flex flex-col gap-2 p-4 max-h-screen overflow-hidden"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {notifications.map(notification => (
           <div key={notification.id} className="pointer-events-auto">
             <Notification

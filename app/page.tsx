@@ -1,6 +1,48 @@
+import { Metadata } from 'next';
 import Link from 'next/link';
 import AnimatedSection from './components/AnimatedSection';
 import Script from 'next/script';
+
+export const metadata: Metadata = {
+	title: 'GoalGenius - Transform Your Goals into Reality',
+	description: 'Track your progress, celebrate milestones, and achieve your dreams with GoalGenius - your personal growth companion.',
+	openGraph: {
+		title: 'GoalGenius - Transform Your Goals into Reality',
+		description: 'Track your progress, celebrate milestones, and achieve your dreams with GoalGenius - your personal growth companion.',
+		type: 'website',
+		url: 'https://goalgenius.soultware.com',
+		images: [
+			{
+				url: 'https://goalgenius.soultware.com/og-home.jpg',
+				width: 1200,
+				height: 630,
+				alt: 'GoalGenius - Goal Tracking App',
+			},
+		],
+		siteName: 'GoalGenius',
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: 'GoalGenius - Transform Your Goals into Reality',
+		description: 'Track your progress, celebrate milestones, and achieve your dreams with GoalGenius - your personal growth companion.',
+		images: ['https://goalgenius.soultware.com/og-home.jpg'],
+	},
+	alternates: {
+		canonical: 'https://goalgenius.soultware.com',
+	},
+	keywords: 'goal tracking, personal development, productivity, milestone tracking, daily check-ins, smart notes',
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			'max-video-preview': -1,
+			'max-image-preview': 'large',
+			'max-snippet': -1,
+		},
+	},
+};
 
 const features = [
   {
@@ -96,7 +138,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/dashboard"
+                  href={process.env.NEXT_PUBLIC_APP_URL + '/dashboard'}
                   className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
                   aria-label="Get Started with GoalGenius"
                 >
@@ -282,7 +324,7 @@ export default function HomePage() {
                 Join thousands of users who are already achieving their goals with GoalGenius.
               </p>
               <Link
-                href="/dashboard"
+                href={process.env.NEXT_PUBLIC_APP_URL + '/dashboard'}
                 className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
                 aria-label="Get Started Now with GoalGenius"
               >

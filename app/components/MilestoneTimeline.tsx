@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Milestone, Goal, GoalCategory } from '@/app/types';
 import { getMilestones, getGoals } from '@/app/lib/storage';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
+import { LoadingPage } from './LoadingSpinner';
 // import CreateMilestoneModal from '@/app/components/CreateMilestoneModal';
 // import { useModal } from '@/app/providers/ModalProvider';
 
@@ -20,9 +22,27 @@ export default function MilestoneTimeline() {
   // const { showModal } = useModal();
 
   useEffect(() => {
-    setMounted(true);
-    setMilestones(getMilestones());
-    setGoals(getGoals());
+    const loadData = async () => {
+      await handleAsyncOperation(
+        async () => {
+          setMounted(true);
+          const loadedMilestones = getMilestones();
+          const loadedGoals = getGoals();
+          setMilestones(loadedMilestones);
+          setGoals(loadedGoals);
+        },
+        setLoading,
+        (error) => {
+          window.addNotification?.({
+            title: 'Error',
+            message: getUserFriendlyErrorMessage(error),
+            type: 'error'
+          });
+        }
+      );
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -37,7 +57,6 @@ export default function MilestoneTimeline() {
     }, {} as Record<GoalCategory, Goal[]>);
 
     setGroupedGoals(grouped);
-    setLoading(false);
   }, [goals, mounted]);
 
   const getStatusColor = (progress: number) => {
@@ -85,35 +104,35 @@ export default function MilestoneTimeline() {
   };
 
   if (loading) {
-    return <div className="animate-pulse">Loading milestones...</div>;
+    return <LoadingPage />;
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12" role="region" aria-label="Goals and milestones timeline">
       {Object.entries(groupedGoals).map(([category, goals]) => (
         goals.length > 0 && (
-          <div key={category} className="space-y-8">
+          <div key={category} className="space-y-8" role="region" aria-label={`${category} goals timeline`}>
             {/* Category Header */}
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20">
-                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   {getCategoryIcon(category as GoalCategory)}
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-white capitalize">{category}</h2>
+              <h2 className="text-xl font-semibold text-white capitalize" id={`${category}-timeline-heading`}>{category}</h2>
             </div>
 
             {/* Goals Timeline */}
             <div className="relative">
-              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/20 via-purple-500/20 to-indigo-500/20"></div>
+              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/20 via-purple-500/20 to-indigo-500/20" aria-hidden="true"></div>
               <div className="space-y-8">
                 {goals.map((goal) => (
-                  <div key={goal.id} className="relative flex items-start group">
+                  <div key={goal.id} className="relative flex items-start group" role="article" aria-labelledby={`goal-${goal.id}-title`}>
                     {/* Timeline Dot */}
                     <div className={`
                       absolute left-8 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white/20
                       ${getStatusColor(goal.progress)}
-                    `}>
+                    `} aria-hidden="true">
                       <div className="absolute inset-0 rounded-full animate-ping bg-white/20 group-hover:bg-white/30"></div>
                     </div>
 
@@ -121,43 +140,51 @@ export default function MilestoneTimeline() {
                     <div className="ml-16 bg-white/5 backdrop-blur-lg rounded-2xl p-6 w-full transform hover:scale-[1.02] transition-all duration-200 border border-white/10">
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{goal.title}</h3>
-                          <p className="text-sm text-gray-400">{goal.timeFrame}</p>
+                          <h3 id={`goal-${goal.id}-title`} className="text-lg font-semibold text-white">{goal.title}</h3>
+                          <p className="text-sm text-gray-400" aria-label={`Timeframe: ${goal.timeFrame}`}>{goal.timeFrame}</p>
                         </div>
                         <span className={`
                           px-3 py-1 rounded-full text-sm font-medium
                           ${goal.progress === 100 ? 'bg-green-500/20 text-green-300' :
                             goal.progress >= 50 ? 'bg-blue-500/20 text-blue-300' :
                             'bg-purple-500/20 text-purple-300'}
-                        `}>
+                        `} role="status" aria-label={`Goal progress: ${goal.progress}% complete`}>
                           {goal.progress}% Complete
                         </span>
                       </div>
 
-                      <p className="text-gray-300 mb-4">{goal.description}</p>
+                      <p className="text-gray-300 mb-4" id={`goal-${goal.id}-description`}>{goal.description}</p>
 
                       {/* Progress Bar */}
                       <div className="w-full bg-white/10 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all duration-500 ${getStatusColor(goal.progress)}`}
                           style={{ width: `${goal.progress}%` }}
+                          role="progressbar"
+                          aria-valuenow={goal.progress}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={`Progress for ${goal.title}`}
                         />
                       </div>
 
                       {/* Custom Milestones */}
-                      <div className="mt-4 space-y-2">
+                      <div className="mt-4 space-y-2" role="list" aria-label={`Milestones for ${goal.title}`}>
                         {milestones
                           .filter(milestone => milestone.goalId === goal.id)
                           .map((milestone) => (
                             <div
                               key={milestone.id}
                               className="flex items-center gap-2 text-gray-300"
+                              role="listitem"
+                              aria-labelledby={`milestone-${milestone.id}-title`}
                             >
                               <svg
                                 className="w-4 h-4 text-blue-400"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
+                                aria-hidden="true"
                               >
                                 <path
                                   strokeLinecap="round"
@@ -167,9 +194,9 @@ export default function MilestoneTimeline() {
                                 />
                               </svg>
                               <div>
-                                <span className="text-sm font-medium">{milestone.title}</span>
-                                <p className="text-xs text-gray-400">{milestone.description}</p>
-                                <span className="text-xs text-gray-500">Due: {new Date(milestone.date).toLocaleDateString()}</span>
+                                <span id={`milestone-${milestone.id}-title`} className="text-sm font-medium">{milestone.title}</span>
+                                <p className="text-xs text-gray-400" aria-label={`Milestone description: ${milestone.description}`}>{milestone.description}</p>
+                                <span className="text-xs text-gray-500" aria-label={`Due date: ${new Date(milestone.date).toLocaleDateString()}`}>Due: {new Date(milestone.date).toLocaleDateString()}</span>
                               </div>
                             </div>
                           ))}

@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Navbar from './components/Navbar';
 import { Metadata } from 'next';
 import Providers from './components/Providers';
+import { ClerkProvider } from '@clerk/nextjs';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -13,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://goalgenius.app'),
+  metadataBase: new URL('https://goalgenius.soultware.com'),
   title: {
     default: 'GoalGenius - Transform Your Goals into Reality',
     template: '%s | GoalGenius'
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GoalGenius - Transform Your Goals into Reality',
     description: 'Track your progress, celebrate milestones, and achieve your dreams with GoalGenius - your personal growth companion.',
-    url: 'https://goalgenius.app',
+    url: 'https://goalgenius.soultware.com',
     siteName: 'GoalGenius',
     locale: 'en_US',
     type: 'website',
@@ -64,7 +65,7 @@ export const metadata: Metadata = {
     google: 'your-google-verification-code',
   },
   alternates: {
-    canonical: 'https://goalgenius.app',
+    canonical: 'https://goalgenius.soultware.com',
   },
 };
 
@@ -74,33 +75,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-		<html lang="en" className={inter.className}>
-			<head>
-				<meta charSet="utf-8" />
-				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-				<link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-				<link rel="apple-touch-icon" sizes="180x180" href="/favicon-128x128.png" />
-				<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-				<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-				<link rel="manifest" href="/manifest.json" />
-				<meta name="theme-color" content="#60A5FA" />
-				<link rel="apple-touch-startup-image" href="/splash.svg" />
-				<meta name="apple-mobile-web-app-capable" content="yes" />
-				<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-			</head>
-			<body>
-				<Providers>
-					<div className="min-h-screen bg-slate-900">
-						<div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-						<div className="relative pb-20">
-							<Header />
-							{children}
-						</div>
-					</div>
-					<Navbar />
-				</Providers>
-			</body>
-		</html>
-	);
+    <html lang="en" className={inter.className}>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon-128x128.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#60A5FA" />
+        <link rel="apple-touch-startup-image" href="/splash.svg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body>
+        <ClerkProvider>
+          <Providers>
+            <div className="min-h-screen bg-slate-900">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
+              <div className="relative pb-20">
+                <Header />
+                {children}
+              </div>
+            </div>
+            <Navbar />
+          </Providers>
+        </ClerkProvider>
+      </body>
+    </html>
+  );
 }

@@ -9,7 +9,7 @@
 
 Transform your aspirations into achievements with GoalGenius - your intelligent goal tracking companion.
 
-[View Demo](https://goalgenius.app) · [Report Bug](https://github.com/ismailco/goalgenius/issues) · [Request Feature](https://github.com/ismailco/goalgenius/issues)
+[View Demo](https://goalgenius.soultware.com) · [Report Bug](https://github.com/ismailco/goalgenius/issues) · [Request Feature](https://github.com/ismailco/goalgenius/issues)
 
 ![GoalGenius Dashboard](public/Screenshot.png)
 

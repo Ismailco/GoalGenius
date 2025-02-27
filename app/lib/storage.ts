@@ -2,6 +2,7 @@ import { Goal, Milestone, Note, Todo, CheckIn } from '@/app/types';
 import { v4 as uuidv4 } from 'uuid';
 import { sanitizeForStorage } from '@/app/lib/validation';
 import validator from 'validator';
+import { StorageError, ValidationError, logError } from './error';
 
 // Helper function to sanitize data before storage
 const sanitizeData = <T extends Record<string, unknown>>(data: T): T => {
@@ -42,9 +43,14 @@ const STORAGE_KEYS = {
 };
 
 export function getGoals(): Goal[] {
-  if (typeof window === 'undefined') return [];
-  const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
-  return goals.map((goal: Record<string, unknown>) => unescapeData(goal));
+  try {
+    if (typeof window === 'undefined') return [];
+    const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    return goals.map((goal: Record<string, unknown>) => unescapeData(goal));
+  } catch (error) {
+    logError(error as Error, { operation: 'getGoals' });
+    throw new StorageError('Failed to retrieve goals');
+  }
 }
 
 export function getGoal(id: string): Goal | null {
@@ -53,41 +59,84 @@ export function getGoal(id: string): Goal | null {
 }
 
 export function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>): Goal {
-  const goals = getGoals();
-  const sanitizedGoal = sanitizeData(goal);
-  const newGoal: Goal = {
-    id: uuidv4(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    title: sanitizedGoal.title,
-    description: sanitizedGoal.description,
-    category: sanitizedGoal.category,
-    timeFrame: sanitizedGoal.timeFrame,
-    status: sanitizedGoal.status,
-    progress: sanitizedGoal.progress,
-  };
-  localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...goals, newGoal]));
-  return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
+  try {
+    const goals = getGoals();
+    const sanitizedGoal = sanitizeData(goal);
+
+    if (!sanitizedGoal.title) {
+      throw new ValidationError('Goal title is required');
+    }
+
+    const newGoal: Goal = {
+      id: uuidv4(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      title: sanitizedGoal.title,
+      description: sanitizedGoal.description,
+      category: sanitizedGoal.category,
+      timeFrame: sanitizedGoal.timeFrame,
+      status: sanitizedGoal.status,
+      progress: sanitizedGoal.progress,
+    };
+
+    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...goals, newGoal]));
+    return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
+  } catch (error) {
+    logError(error as Error, { operation: 'createGoal', data: goal });
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new StorageError('Failed to create goal');
+  }
 }
 
 export function updateGoal(id: string, updates: Partial<Goal>): Goal {
-  const goals = getGoals();
-  const sanitizedUpdates = sanitizeData(updates);
-  const updatedGoals = goals.map(goal => {
-    if (goal.id === id) {
-      return { ...goal, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+  try {
+    const goals = getGoals();
+    const existingGoal = goals.find(g => g.id === id);
+
+    if (!existingGoal) {
+      throw new ValidationError('Goal not found');
     }
-    return goal;
-  });
-  localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
-  return unescapeData(updatedGoals.find(g => g.id === id)! as unknown as Record<string, unknown>) as unknown as Goal;
+
+    const sanitizedUpdates = sanitizeData(updates);
+    const updatedGoals = goals.map(goal => {
+      if (goal.id === id) {
+        return { ...goal, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+      }
+      return goal;
+    });
+
+    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
+    return unescapeData(updatedGoals.find(g => g.id === id)! as unknown as Record<string, unknown>) as unknown as Goal;
+  } catch (error) {
+    logError(error as Error, { operation: 'updateGoal', goalId: id, updates });
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new StorageError('Failed to update goal');
+  }
 }
 
 export function deleteGoal(id: string): boolean {
-  const goals = getGoals();
-  const filtered = goals.filter(goal => goal.id !== id);
-  localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(filtered));
-  return true;
+  try {
+    const goals = getGoals();
+    const goalExists = goals.some(g => g.id === id);
+
+    if (!goalExists) {
+      throw new ValidationError('Goal not found');
+    }
+
+    const filtered = goals.filter(goal => goal.id !== id);
+    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(filtered));
+    return true;
+  } catch (error) {
+    logError(error as Error, { operation: 'deleteGoal', goalId: id });
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new StorageError('Failed to delete goal');
+  }
 }
 
 export function getMilestones(): Milestone[] {
