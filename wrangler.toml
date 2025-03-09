@@ -1,0 +1,9 @@
+name = "goalgenius"
+compatibility_date = "2025-03-08"
+node_compat = true
+
+[[ d1_databases ]]
+binding = "DB"
+database_name = "goalgenius_db"
+database_id = "e235d926-15cb-4c3d-b275-3369774cf609"
+migrations_dir = "models"

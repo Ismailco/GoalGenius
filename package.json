@@ -3,21 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-favicons": "node scripts/generate-favicons.js"
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "preview": "pnpm run pages:build && wrangler pages dev",
+    "deploy": "pnpm run pages:build && wrangler pages deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts",
+    "drizzle:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "drizzle:migrate": "drizzle-kit migrate --config drizzle.config.ts",
+    "drizzle:studio": "drizzle-kit studio --config drizzle.config.ts",
+    "drizzle:pull": "drizzle-kit pull --config drizzle.config.ts",
+    "drizzle:generate:local": "drizzle-kit generate --config drizzle.config.local.ts",
+    "drizzle:migrate:local": "drizzle-kit migrate --config drizzle.config.local.ts",
+    "drizzle:studio:local": "drizzle-kit studio --config drizzle.config.local.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.12.0",
-    "@types/dompurify": "^3.0.5",
     "@types/uuid": "^10.0.0",
     "@types/validator": "^13.12.2",
     "date-fns": "^4.1.0",
     "dompurify": "^3.2.4",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.40.0",
     "framer-motion": "^12.3.1",
-    "next": "15.1.5",
+    "next": "15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "uuid": "^11.0.5",
@@ -28,11 +38,18 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "better-sqlite3": "^11.8.1",
+    "drizzle-kit": "^0.30.5",
     "eslint": "^9",
     "eslint-config-next": "15.1.5",
     "postcss": "^8",
     "sharp": "^0.33.5",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "sharp"
+    ]
   }
 }

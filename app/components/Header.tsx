@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import UserProfile from './UserProfile';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function Header() {
 	const pathname = usePathname();
@@ -61,163 +60,116 @@ export default function Header() {
 		return (
 			<>
 				<header className="sm:border-b sm:border-white/10 bg-slate-900 lg:bg-transparent z-[997]">
-				<div className="max-w-7xl mx-auto px-4 pt-3 pb-0 sm:py-3 sm:px-4">
-					<div className="flex justify-between items-center">
-						<div className="flex items-center">
-							<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
-						</div>
-						<div className="flex items-center space-x-4">
-							<SignedOut>
-								<div className="hidden sm:flex space-x-2">
-									<SignInButton>
-										<button className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full hover:from-blue-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200">Sign In</button>
-									</SignInButton>
-									<SignUpButton>
-										<button className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full hover:from-blue-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200">Sign Up</button>
-									</SignUpButton>
-								</div>
-								{/* Mobile-friendly version */}
-								<div className="sm:hidden">
-									<SignInButton />
-								</div>
-							</SignedOut>
-							<SignedIn>
-								<UserButton
-									appearance={{
-										elements: {
-											userButtonAvatarBox: "w-10 h-10 rounded-full"
-										}
-									}}
-								/>
-							</SignedIn>
+					<div className="max-w-7xl mx-auto px-4 pt-3 pb-0 sm:py-3 sm:px-4">
+						<div className="flex justify-between items-center">
+							<div className="flex items-center">
+								<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
+							</div>
 						</div>
 					</div>
-				</div>
-			</header>
-		</>
-	)
+				</header>
+			</>
+		)
 	} else {
 		return (
 			<>
 				<header className="sm:border-b sm:border-white/10 bg-slate-900 lg:bg-transparent z-[997]">
 					<div className="max-w-7xl mx-auto px-4 pt-3 pb-0 sm:py-3 sm:px-4">
-					<div className="flex justify-between items-center">
-						{/* Mobile Layout */}
-						<div className="flex items-center justify-between w-full sm:hidden">
-							{/* User Profile as Menu Button */}
-							<div
-								onClick={(e) => {
-									e.stopPropagation();
-									setIsMobileMenuOpen(!isMobileMenuOpen);
-								}}
-								className="relative z-[10]"
-							>
-								<SignedOut>
+						<div className="flex justify-between items-center">
+							{/* Mobile Layout */}
+							<div className="flex items-center justify-between w-full sm:hidden">
+								{/* User Profile as Menu Button */}
+								<div
+									onClick={(e) => {
+										e.stopPropagation();
+										setIsMobileMenuOpen(!isMobileMenuOpen);
+									}}
+									className="relative z-[10]"
+								>
 									<UserProfile isMobile={true} isMenuButton={true} />
-								</SignedOut>
-								<SignedIn>
-									<UserButton
-										afterSignOutUrl="/"
-										appearance={{
-											elements: {
-												userButtonAvatarBox: "w-10 h-10 rounded-full"
-											}
-										}}
-									/>
-								</SignedIn>
+
+								</div>
+
+								{/* Centered Logo */}
+								<div className="flex items-center">
+									<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+									</svg>
+								</div>
+
+								{/* Empty div for spacing */}
+								<div className="w-10"></div>
 							</div>
 
-							{/* Centered Logo */}
-							<div className="flex items-center">
-								<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-								</svg>
+							{/* Desktop Logo and Title */}
+							<div className="hidden sm:flex items-center space-x-4">
+								<div className="p-2 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20">
+									<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+									</svg>
+								</div>
+								<div>
+									<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
+									<p className="text-sm text-gray-400">Transform your aspirations into achievements</p>
+								</div>
 							</div>
 
-							{/* Empty div for spacing */}
-							<div className="w-10"></div>
+							{/* Desktop User Profile */}
+							<div className="hidden sm:block">
+									<UserProfile isMobile={false} />
+							</div>
 						</div>
+					</div>
+				</header>
 
-						{/* Desktop Logo and Title */}
-						<div className="hidden sm:flex items-center space-x-4">
+				{/* Mobile Menu Overlay */}
+				{isMobileMenuOpen && (
+					<div
+						className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] sm:hidden"
+						onClick={(e) => {
+							e.stopPropagation();
+							setIsMobileMenuOpen(false);
+						}}
+					/>
+				)}
+
+				{/* Mobile Slide-out Menu */}
+				<div ref={menuRef} className={`fixed top-0 left-0 bottom-0 w-64 bg-slate-900/95 backdrop-blur-xl border-r border-white/10 transform transition-transform duration-300 ease-in-out z-[999] sm:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+					{/* Logo in Menu */}
+					<div className="p-6 border-b border-white/10">
+						<div className="flex items-center space-x-3">
 							<div className="p-2 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20">
 								<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
 								</svg>
 							</div>
 							<div>
-								<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
-								<p className="text-sm text-gray-400">Transform your aspirations into achievements</p>
+								<h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
 							</div>
 						</div>
+					</div>
 
-						{/* Desktop User Profile */}
-						<div className="hidden sm:block">
-							<SignedOut>
-								<UserProfile isMobile={false} />
-							</SignedOut>
-							<SignedIn>
-								<UserButton
-									afterSignOutUrl="/"
-									appearance={{
-										elements: {
-											userButtonAvatarBox: "w-10 h-10 rounded-full"
-										}
-									}}
-								/>
-							</SignedIn>
-						</div>
+					{/* Navigation Links */}
+					<nav className="flex-1 p-4 space-y-2">
+						{navItems.map((item) => {
+							const isActive = pathname === item.href;
+							return (
+								<Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+									<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+									</svg>
+									<span className="font-medium">{item.name}</span>
+								</Link>
+							);
+						})}
+					</nav>
+
+					{/* User Profile at bottom */}
+					<div className="p-4 border-t border-white/10">
+						<UserProfile isMobile={true} />
 					</div>
 				</div>
-			</header>
-
-			{/* Mobile Menu Overlay */}
-			{isMobileMenuOpen && (
-				<div
-					className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] sm:hidden"
-					onClick={(e) => {
-						e.stopPropagation();
-						setIsMobileMenuOpen(false);
-					}}
-				/>
-			)}
-
-			{/* Mobile Slide-out Menu */}
-			<div ref={menuRef} className={`fixed top-0 left-0 bottom-0 w-64 bg-slate-900/95 backdrop-blur-xl border-r border-white/10 transform transition-transform duration-300 ease-in-out z-[999] sm:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-				{/* Logo in Menu */}
-				<div className="p-6 border-b border-white/10">
-					<div className="flex items-center space-x-3">
-						<div className="p-2 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20">
-							<svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-							</svg>
-						</div>
-						<div>
-							<h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
-						</div>
-					</div>
-				</div>
-
-				{/* Navigation Links */}
-				<nav className="flex-1 p-4 space-y-2">
-					{navItems.map((item) => {
-						const isActive = pathname === item.href;
-						return (
-							<Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-								<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-								</svg>
-								<span className="font-medium">{item.name}</span>
-							</Link>
-						);
-					})}
-				</nav>
-
-				{/* User Profile at bottom */}
-				<div className="p-4 border-t border-white/10">
-					<UserProfile isMobile={true} />
-				</div>
-			</div>
-		</>
-	);
-}};
+			</>
+		);
+	}
+};

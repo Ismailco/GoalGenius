@@ -4,7 +4,6 @@ import Header from './components/Header';
 import Navbar from './components/Navbar';
 import { Metadata } from 'next';
 import Providers from './components/Providers';
-import { ClerkProvider } from '@clerk/nextjs';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -75,7 +74,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
       <html lang="en" className={inter.className}>
         <head>
           <meta charSet="utf-8" />
@@ -104,6 +102,5 @@ export default function RootLayout({
           </Providers>
         </body>
       </html>
-    </ClerkProvider>
   );
 }
