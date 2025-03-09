@@ -14,6 +14,7 @@ import SectionHeader from '@/app/components/SectionHeader';
 import DashboardSection from '@/app/components/DashboardSection';
 
 export default function DashboardPage() {
+
   const { showModal } = useModal();
   const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState({
@@ -51,7 +52,9 @@ export default function DashboardPage() {
       <DashboardSection className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Your Journey Dashboard</h1>
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+              Your Journey Dashboard
+            </h1>
             <p className="text-gray-300 mt-2">Track your progress, achieve your dreams</p>
           </div>
           <div className="flex gap-4">

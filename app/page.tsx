@@ -119,7 +119,7 @@ export default function HomePage() {
       </Script>
 
       <main className="min-h-screen bg-slate-900">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
+        <div className="absolute top-16 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
 
         {/* Hero Section */}
         <section className="relative" aria-label="hero">
@@ -138,7 +138,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href={process.env.NEXT_PUBLIC_APP_URL + '/dashboard'}
+                  href='/dashboard'
                   className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
                   aria-label="Get Started with GoalGenius"
                 >
@@ -324,7 +324,7 @@ export default function HomePage() {
                 Join thousands of users who are already achieving their goals with GoalGenius.
               </p>
               <Link
-                href={process.env.NEXT_PUBLIC_APP_URL + '/dashboard'}
+                href='/dashboard'
                 className="inline-flex items-center px-8 py-3 text-lg font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
                 aria-label="Get Started Now with GoalGenius"
               >

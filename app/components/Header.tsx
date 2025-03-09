@@ -56,7 +56,7 @@ export default function Header() {
 	];
 
 
-	if (pathname === '/' || pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/docs') {
+	if (pathname === '/' || pathname === '/docs' || pathname === '/sign-in' || pathname === '/sign-up') {
 		return (
 			<>
 				<header className="sm:border-b sm:border-white/10 bg-slate-900 lg:bg-transparent z-[997]">
@@ -86,7 +86,7 @@ export default function Header() {
 								}}
 								className="relative z-[10]"
 							>
-								<UserProfile isMobile={true} isMenuButton={true} />
+									<UserProfile isMobile={true} isMenuButton={true} />
 							</div>
 
 							{/* Centered Logo */}
@@ -115,7 +115,7 @@ export default function Header() {
 
 						{/* Desktop User Profile */}
 						<div className="hidden sm:block">
-							<UserProfile isMobile={false} />
+								<UserProfile isMobile={false} />
 						</div>
 					</div>
 				</div>
