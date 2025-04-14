@@ -7,16 +7,22 @@
 	"name": "nutryfit",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2025-03-01",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".open-next/assets"
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "nutryfit-db",
+			"database_id": "b62d0940-1111-4a0f-9b25-6e0330865810",
+			"migrations_dir": "drizzle"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
