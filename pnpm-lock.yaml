@@ -17,6 +17,9 @@ importers:
       drizzle-orm:
         specifier: ^0.41.0
         version: 0.41.0(@cloudflare/workers-types@4.20250417.0)(@libsql/client@0.15.4)(gel@2.0.2)(kysely@0.27.6)(sqlite3@5.1.7)
+      kysely-d1:
+        specifier: ^0.3.0
+        version: 0.3.0(kysely@0.27.6)
       next:
         specifier: 15.2.5
         version: 15.2.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -2534,6 +2537,11 @@ packages:
 
   jsbn@1.1.0:
     resolution: {integrity: sha512-4bYVV3aAMtDTTu4+xsDYa6sy9GyJ69/amsu9sYF2zqjiEoZA5xJi3BrfX3uY+/IekIu7MwdObdbDWpoZdBv3/A==}
+
+  kysely-d1@0.3.0:
+    resolution: {integrity: sha512-9wTbE6ooLiYtBa4wPg9e4fjfcmvRtgE/2j9pAjYrIq+iz+EsH/Hj9YbtxpEXA6JoRgfulVQ1EtGj6aycGGRpYw==}
+    peerDependencies:
+      kysely: '*'
 
   kysely@0.27.6:
     resolution: {integrity: sha512-FIyV/64EkKhJmjgC0g2hygpBv5RNWVPyNCqSAD7eTCv6eFWNIi4PN1UvdSJGicN/o35bnevgis4Y0UDC0qi8jQ==}
@@ -6431,6 +6439,10 @@ snapshots:
 
   jsbn@1.1.0:
     optional: true
+
+  kysely-d1@0.3.0(kysely@0.27.6):
+    dependencies:
+      kysely: 0.27.6
 
   kysely@0.27.6: {}
 

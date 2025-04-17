@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev --turbopack",
-		"build": "next build",
+		"build": "open-next build",
 		"start": "next start",
 		"lint": "next lint",
 		"db:generate": "drizzle-kit generate --config drizzle.config.ts",
@@ -19,6 +19,7 @@
 		"better-auth": "^1.2.7",
 		"drizzle-kit": "^0.30.6",
 		"drizzle-orm": "^0.41.0",
+		"kysely-d1": "^0.3.0",
 		"next": "15.2.5",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
