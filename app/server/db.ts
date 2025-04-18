@@ -4,7 +4,8 @@ import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 import { getLocalD1DB } from "../../drizzle.config";
 
-let db;
+// Define a type for our database (will be inferred from drizzle)
+let db: ReturnType<typeof drizzleD1<typeof schema>> | ReturnType<typeof drizzleLibSQL<typeof schema>>;
 
 if (process.env.NODE_ENV === "production") {
   // Use D1 in production

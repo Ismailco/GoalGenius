@@ -8,7 +8,7 @@ export async function updateUserRole(email: string, role: string) {
   try {
     // Find the user by email and update their role
     await db.update(user)
-      .set({ role })
+      .set({ role: role as "admin" | "practitioner" | "client" })
       .where(eq(user.email, email));
 
     return { success: true };
