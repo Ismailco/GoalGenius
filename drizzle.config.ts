@@ -2,7 +2,7 @@ import { defineConfig } from "drizzle-kit";
 import fs from "node:fs";
 import path from "node:path";
 
-function getLocalD1DB() {
+export function getLocalD1DB() {
   try {
     const basePath = path.resolve(".wrangler");
     const dbFile = fs.readdirSync(basePath, { encoding: "utf-8", recursive: true })

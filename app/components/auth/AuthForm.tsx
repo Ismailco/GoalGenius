@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signIn, signUp } from '@/lib/auth-client';
+import { updateUserRole } from '@/app/actions/user';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -29,11 +30,19 @@ export function AuthForm({ mode }: AuthFormProps) {
         });
       } else {
         const name = formData.get('name') as string;
+        const role = formData.get('role') as string;
+
+        // First sign up the user (now with default 'client' role)
         await signUp.email({
           email,
           password,
           name,
         });
+
+        // If role is not client, update it
+        if (role && role !== 'client') {
+          await updateUserRole(email, role);
+        }
       }
     } catch (err) {
       console.error('Auth error:', err);
@@ -99,6 +108,24 @@ export function AuthForm({ mode }: AuthFormProps) {
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
             />
           </div>
+
+          {mode === 'signup' && (
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium">
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                defaultValue="client"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              >
+                <option value="client">Client</option>
+                <option value="practitioner">Practitioner</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-md bg-red-50 p-4">

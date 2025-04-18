@@ -15,6 +15,13 @@
       "when": 1744914532404,
       "tag": "0001_flowery_ender_wiggin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1744997432851,
+      "tag": "0002_daily_vengeance",
+      "breakpoints": true
     }
   ]
 }
