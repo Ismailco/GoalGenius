@@ -223,7 +223,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => signIn.social({ provider: 'google', callbackURL: '/' })}
+                onClick={() => signIn.social({ provider: 'google' })}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -236,7 +236,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               </button>
               <button
                 type="button"
-                onClick={() => signIn.social({ provider: 'github', callbackURL: '/' })}
+                onClick={() => signIn.social({ provider: 'github' })}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
