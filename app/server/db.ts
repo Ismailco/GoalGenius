@@ -7,10 +7,9 @@ import * as schema from "./schema";
 // Define a type for our database (will be inferred from drizzle)
 let db: ReturnType<typeof drizzleD1<typeof schema>> | ReturnType<typeof drizzleLibSQL<typeof schema>>;
 
-if (process.env.NEXT_PUBLIC_NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production") {
   // Use D1 in production
   db = drizzleD1(process.env.DB, { schema });
-  console.log("Using D1 in production ", process.env.DB);
 } else {
   // Use libsql in development with the same DB file
   const client = createClient({

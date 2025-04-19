@@ -2,7 +2,7 @@
 // Runtime types generated with workerd@1.20250409.0 2025-03-01 nodejs_compat
 declare namespace Cloudflare {
 	interface Env {
-		NEXT_PUBLIC_NEXTJS_ENV: string;
+		NEXTJS_ENV: string;
 		DB: D1Database;
 		ASSETS: Fetcher;
 	}
