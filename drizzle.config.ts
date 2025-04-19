@@ -23,7 +23,7 @@ export default defineConfig({
 	schema: './app/server/schema.ts',
 	out: './drizzle',
 	dialect: 'sqlite',
-	...(process.env.NODE_ENV === 'production'
+	...(process.env.NEXT_PUBLIC_NODE_ENV === 'production'
 		? {
 				driver: 'd1-http',
 				dbCredentials: {
