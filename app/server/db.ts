@@ -8,8 +8,16 @@ import * as schema from "./schema";
 let db: ReturnType<typeof drizzleD1<typeof schema>> | ReturnType<typeof drizzleLibSQL<typeof schema>>;
 
 if (process.env.NODE_ENV === "production") {
-  // Use D1 in production
-  db = drizzleD1(process.env.DB, { schema });
+  // Access D1 in production through Cloudflare bindings
+  // @ts-ignore - Cloudflare bindings are injected at runtime
+  if (typeof globalThis.DB !== "undefined") {
+    // We're in a Cloudflare Pages/Workers environment with D1 binding
+    // @ts-ignore
+    db = drizzleD1(globalThis.DB, { schema });
+  } else {
+    // Fallback for other production environments if needed
+    db = drizzleD1(process.env.DB, { schema });
+  }
 } else {
   // Use libsql in development with the same DB file
   const client = createClient({
