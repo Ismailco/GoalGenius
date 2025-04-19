@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { signIn, signUp } from '@/lib/auth-client';
+import { signIn, signUp, useSession } from '@/lib/auth-client';
 import { updateUserRole } from '@/app/actions/user';
+import { redirect } from 'next/navigation';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -13,6 +14,11 @@ interface AuthFormProps {
 export function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { data: session } = useSession();
+
+  if (session) {
+    redirect('/dashboard');
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

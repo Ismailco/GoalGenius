@@ -1,0 +1,57 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" fill="#DCFCE7" />
+
+  <!-- Progress chart -->
+  <rect x="60" y="100" width="180" height="120" rx="8" fill="white" stroke="#16A34A" stroke-width="2" />
+
+  <!-- Chart grid lines -->
+  <line x1="60" y1="140" x2="240" y2="140" stroke="#D1FAE5" stroke-width="2" />
+  <line x1="60" y1="180" x2="240" y2="180" stroke="#D1FAE5" stroke-width="2" />
+  <line x1="100" y1="100" x2="100" y2="220" stroke="#D1FAE5" stroke-width="2" />
+  <line x1="140" y1="100" x2="140" y2="220" stroke="#D1FAE5" stroke-width="2" />
+  <line x1="180" y1="100" x2="180" y2="220" stroke="#D1FAE5" stroke-width="2" />
+  <line x1="220" y1="100" x2="220" y2="220" stroke="#D1FAE5" stroke-width="2" />
+
+  <!-- Progress line -->
+  <path d="M70 200 L100 180 L140 190 L180 150 L220 120 L230 110"
+        stroke="#16A34A"
+        stroke-width="3"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+
+  <!-- Data points -->
+  <circle cx="70" cy="200" r="6" fill="#16A34A" />
+  <circle cx="100" cy="180" r="6" fill="#16A34A" />
+  <circle cx="140" cy="190" r="6" fill="#16A34A" />
+  <circle cx="180" cy="150" r="6" fill="#16A34A" />
+  <circle cx="220" cy="120" r="6" fill="#16A34A" />
+  <circle cx="230" cy="110" r="6" fill="#16A34A" />
+
+  <!-- Upward trend arrow -->
+  <path d="M240 80 L260 60 L280 80" stroke="#16A34A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  <line x1="260" y1="60" x2="260" y2="100" stroke="#16A34A" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Progress indicators -->
+  <circle cx="70" cy="250" r="15" fill="#D1FAE5" stroke="#16A34A" stroke-width="2" />
+  <path d="M64 250 L68 254 L76 246" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+  <circle cx="110" cy="250" r="15" fill="#D1FAE5" stroke="#16A34A" stroke-width="2" />
+  <path d="M104 250 L108 254 L116 246" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+  <circle cx="150" cy="250" r="15" fill="#D1FAE5" stroke="#16A34A" stroke-width="2" />
+  <path d="M144 250 L148 254 L156 246" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Mobile device -->
+  <rect x="200" y="230" width="40" height="60" rx="5" fill="#4ADE80" />
+  <rect x="205" y="235" width="30" height="40" rx="3" fill="white" />
+  <circle cx="220" cy="285" r="4" fill="white" />
+
+  <!-- Mini chart in device -->
+  <path d="M210 255 L215 250 L220 260 L225 245 L230 250"
+        stroke="#16A34A"
+        stroke-width="1.5"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+</svg>

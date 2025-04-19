@@ -1,0 +1,23 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" fill="#E0F2FE" />
+
+  <!-- Plate -->
+  <circle cx="150" cy="150" r="80" fill="white" stroke="#0284C7" stroke-width="3" />
+
+  <!-- Food items -->
+  <rect x="110" y="125" width="30" height="30" rx="5" fill="#84CC16" />
+  <circle cx="185" cy="125" r="15" fill="#F97316" />
+  <rect x="130" y="165" width="40" height="20" rx="5" fill="#A855F7" />
+  <circle cx="105" cy="175" r="10" fill="#EC4899" />
+  <circle cx="190" cy="170" r="12" fill="#F43F5E" />
+
+  <!-- Fork and knife -->
+  <rect x="90" y="70" width="8" height="60" rx="4" transform="rotate(-45 90 70)" fill="#64748B" />
+  <rect x="220" y="60" width="8" height="60" rx="4" transform="rotate(45 220 60)" fill="#64748B" />
+  <rect x="200" y="80" width="8" height="30" rx="4" transform="rotate(45 200 80)" fill="#64748B" />
+
+  <!-- Custom measurement lines -->
+  <path d="M220 180 Q 200 200 180 180" stroke="#0284C7" stroke-width="2" fill="none" />
+  <path d="M125 210 Q 150 230 175 210" stroke="#0284C7" stroke-width="2" fill="none" />
+  <path d="M90 140 Q 70 150 90 160" stroke="#0284C7" stroke-width="2" fill="none" />
+</svg>
