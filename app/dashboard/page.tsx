@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/auth/auth-client';
 import { useEffect } from 'react';
 
 export default function DashboardPage() {

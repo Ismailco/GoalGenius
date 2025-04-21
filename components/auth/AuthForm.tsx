@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { signIn, signUp, useSession } from '@/lib/auth-client';
+import { signIn, signUp, useSession } from '@/lib/auth/auth-client';
 import { updateUserRole } from '@/app/actions/user';
 import { redirect } from 'next/navigation';
 

@@ -1,7 +1,7 @@
 'use server'
 
-import { db } from "@/app/server/db";
-import { user } from "@/app/server/schema";
+import { db } from "@/lib/db/db";
+import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function updateUserRole(email: string, role: string) {

@@ -20,7 +20,7 @@ import { defineConfig } from "drizzle-kit";
 // }
 
 export default defineConfig({
-	schema: './app/server/schema.ts',
+	schema: './lib/db/schema.ts',
 	out: './drizzle',
 	dialect: 'sqlite',
 	...(process.env.NODE_ENV === 'production'
