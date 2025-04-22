@@ -25,7 +25,7 @@ export default function Dashboard() {
 	}
 
 	// Use the fetched role or default to 'client'
-	const userRole = role || 'client';
+	const userRole = role;
 
 	switch (userRole) {
 		case 'admin':
