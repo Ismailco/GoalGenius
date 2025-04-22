@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { headers } from 'next/headers';
 
+export const runtime = 'edge';
+
 export async function GET(request: Request) {
   try {
     // Verify the user is authenticated
