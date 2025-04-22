@@ -1,4 +1,4 @@
-import { pageMetadata } from '../metadata';
+import { pageMetadata } from '@/app/metadata';
 
 export const metadata = pageMetadata.dashboard;
 

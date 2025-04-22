@@ -39,15 +39,15 @@ export function AuthForm({ mode }: AuthFormProps) {
         const name = formData.get('name') as string;
         const role = formData.get('role') as string;
 
-        // First sign up the user (now with default 'client' role)
+        // First sign up the user (now with default 'practitioner' role)
         await signUp.email({
           email,
           password,
           name,
         });
 
-        // If role is not client, update it
-        if (role && role !== 'client') {
+        // If role is not practitioner, update it
+        if (role && role !== 'practitioner') {
           await updateUserRole(email, role);
         }
       }
@@ -187,12 +187,12 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <select
                   id="role"
                   name="role"
-                  defaultValue="client"
+                  defaultValue="practitioner"
                   className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors"
                 >
-                  <option value="client">Client</option>
+                  {/* <option value="client">Client</option> */}
                   <option value="practitioner">Practitioner</option>
-                  <option value="admin">Admin</option>
+                  {/* <option value="admin">Admin</option> */}
                 </select>
               </div>
             )}
