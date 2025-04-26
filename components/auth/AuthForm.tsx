@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signIn, signUp, useSession } from '@/lib/auth/auth-client';
-import { updateUserRole } from '@/app/actions/user';
 import { redirect } from 'next/navigation';
 
 interface AuthFormProps {
@@ -37,19 +36,13 @@ export function AuthForm({ mode }: AuthFormProps) {
         });
       } else {
         const name = formData.get('name') as string;
-        const role = formData.get('role') as string;
 
-        // First sign up the user (now with default 'practitioner' role)
+        // First sign up the user
         await signUp.email({
           email,
           password,
           name,
         });
-
-        // If role is not practitioner, update it
-        if (role && role !== 'practitioner') {
-          await updateUserRole(email, role);
-        }
       }
     } catch (err) {
       console.error('Auth error:', err);
@@ -178,24 +171,6 @@ export function AuthForm({ mode }: AuthFormProps) {
                 placeholder="••••••••"
               />
             </div>
-
-            {mode === 'signup' && (
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium mb-1">
-                  Role
-                </label>
-                <select
-                  id="role"
-                  name="role"
-                  defaultValue="practitioner"
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors"
-                >
-                  {/* <option value="client">Client</option> */}
-                  <option value="practitioner">Practitioner</option>
-                  {/* <option value="admin">Admin</option> */}
-                </select>
-              </div>
-            )}
 
             {error && (
               <div className="rounded-md bg-red-50 p-4">

@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "nutryfit",
+	"name": "goalgenius",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2025-03-01",
 	"compatibility_flags": ["nodejs_compat"],
@@ -18,8 +18,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "nutryfit-db",
-			"database_id": "b62d0940-1111-4a0f-9b25-6e0330865810",
+			"database_name": "goalgenius_db",
+			"database_id": "e235d926-15cb-4c3d-b275-3369774cf609",
 			"migrations_dir": "drizzle"
 		}
 	],

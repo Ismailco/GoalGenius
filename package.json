@@ -1,5 +1,5 @@
 {
-	"name": "nutryfit",
+	"name": "goalgenius",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
@@ -9,8 +9,8 @@
 		"lint": "next lint",
 		"db:generate": "drizzle-kit generate --config drizzle.config.ts",
 		"db:studio": "drizzle-kit studio --config drizzle.config.ts",
-		"db:migrate:local": "wrangler d1 migrations apply nutryfit-db --local --config wrangler.jsonc",
-		"db:migrate:prod": "wrangler d1 migrations apply nutryfit-db --remote --config wrangler.jsonc",
+		"db:migrate:local": "wrangler d1 migrations apply goalgenius_db --local --config wrangler.jsonc",
+		"db:migrate:prod": "wrangler d1 migrations apply goalgenius_db --remote --config wrangler.jsonc",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
@@ -23,7 +23,15 @@
 		"next": "15.2.5",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
-		"sqlite3": "^5.1.7"
+		"sqlite3": "^5.1.7",
+		"@types/uuid": "^10.0.0",
+		"@types/validator": "^13.12.2",
+		"date-fns": "^4.1.0",
+		"dompurify": "^3.2.4",
+    "framer-motion": "^12.3.1",
+    "uuid": "^11.0.5",
+    "validator": "^13.12.0",
+    "xss": "^1.0.15"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250414.0",

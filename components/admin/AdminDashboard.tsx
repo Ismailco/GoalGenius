@@ -28,7 +28,7 @@ export default function AdminDashboard({ user }: { user: any }) {
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:block">
         <div className="p-4 border-b">
           <Link href="/" className="flex items-center">
-            <span className="text-xl font-semibold text-blue-600">NutryFit</span>
+            <span className="text-xl font-semibold text-blue-600">goalgenius</span>
           </Link>
         </div>
 

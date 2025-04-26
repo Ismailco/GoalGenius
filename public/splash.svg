@@ -1,0 +1,97 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+
+    <!-- Circular gradient for the spinner -->
+    <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Target/Goal Icon (draws itself) -->
+  <g transform="translate(50, 50)">
+    <!-- Outer circle -->
+    <circle cx="50" cy="50" r="45" fill="none" stroke="url(#brandGradient)" stroke-width="4">
+      <animate
+        attributeName="stroke-dasharray"
+        from="0 283"
+        to="283 283"
+        dur="1.5s"
+        fill="freeze"
+      />
+    </circle>
+
+    <!-- Middle circle -->
+    <circle cx="50" cy="50" r="30" fill="none" stroke="url(#brandGradient)" stroke-width="4">
+      <animate
+        attributeName="stroke-dasharray"
+        from="0 189"
+        to="189 189"
+        dur="1.5s"
+        begin="0.3s"
+        fill="freeze"
+      />
+    </circle>
+
+    <!-- Inner circle -->
+    <circle cx="50" cy="50" r="15" fill="none" stroke="url(#brandGradient)" stroke-width="4">
+      <animate
+        attributeName="stroke-dasharray"
+        from="0 94"
+        to="94 94"
+        dur="1.5s"
+        begin="0.6s"
+        fill="freeze"
+      />
+    </circle>
+
+    <!-- Center dot -->
+    <circle cx="50" cy="50" r="5" fill="url(#brandGradient)">
+      <animate
+        attributeName="r"
+        from="0"
+        to="5"
+        dur="0.3s"
+        begin="0.9s"
+        fill="freeze"
+      />
+    </circle>
+  </g>
+
+  <!-- Rotating spinner -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="url(#spinnerGradient)" stroke-width="4" stroke-linecap="round">
+    <animate
+      attributeName="stroke-dasharray"
+      from="0 565"
+      to="565 565"
+      dur="2s"
+      fill="freeze"
+    />
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 100 100"
+      to="360 100 100"
+      dur="2s"
+      repeatCount="indefinite"
+    />
+  </circle>
+
+  <!-- Text -->
+  <text x="100" y="160" text-anchor="middle" font-family="sans-serif" font-size="24" fill="url(#brandGradient)" opacity="0">
+    GoalGenius
+    <animate
+      attributeName="opacity"
+      from="0"
+      to="1"
+      dur="1s"
+      begin="1s"
+      fill="freeze"
+    />
+  </text>
+</svg>

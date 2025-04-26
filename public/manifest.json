@@ -1,0 +1,51 @@
+{
+	"name": "GoalGenius",
+	"short_name": "GoalGenius",
+	"description": "GoalGenius is a tool that helps you achieve your goals.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#60A5FA",
+	"icons": [
+		{
+			"src": "/favicon-16x16.png",
+			"sizes": "16x16",
+			"type": "image/png"
+		},
+		{
+			"src": "/favicon-32x32.png",
+			"sizes": "32x32",
+			"type": "image/png"
+		},
+		{
+			"src": "/favicon-48x48.png",
+			"sizes": "48x48",
+			"type": "image/png"
+		},
+		{
+			"src": "/favicon-64x64.png",
+			"sizes": "64x64",
+			"type": "image/png"
+		},
+		{
+			"src": "/favicon-128x128.png",
+			"sizes": "128x128",
+			"type": "image/png"
+		},
+		{
+			"src": "/favicon-256x256.png",
+			"sizes": "256x256",
+			"type": "image/png",
+			"purpose": "any maskable"
+		}
+	],
+	"splash_screen": {
+		"image": "/splash.svg",
+		"background_color": "#1e293b",
+		"resize_mode": "contain",
+		"dark_image": "/splash.svg"
+	},
+	"orientation": "portrait",
+	"categories": ["productivity", "lifestyle"],
+	"prefer_related_applications": false
+}

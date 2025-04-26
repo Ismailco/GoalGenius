@@ -10,8 +10,8 @@ import { Metadata } from 'next';
 // Base metadata configuration for SEO optimization
 export const metadata: Metadata = {
   title: {
-    template: '%s | NutryFit',
-    default: 'NutryFit - Your Personalized Nutrition & Fitness App'
+    template: '%s | goalgenius',
+    default: 'goalgenius - Your Personalized Nutrition & Fitness App'
   },
   description: 'Track your nutrition, plan your meals, and achieve your fitness goals with personalized plans, expert guidance, and progress tracking.',
   keywords: [
@@ -25,15 +25,15 @@ export const metadata: Metadata = {
     'weight management',
     'calorie tracking'
   ],
-  authors: [{ name: 'NutryFit Team' }],
-  creator: 'NutryFit',
-  publisher: 'NutryFit Inc.',
+  authors: [{ name: 'goalgenius Team' }],
+  creator: 'goalgenius',
+  publisher: 'goalgenius Inc.',
   formatDetection: {
     email: false,
     telephone: false,
     address: false
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://nutryfit.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://goalgenius.app'),
   alternates: {
     canonical: '/',
     languages: {
@@ -43,25 +43,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://nutryfit.app',
-    siteName: 'NutryFit',
-    title: 'NutryFit - Your Personalized Nutrition & Fitness App',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://goalgenius.app',
+    siteName: 'goalgenius',
+    title: 'goalgenius - Your Personalized Nutrition & Fitness App',
     description: 'Track your nutrition, plan your meals, and achieve your fitness goals with personalized plans, expert guidance, and progress tracking.',
     images: [
       {
         url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'NutryFit - Your Personalized Nutrition & Fitness App'
+        alt: 'goalgenius - Your Personalized Nutrition & Fitness App'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NutryFit - Your Personalized Nutrition & Fitness App',
+    title: 'goalgenius - Your Personalized Nutrition & Fitness App',
     description: 'Track your nutrition, plan your meals, and achieve your fitness goals with personalized plans, expert guidance, and progress tracking.',
-    creator: '@nutryfit',
-    site: '@nutryfit',
+    creator: '@goalgenius',
+    site: '@goalgenius',
     images: ['/images/twitter-image.jpg']
   },
   robots: {
@@ -88,11 +88,11 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
-  applicationName: 'NutryFit',
+  applicationName: 'goalgenius',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'NutryFit',
+    title: 'goalgenius',
   },
   category: 'health & fitness',
   other: {
@@ -106,14 +106,14 @@ export const metadata: Metadata = {
   verification: {
     google: 'google-site-verification-code',
     yandex: 'yandex-verification-code',
-    me: ['support@nutryfit.app']
+    me: ['support@goalgenius.app']
   }
 };
 
 /**
  * Generate custom metadata for a specific page
  *
- * @param title - The page title (will be used in the template '%s | NutryFit')
+ * @param title - The page title (will be used in the template '%s | goalgenius')
  * @param description - Custom page description
  * @param pageProps - Additional metadata properties specific to the page
  * @returns Metadata object with the base metadata plus customizations
@@ -169,11 +169,11 @@ export const pageMetadata = {
   ),
   signin: generateMetadata(
     'Sign In',
-    'Access your NutryFit account'
+    'Access your goalgenius account'
   ),
   signup: generateMetadata(
     'Sign Up',
-    'Create your NutryFit account and start your health journey'
+    'Create your goalgenius account and start your health journey'
   ),
   nutrition: generateMetadata(
     'Nutrition',

@@ -21,7 +21,7 @@ export default function Home() {
     }
 
     // Check if user has visited before
-    setHasVisited(localStorage.getItem('hasVisitedNutryFit') === 'true');
+    setHasVisited(localStorage.getItem('hasVisitedgoalgenius') === 'true');
 
     if (hasVisited) {
       // If already visited, redirect to dashboard or login
@@ -36,19 +36,19 @@ export default function Home() {
 
   // Save that user has visited when they complete onboarding
   const completeOnboarding = () => {
-    localStorage.setItem('hasVisitedNutryFit', 'true');
+    localStorage.setItem('hasVisitedgoalgenius', 'true');
     router.push('/auth/signup');
   };
 
   // Skip onboarding and go directly to sign in
   const skipOnboarding = () => {
-    localStorage.setItem('hasVisitedNutryFit', 'true');
+    localStorage.setItem('hasVisitedgoalgenius', 'true');
     router.push('/auth/signin');
   };
 
   const onboardingSteps = [
     {
-      title: "Welcome to NutryFit",
+      title: "Welcome to goalgenius",
       description: "Your personalized nutrition and wellness companion.",
       image: "/images/logo_trans_white.png",
       isIntro: true
@@ -113,7 +113,7 @@ export default function Home() {
                 <div className="relative h-20 w-60 mx-auto mb-8">
                   <Image
                     src={currentStepData.image}
-                    alt="NutryFit Logo"
+                    alt="goalgenius Logo"
                     width={200}
                     height={100}
                     className="w-full h-full drop-shadow-lg"

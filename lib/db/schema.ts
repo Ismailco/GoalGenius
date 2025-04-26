@@ -6,17 +6,16 @@ export const user = sqliteTable('user', {
 	email: text('email').notNull().unique(),
 	emailVerified: integer('email_verified', { mode: 'boolean' }).notNull(),
 	image: text('image'),
-	role: text('role', { enum: ['admin', 'practitioner', 'client'] }).notNull().default('practitioner'),
-	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
 export const session = sqliteTable('session', {
 	id: text('id').primaryKey(),
-	expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+	expiresAt: integer('expires_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	token: text('token').notNull().unique(),
-	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	ipAddress: text('ip_address'),
 	userAgent: text('user_agent'),
 	userId: text('user_id')
@@ -38,54 +37,25 @@ export const account = sqliteTable('account', {
 	refreshTokenExpiresAt: integer('refresh_token_expires_at', { mode: 'timestamp' }),
 	scope: text('scope'),
 	password: text('password'),
-	createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
 export const verification = sqliteTable('verification', {
 	id: text('id').primaryKey(),
 	identifier: text('identifier').notNull(),
 	value: text('value').notNull(),
-	expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' }),
-	updatedAt: integer('updated_at', { mode: 'timestamp' }),
-});
-
-// Practitioners (users of the platform)
-export const practitioners = sqliteTable('practitioners', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	userId: text('user_id')
-		.notNull()
-		.unique()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	fullName: text('full_name').notNull(),
-	email: text('email').notNull().unique(),
+	expiresAt: integer('expires_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// Clients managed by practitioners
-export const clients = sqliteTable('clients', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	userId: text('user_id')
-		.notNull()
-		.unique()
-		.references(() => user.id, { onDelete: 'cascade' }),
-	practitionerId: integer('practitioner_id')
-		.notNull()
-		.references(() => practitioners.id),
-	fullName: text('full_name').notNull(),
-	email: text('email'),
-	phone: text('phone'),
-	notes: text('notes'),
-	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-});
-
-// Subscription plans for practitioners
+// Subscription plans
 export const subscriptions = sqliteTable('subscriptions', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
-	practitionerId: integer('practitioner_id')
+	userId: text('user_id')
 		.notNull()
-		.references(() => practitioners.id),
+		.references(() => user.id),
 	plan: text('plan').notNull(), // e.g., 'free', 'pro', 'premium'
 	startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	expiresAt: integer('expires_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
