@@ -21,9 +21,9 @@ if (process.env.NODE_ENV === "production") {
 } else {
   // Use libsql in development with the same DB file
   const client = createClient({
-    // url: `file:${getLocalD1DB()}`,
-    url: "file:.wrangler/state/v3/d1/miniflare-D1DatabaseObject/7ea06d4d8d20122be67243a61291b0fef1f2f34ada256d282420c8f24bfcd015.sqlite",
-  });
+		// url: `file:${getLocalD1DB()}`,
+		url: 'file:.wrangler/state/v3/d1/miniflare-D1DatabaseObject/2de96be69f5f153c13592d3e6059b36b0c576a977e98836d01f8386c65c8067d.sqlite',
+	});
   db = drizzleLibSQL(client, { schema });
 }
 
