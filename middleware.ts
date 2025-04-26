@@ -26,5 +26,8 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/profile/:path*',
+    '/todos/:path*',
+    '/notes/:path*',
+    '/checkins/:path*'
   ],
 };
