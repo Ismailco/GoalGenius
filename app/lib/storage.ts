@@ -1,5 +1,5 @@
 import { Goal, Milestone, Note, Todo, CheckIn } from '@/app/types';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { sanitizeForStorage } from '@/app/lib/validation';
 import validator from 'validator';
 import { StorageError, ValidationError, logError } from './error';
@@ -56,7 +56,7 @@ async function apiRequest<T>(
 ): Promise<T> {
   const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
   if (!userId) {
-    throw new ValidationError('User ID not found');
+    throw new StorageError('No user ID found');
   }
 
   const response = await fetch(`/api/${endpoint}`, {

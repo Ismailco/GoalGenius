@@ -32,8 +32,23 @@ export default function TodosPage() {
   });
 
   useEffect(() => {
-    setMounted(true);
-    setTodos(getTodos());
+    const loadTodos = async () => {
+      try {
+        setMounted(true);
+        const loadedTodos = await getTodos();
+        setTodos(loadedTodos);
+      } catch (error) {
+        console.error('Error loading todos:', error);
+        setAlert({
+          show: true,
+          title: 'Error',
+          message: 'Failed to load todos',
+          type: 'error'
+        });
+      }
+    };
+
+    loadTodos();
   }, []);
 
   // Don't render anything until mounted to prevent hydration errors
@@ -55,8 +70,19 @@ export default function TodosPage() {
     );
   }
 
-  const handleSaveTodo = () => {
-    setTodos(getTodos());
+  const handleSaveTodo = async () => {
+    try {
+      const updatedTodos = await getTodos();
+      setTodos(updatedTodos);
+    } catch (error) {
+      console.error('Error loading todos:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to refresh todos',
+        type: 'error'
+      });
+    }
   };
 
   const handleEditTodo = (todo: Todo) => {
@@ -71,10 +97,11 @@ export default function TodosPage() {
       message: 'Are you sure you want to delete this todo?',
       type: 'warning',
       isConfirmation: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         try {
-          deleteTodo(id);
-          setTodos(getTodos());
+          await deleteTodo(id);
+          const updatedTodos = await getTodos();
+          setTodos(updatedTodos);
         } catch (error) {
           console.error('Error deleting todo:', error);
           setAlert({
@@ -88,9 +115,20 @@ export default function TodosPage() {
     });
   };
 
-  const handleToggleComplete = (todo: Todo) => {
-    toggleTodoComplete(todo.id);
-    setTodos(getTodos());
+  const handleToggleComplete = async (todo: Todo) => {
+    try {
+      await toggleTodoComplete(todo.id);
+      const updatedTodos = await getTodos();
+      setTodos(updatedTodos);
+    } catch (error) {
+      console.error('Error toggling todo completion:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to update todo status',
+        type: 'error'
+      });
+    }
   };
 
   const categories = Array.from(new Set(todos.map(todo => todo.category).filter(Boolean)));

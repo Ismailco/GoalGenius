@@ -26,8 +26,10 @@ export default function MilestoneTimeline() {
       await handleAsyncOperation(
         async () => {
           setMounted(true);
-          const loadedMilestones = getMilestones();
-          const loadedGoals = getGoals();
+          const [loadedMilestones, loadedGoals] = await Promise.all([
+            getMilestones(),
+            getGoals()
+          ]);
           setMilestones(loadedMilestones);
           setGoals(loadedGoals);
         },
@@ -46,7 +48,7 @@ export default function MilestoneTimeline() {
   }, []);
 
   useEffect(() => {
-    if (!mounted || !goals) return;
+    if (!mounted || !goals.length) return;
 
     const grouped = goals.reduce((acc, goal) => {
       if (!acc[goal.category]) {

@@ -30,8 +30,23 @@ export default function CheckInsPage() {
   });
 
   useEffect(() => {
-    setMounted(true);
-    setCheckIns(getCheckIns());
+    const loadCheckIns = async () => {
+      try {
+        setMounted(true);
+        const loadedCheckIns = await getCheckIns();
+        setCheckIns(loadedCheckIns);
+      } catch (error) {
+        console.error('Error loading check-ins:', error);
+        setAlert({
+          show: true,
+          title: 'Error',
+          message: 'Failed to load check-ins',
+          type: 'error'
+        });
+      }
+    };
+
+    loadCheckIns();
   }, []);
 
   // Don't render anything until mounted to prevent hydration errors
@@ -53,8 +68,19 @@ export default function CheckInsPage() {
     );
   }
 
-  const handleSaveCheckIn = () => {
-    setCheckIns(getCheckIns());
+  const handleSaveCheckIn = async () => {
+    try {
+      const updatedCheckIns = await getCheckIns();
+      setCheckIns(updatedCheckIns);
+    } catch (error) {
+      console.error('Error refreshing check-ins:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to refresh check-ins',
+        type: 'error'
+      });
+    }
   };
 
   const handleEditCheckIn = (checkIn: CheckIn) => {
@@ -69,10 +95,11 @@ export default function CheckInsPage() {
       message: 'Are you sure you want to delete this check-in?',
       type: 'warning',
       isConfirmation: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         try {
-          deleteCheckIn(id);
-          setCheckIns(getCheckIns());
+          await deleteCheckIn(id);
+          const updatedCheckIns = await getCheckIns();
+          setCheckIns(updatedCheckIns);
         } catch (error) {
           console.error('Error deleting check-in:', error);
           setAlert({
