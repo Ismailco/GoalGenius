@@ -184,9 +184,9 @@ export default function CreateCheckInModal({
           notes: notesValidation.sanitizedValue || undefined,
         };
 
-        const savedCheckIn = existingCheckIn
+        const savedCheckIn = await (existingCheckIn
           ? updateCheckIn(existingCheckIn.id, checkInData)
-          : createCheckIn(checkInData);
+          : createCheckIn(checkInData));
 
         onSave?.(savedCheckIn);
         onClose();
