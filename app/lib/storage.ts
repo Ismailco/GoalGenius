@@ -40,46 +40,93 @@ const STORAGE_KEYS = {
   NOTES: 'notes',
   TODOS: 'todos',
   CHECKINS: 'checkins',
+  USER_ID: 'userId',
 };
 
-export function getGoals(): Goal[] {
+// Add type for API error response
+type ApiErrorResponse = {
+  error: string;
+};
+
+// Updated apiRequest with better error handling
+async function apiRequest<T>(
+  endpoint: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  data?: unknown
+): Promise<T> {
+  const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+  if (!userId) {
+    throw new ValidationError('User ID not found');
+  }
+
+  const response = await fetch(`/api/${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify({ ...data, userId }) : undefined,
+  });
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    const errorData = responseData as ApiErrorResponse;
+    throw new StorageError(errorData.error || 'API request failed');
+  }
+
+  return responseData as T;
+}
+
+// Updated Goal functions with API sync
+export async function getGoals(): Promise<Goal[]> {
   try {
-    if (typeof window === 'undefined') return [];
-    const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
-    return goals.map((goal: Record<string, unknown>) => unescapeData(goal));
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (!userId) return [];
+
+    // Fetch from API
+    const goals = await apiRequest<Goal[]>(`goals?userId=${userId}`, 'GET');
+
+    // Update local storage
+    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
+
+    return goals.map(goal => unescapeData(goal as unknown as Record<string, unknown>) as unknown as Goal);
   } catch (error) {
+    // Fallback to local storage if API fails
     logError(error as Error, { operation: 'getGoals' });
-    throw new StorageError('Failed to retrieve goals');
+    const localGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    return localGoals.map((goal: Record<string, unknown>) => unescapeData(goal));
   }
 }
 
-export function getGoal(id: string): Goal | null {
-  const goals = getGoals();
-  return goals.find(goal => goal.id === id) || null;
+// Updated getGoal to handle async/await
+export async function getGoal(id: string): Promise<Goal | null> {
+  try {
+    const goals = await getGoals();
+    return goals.find(goal => goal.id === id) || null;
+  } catch (error) {
+    logError(error as Error, { operation: 'getGoal', goalId: id });
+    // Fallback to local storage
+    const localGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    const localGoal = localGoals.find((goal: Goal) => goal.id === id);
+    return localGoal ? unescapeData(localGoal as unknown as Record<string, unknown>) as unknown as Goal : null;
+  }
 }
 
-export function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>): Goal {
+export async function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>): Promise<Goal> {
   try {
-    const goals = getGoals();
     const sanitizedGoal = sanitizeData(goal);
 
     if (!sanitizedGoal.title) {
       throw new ValidationError('Goal title is required');
     }
 
-    const newGoal: Goal = {
-      id: uuidv4(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      title: sanitizedGoal.title,
-      description: sanitizedGoal.description,
-      category: sanitizedGoal.category,
-      timeFrame: sanitizedGoal.timeFrame,
-      status: sanitizedGoal.status,
-      progress: sanitizedGoal.progress,
-    };
+    // Create via API
+    const newGoal = await apiRequest<Goal>('goals', 'POST', sanitizedGoal);
 
+    // Update local storage
+    const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...goals, newGoal]));
+
     return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
     logError(error as Error, { operation: 'createGoal', data: goal });
@@ -90,261 +137,485 @@ export function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>): 
   }
 }
 
-export function updateGoal(id: string, updates: Partial<Goal>): Goal {
+export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Goal> {
   try {
-    const goals = getGoals();
-    const existingGoal = goals.find(g => g.id === id);
-
-    if (!existingGoal) {
-      throw new ValidationError('Goal not found');
-    }
-
     const sanitizedUpdates = sanitizeData(updates);
-    const updatedGoals = goals.map(goal => {
-      if (goal.id === id) {
-        return { ...goal, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
-      }
-      return goal;
-    });
 
+    // Update via API
+    const updatedGoal = await apiRequest<Goal>('goals', 'PUT', { id, ...sanitizedUpdates });
+
+    // Update local storage
+    const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    const updatedGoals = goals.map((goal: Goal) =>
+      goal.id === id ? updatedGoal : goal
+    );
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
-    return unescapeData(updatedGoals.find(g => g.id === id)! as unknown as Record<string, unknown>) as unknown as Goal;
+
+    return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
     logError(error as Error, { operation: 'updateGoal', goalId: id, updates });
-    if (error instanceof ValidationError) {
-      throw error;
-    }
     throw new StorageError('Failed to update goal');
   }
 }
 
-export function deleteGoal(id: string): boolean {
+export async function deleteGoal(id: string): Promise<boolean> {
   try {
-    const goals = getGoals();
-    const goalExists = goals.some(g => g.id === id);
+    // Delete via API
+    await apiRequest<{ success: true }>(`goals?id=${id}`, 'DELETE');
 
-    if (!goalExists) {
-      throw new ValidationError('Goal not found');
-    }
-
-    const filtered = goals.filter(goal => goal.id !== id);
+    // Update local storage
+    const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    const filtered = goals.filter((goal: Goal) => goal.id !== id);
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(filtered));
+
     return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteGoal', goalId: id });
-    if (error instanceof ValidationError) {
-      throw error;
-    }
     throw new StorageError('Failed to delete goal');
   }
 }
 
-export function getMilestones(): Milestone[] {
-  if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(STORAGE_KEYS.MILESTONES);
-  const milestones = stored ? JSON.parse(stored) : [];
-  return milestones.map((milestone: Record<string, unknown>) => unescapeData(milestone));
+// Updated Milestone functions with API sync
+export async function getMilestones(): Promise<Milestone[]> {
+  try {
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (!userId) return [];
+
+    // Fetch from API
+    const milestones = await apiRequest<Milestone[]>(`milestones?userId=${userId}`, 'GET');
+
+    // Update local storage
+    localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
+
+    return milestones.map(milestone =>
+      unescapeData(milestone as unknown as Record<string, unknown>) as unknown as Milestone
+    );
+  } catch (error) {
+    // Fallback to local storage
+    logError(error as Error, { operation: 'getMilestones' });
+    const stored = localStorage.getItem(STORAGE_KEYS.MILESTONES);
+    const localMilestones = stored ? JSON.parse(stored) : [];
+    return localMilestones.map((milestone: Record<string, unknown>) => unescapeData(milestone));
+  }
 }
 
-export function getMilestone(id: string): Milestone | null {
-  const milestones = getMilestones();
-  return milestones.find(milestone => milestone.id === id) || null;
+export async function getMilestone(id: string): Promise<Milestone | null> {
+  try {
+    const milestones = await getMilestones();
+    return milestones.find(milestone => milestone.id === id) || null;
+  } catch (error) {
+    logError(error as Error, { operation: 'getMilestone', milestoneId: id });
+    // Fallback to local storage
+    const localMilestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+    const localMilestone = localMilestones.find((milestone: Milestone) => milestone.id === id);
+    return localMilestone ? unescapeData(localMilestone as unknown as Record<string, unknown>) as unknown as Milestone : null;
+  }
 }
 
-export function createMilestone(milestone: Omit<Milestone, 'id'>): Milestone {
-  const milestones = getMilestones();
-  const sanitizedMilestone = sanitizeData(milestone);
-  const newMilestone: Milestone = {
-    id: crypto.randomUUID(),
-    goalId: sanitizedMilestone.goalId,
-    title: sanitizedMilestone.title,
-    description: sanitizedMilestone.description,
-    date: sanitizedMilestone.date
-  };
+export async function createMilestone(milestone: Omit<Milestone, 'id' | 'createdAt' | 'updatedAt'>): Promise<Milestone> {
+  try {
+    const sanitizedMilestone = sanitizeData(milestone);
 
-  milestones.push(newMilestone);
-  localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
-  return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
-}
-
-export function updateMilestone(id: string, updates: Partial<Milestone>): Milestone {
-  const milestones = getMilestones();
-  const index = milestones.findIndex(milestone => milestone.id === id);
-
-  if (index === -1) throw new Error('Milestone not found');
-
-  const sanitizedUpdates = sanitizeData(updates);
-  const updatedMilestone = {
-    ...milestones[index],
-    ...sanitizedUpdates,
-  };
-
-  milestones[index] = updatedMilestone;
-  localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
-  return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
-}
-
-export function deleteMilestone(id: string): boolean {
-  const milestones = getMilestones();
-  const filtered = milestones.filter(milestone => milestone.id !== id);
-  localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(filtered));
-  return true;
-}
-
-export function getNotes(): Note[] {
-  const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
-  return notes.map((note: Record<string, unknown>) => unescapeData(note));
-}
-
-export function getNote(id: string): Note | null {
-  const notes = getNotes();
-  return notes.find(note => note.id === id) || null;
-}
-
-export function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Note {
-  const notes = getNotes();
-  const sanitizedNote = sanitizeData(note);
-  const newNote: Note = {
-    id: uuidv4(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    title: sanitizedNote.title,
-    content: sanitizedNote.content,
-    category: sanitizedNote.category,
-    isPinned: sanitizedNote.isPinned || false,
-  };
-  localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify([...notes, newNote]));
-  return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
-}
-
-export function updateNote(id: string, updates: Partial<Note>): Note {
-  const notes = getNotes();
-  const sanitizedUpdates = sanitizeData(updates);
-  const updatedNotes = notes.map(note => {
-    if (note.id === id) {
-      return { ...note, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    // Validate required fields
+    if (!sanitizedMilestone.goalId || !sanitizedMilestone.title || !sanitizedMilestone.date) {
+      throw new ValidationError('Missing required fields');
     }
-    return note;
-  });
-  localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
-  return unescapeData(updatedNotes.find(n => n.id === id)! as unknown as Record<string, unknown>) as unknown as Note;
-}
 
-export function deleteNote(id: string): boolean {
-  const notes = getNotes();
-  const filtered = notes.filter(note => note.id !== id);
-  localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(filtered));
-  return true;
-}
+    // Create via API
+    const newMilestone = await apiRequest<Milestone>('milestones', 'POST', sanitizedMilestone);
 
-export function getTodos(): Todo[] {
-  if (typeof window === 'undefined') return [];
-  const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
-  return todos.map((todo: Record<string, unknown>) => unescapeData(todo));
-}
+    // Update local storage
+    const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+    localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify([...milestones, newMilestone]));
 
-export function getTodo(id: string): Todo | null {
-  const todos = getTodos();
-  return todos.find(todo => todo.id === id) || null;
-}
-
-export function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'completed'>): Todo {
-  const todos = getTodos();
-  const sanitizedTodo = sanitizeData(todo);
-  const newTodo: Todo = {
-    id: uuidv4(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    completed: false,
-    title: sanitizedTodo.title,
-    description: sanitizedTodo.description,
-    priority: sanitizedTodo.priority,
-    dueDate: sanitizedTodo.dueDate,
-    category: sanitizedTodo.category,
-  };
-
-  localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify([...todos, newTodo]));
-  return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
-}
-
-export function updateTodo(id: string, updates: Partial<Todo>): Todo {
-  const todos = getTodos();
-  const sanitizedUpdates = sanitizeData(updates);
-  const updatedTodos = todos.map(todo => {
-    if (todo.id === id) {
-      return { ...todo, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+  } catch (error) {
+    logError(error as Error, { operation: 'createMilestone', data: milestone });
+    if (error instanceof ValidationError) {
+      throw error;
     }
-    return todo;
-  });
-  localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(updatedTodos));
-  return unescapeData(updatedTodos.find(t => t.id === id)! as unknown as Record<string, unknown>) as unknown as Todo;
+    throw new StorageError('Failed to create milestone');
+  }
 }
 
-export function deleteTodo(id: string): boolean {
-  const todos = getTodos();
-  const filtered = todos.filter(todo => todo.id !== id);
-  localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(filtered));
-  return true;
+export async function updateMilestone(id: string, updates: Partial<Milestone>): Promise<Milestone> {
+  try {
+    const sanitizedUpdates = sanitizeData(updates);
+
+    // Update via API
+    const updatedMilestone = await apiRequest<Milestone>('milestones', 'PUT', { id, ...sanitizedUpdates });
+
+    // Update local storage
+    const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+    const updatedMilestones = milestones.map((milestone: Milestone) =>
+      milestone.id === id ? updatedMilestone : milestone
+    );
+    localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(updatedMilestones));
+
+    return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+  } catch (error) {
+    logError(error as Error, { operation: 'updateMilestone', milestoneId: id, updates });
+    throw new StorageError('Failed to update milestone');
+  }
 }
 
-export function toggleTodoComplete(id: string): Todo {
-  const todo = getTodo(id);
-  if (!todo) throw new Error('Todo not found');
-  return updateTodo(id, { completed: !todo.completed });
+export async function deleteMilestone(id: string): Promise<boolean> {
+  try {
+    // Delete via API
+    await apiRequest<{ success: true }>(`milestones?id=${id}`, 'DELETE');
+
+    // Update local storage
+    const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+    const filtered = milestones.filter((milestone: Milestone) => milestone.id !== id);
+    localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(filtered));
+
+    return true;
+  } catch (error) {
+    logError(error as Error, { operation: 'deleteMilestone', milestoneId: id });
+    throw new StorageError('Failed to delete milestone');
+  }
 }
 
-export function getCheckIns(): CheckIn[] {
-  if (typeof window === 'undefined') return [];
-  const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
-  return checkIns.map((checkIn: Record<string, unknown>) => unescapeData(checkIn));
+// Updated Note functions with API sync
+export async function getNotes(): Promise<Note[]> {
+  try {
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (!userId) return [];
+
+    // Fetch from API
+    const notes = await apiRequest<Note[]>(`notes?userId=${userId}`, 'GET');
+
+    // Update local storage
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
+
+    return notes.map(note =>
+      unescapeData(note as unknown as Record<string, unknown>) as unknown as Note
+    );
+  } catch (error) {
+    // Fallback to local storage
+    logError(error as Error, { operation: 'getNotes' });
+    const localNotes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    return localNotes.map((note: Record<string, unknown>) => unescapeData(note));
+  }
 }
 
-export function getCheckIn(id: string): CheckIn | null {
-  const checkIns = getCheckIns();
-  return checkIns.find(checkIn => checkIn.id === id) || null;
+export async function getNote(id: string): Promise<Note | null> {
+  try {
+    const notes = await getNotes();
+    return notes.find(note => note.id === id) || null;
+  } catch (error) {
+    logError(error as Error, { operation: 'getNote', noteId: id });
+    // Fallback to local storage
+    const localNotes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    const localNote = localNotes.find((note: Note) => note.id === id);
+    return localNote ? unescapeData(localNote as unknown as Record<string, unknown>) as unknown as Note : null;
+  }
 }
 
-export function getCheckInByDate(date: string): CheckIn | null {
-  const checkIns = getCheckIns();
-  return checkIns.find(checkIn => checkIn.date === date) || null;
-}
+export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<Note> {
+  try {
+    const sanitizedNote = sanitizeData(note);
 
-export function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'updatedAt'>): CheckIn {
-  const checkIns = getCheckIns();
-  const sanitizedCheckIn = sanitizeData(checkIn);
-  const newCheckIn: CheckIn = {
-    id: uuidv4(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    date: sanitizedCheckIn.date,
-    mood: sanitizedCheckIn.mood,
-    energy: sanitizedCheckIn.energy,
-    accomplishments: sanitizedCheckIn.accomplishments,
-    challenges: sanitizedCheckIn.challenges,
-    goals: sanitizedCheckIn.goals,
-    notes: sanitizedCheckIn.notes,
-  };
-
-  localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify([...checkIns, newCheckIn]));
-  return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
-}
-
-export function updateCheckIn(id: string, updates: Partial<CheckIn>): CheckIn {
-  const checkIns = getCheckIns();
-  const sanitizedUpdates = sanitizeData(updates);
-  const updatedCheckIns = checkIns.map(checkIn => {
-    if (checkIn.id === id) {
-      return { ...checkIn, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    // Validate required fields
+    if (!sanitizedNote.title || !sanitizedNote.content) {
+      throw new ValidationError('Title and content are required');
     }
-    return checkIn;
-  });
-  localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(updatedCheckIns));
-  return unescapeData(updatedCheckIns.find(c => c.id === id)! as unknown as Record<string, unknown>) as unknown as CheckIn;
+
+    // Create via API
+    const newNote = await apiRequest<Note>('notes', 'POST', {
+      ...sanitizedNote,
+      isPinned: sanitizedNote.isPinned ?? false
+    });
+
+    // Update local storage
+    const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify([...notes, newNote]));
+
+    return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
+  } catch (error) {
+    logError(error as Error, { operation: 'createNote', data: note });
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new StorageError('Failed to create note');
+  }
 }
 
-export function deleteCheckIn(id: string): boolean {
-  const checkIns = getCheckIns();
-  const filtered = checkIns.filter(checkIn => checkIn.id !== id);
-  localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(filtered));
-  return true;
+export async function updateNote(id: string, updates: Partial<Note>): Promise<Note> {
+  try {
+    const sanitizedUpdates = sanitizeData(updates);
+
+    // Update via API
+    const updatedNote = await apiRequest<Note>('notes', 'PUT', { id, ...sanitizedUpdates });
+
+    // Update local storage
+    const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    const updatedNotes = notes.map((note: Note) =>
+      note.id === id ? updatedNote : note
+    );
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
+
+    return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
+  } catch (error) {
+    logError(error as Error, { operation: 'updateNote', noteId: id, updates });
+    throw new StorageError('Failed to update note');
+  }
+}
+
+export async function deleteNote(id: string): Promise<boolean> {
+  try {
+    // Delete via API
+    await apiRequest<{ success: true }>(`notes?id=${id}`, 'DELETE');
+
+    // Update local storage
+    const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    const filtered = notes.filter((note: Note) => note.id !== id);
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(filtered));
+
+    return true;
+  } catch (error) {
+    logError(error as Error, { operation: 'deleteNote', noteId: id });
+    throw new StorageError('Failed to delete note');
+  }
+}
+
+// Updated Todo functions with API sync
+export async function getTodos(): Promise<Todo[]> {
+  try {
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (!userId) return [];
+
+    // Fetch from API
+    const todos = await apiRequest<Todo[]>(`todos?userId=${userId}`, 'GET');
+
+    // Update local storage
+    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(todos));
+
+    return todos.map(todo =>
+      unescapeData(todo as unknown as Record<string, unknown>) as unknown as Todo
+    );
+  } catch (error) {
+    // Fallback to local storage
+    logError(error as Error, { operation: 'getTodos' });
+    const localTodos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    return localTodos.map((todo: Record<string, unknown>) => unescapeData(todo));
+  }
+}
+
+export async function getTodo(id: string): Promise<Todo | null> {
+  try {
+    const todos = await getTodos();
+    return todos.find(todo => todo.id === id) || null;
+  } catch (error) {
+    logError(error as Error, { operation: 'getTodo', todoId: id });
+    // Fallback to local storage
+    const localTodos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    const localTodo = localTodos.find((todo: Todo) => todo.id === id);
+    return localTodo ? unescapeData(localTodo as unknown as Record<string, unknown>) as unknown as Todo : null;
+  }
+}
+
+export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'completed'>): Promise<Todo> {
+  try {
+    const sanitizedTodo = sanitizeData(todo);
+
+    // Validate required fields
+    if (!sanitizedTodo.title || !sanitizedTodo.priority) {
+      throw new ValidationError('Title and priority are required');
+    }
+
+    // Validate priority
+    if (!['low', 'medium', 'high'].includes(sanitizedTodo.priority)) {
+      throw new ValidationError('Invalid priority level');
+    }
+
+    // Create via API
+    const newTodo = await apiRequest<Todo>('todos', 'POST', {
+      ...sanitizedTodo,
+      completed: false
+    });
+
+    // Update local storage
+    const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify([...todos, newTodo]));
+
+    return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
+  } catch (error) {
+    logError(error as Error, { operation: 'createTodo', data: todo });
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new StorageError('Failed to create todo');
+  }
+}
+
+export async function updateTodo(id: string, updates: Partial<Todo>): Promise<Todo> {
+  try {
+    const sanitizedUpdates = sanitizeData(updates);
+
+    // Validate priority if it's being updated
+    if (sanitizedUpdates.priority && !['low', 'medium', 'high'].includes(sanitizedUpdates.priority)) {
+      throw new ValidationError('Invalid priority level');
+    }
+
+    // Update via API
+    const updatedTodo = await apiRequest<Todo>('todos', 'PUT', { id, ...sanitizedUpdates });
+
+    // Update local storage
+    const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    const updatedTodos = todos.map((todo: Todo) =>
+      todo.id === id ? updatedTodo : todo
+    );
+    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(updatedTodos));
+
+    return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
+  } catch (error) {
+    logError(error as Error, { operation: 'updateTodo', todoId: id, updates });
+    throw new StorageError('Failed to update todo');
+  }
+}
+
+export async function deleteTodo(id: string): Promise<boolean> {
+  try {
+    // Delete via API
+    await apiRequest<{ success: true }>(`todos?id=${id}`, 'DELETE');
+
+    // Update local storage
+    const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    const filtered = todos.filter((todo: Todo) => todo.id !== id);
+    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(filtered));
+
+    return true;
+  } catch (error) {
+    logError(error as Error, { operation: 'deleteTodo', todoId: id });
+    throw new StorageError('Failed to delete todo');
+  }
+}
+
+// Helper function for toggling todo completion status
+export async function toggleTodoComplete(id: string): Promise<Todo> {
+  try {
+    const todo = await getTodo(id);
+    if (!todo) {
+      throw new ValidationError('Todo not found');
+    }
+
+    return updateTodo(id, { completed: !todo.completed });
+  } catch (error) {
+    logError(error as Error, { operation: 'toggleTodoComplete', todoId: id });
+    throw new StorageError('Failed to toggle todo completion');
+  }
+}
+
+// Updated CheckIn functions with API sync
+export async function getCheckIns(): Promise<CheckIn[]> {
+  try {
+    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (!userId) return [];
+
+    // Fetch from API
+    const checkIns = await apiRequest<CheckIn[]>(`checkins?userId=${userId}`, 'GET');
+
+    // Update local storage
+    localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(checkIns));
+
+    return checkIns.map(checkIn =>
+      unescapeData(checkIn as unknown as Record<string, unknown>) as unknown as CheckIn
+    );
+  } catch (error) {
+    // Fallback to local storage
+    logError(error as Error, { operation: 'getCheckIns' });
+    const localCheckIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    return localCheckIns.map((checkIn: Record<string, unknown>) => unescapeData(checkIn));
+  }
+}
+
+export async function getCheckIn(id: string): Promise<CheckIn | null> {
+  try {
+    const checkIns = await getCheckIns();
+    return checkIns.find(checkIn => checkIn.id === id) || null;
+  } catch (error) {
+    logError(error as Error, { operation: 'getCheckIn', checkInId: id });
+    // Fallback to local storage
+    const localCheckIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    const localCheckIn = localCheckIns.find((checkIn: CheckIn) => checkIn.id === id);
+    return localCheckIn ? unescapeData(localCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn : null;
+  }
+}
+
+export async function getCheckInByDate(date: string): Promise<CheckIn | null> {
+  try {
+    const checkIns = await getCheckIns();
+    return checkIns.find(checkIn => checkIn.date === date) || null;
+  } catch (error) {
+    logError(error as Error, { operation: 'getCheckInByDate', date });
+    // Fallback to local storage
+    const localCheckIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    const localCheckIn = localCheckIns.find((checkIn: CheckIn) => checkIn.date === date);
+    return localCheckIn ? unescapeData(localCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn : null;
+  }
+}
+
+export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'updatedAt'>): Promise<CheckIn> {
+  try {
+    const sanitizedCheckIn = sanitizeData(checkIn);
+
+    // Validate required fields
+    if (!sanitizedCheckIn.date || !sanitizedCheckIn.mood || !sanitizedCheckIn.energy) {
+      throw new ValidationError('Date, mood, and energy are required');
+    }
+
+    // Create via API
+    const newCheckIn = await apiRequest<CheckIn>('checkins', 'POST', sanitizedCheckIn);
+
+    // Update local storage
+    const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify([...checkIns, newCheckIn]));
+
+    return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+  } catch (error) {
+    logError(error as Error, { operation: 'createCheckIn', data: checkIn });
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new StorageError('Failed to create check-in');
+  }
+}
+
+export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Promise<CheckIn> {
+  try {
+    const sanitizedUpdates = sanitizeData(updates);
+
+    // Update via API
+    const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
+
+    // Update local storage
+    const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    const updatedCheckIns = checkIns.map((checkIn: CheckIn) =>
+      checkIn.id === id ? updatedCheckIn : checkIn
+    );
+    localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(updatedCheckIns));
+
+    return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+  } catch (error) {
+    logError(error as Error, { operation: 'updateCheckIn', checkInId: id, updates });
+    throw new StorageError('Failed to update check-in');
+  }
+}
+
+export async function deleteCheckIn(id: string): Promise<boolean> {
+  try {
+    // Delete via API
+    await apiRequest<{ success: true }>(`checkins?id=${id}`, 'DELETE');
+
+    // Update local storage
+    const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    const filtered = checkIns.filter((checkIn: CheckIn) => checkIn.id !== id);
+    localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(filtered));
+
+    return true;
+  } catch (error) {
+    logError(error as Error, { operation: 'deleteCheckIn', checkInId: id });
+    throw new StorageError('Failed to delete check-in');
+  }
 }

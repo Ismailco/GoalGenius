@@ -60,3 +60,67 @@ export const subscriptions = sqliteTable('subscriptions', {
 	startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	expiresAt: integer('expires_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+export const goals = sqliteTable('goals', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull(),
+	title: text('title').notNull(),
+	description: text('description'),
+	category: text('category', { enum: ['health', 'career', 'learning', 'relationships'] }).notNull(),
+	timeFrame: text('time_frame').notNull(),
+	status: text('status', { enum: ['not-started', 'in-progress', 'completed'] }).notNull(),
+	progress: integer('progress').notNull(),
+	dueDate: text('due_date'),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const milestones = sqliteTable('milestones', {
+	id: text('id').primaryKey(),
+	goalId: text('goal_id').notNull().references(() => goals.id),
+	userId: text('user_id').notNull(),
+	title: text('title').notNull(),
+	description: text('description'),
+	date: text('date').notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const notes = sqliteTable('notes', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull(),
+	title: text('title').notNull(),
+	content: text('content').notNull(),
+	category: text('category'),
+	isPinned: integer('is_pinned', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const todos = sqliteTable('todos', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull(),
+	title: text('title').notNull(),
+	description: text('description'),
+	priority: text('priority', { enum: ['low', 'medium', 'high'] }).notNull(),
+	dueDate: text('due_date'),
+	category: text('category'),
+	completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const checkIns = sqliteTable('check_ins', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull(),
+	date: text('date').notNull(),
+	mood: text('mood', { enum: ['great', 'good', 'okay', 'bad', 'terrible'] }).notNull(),
+	energy: text('energy', { enum: ['high', 'medium', 'low'] }).notNull(),
+	accomplishments: text('accomplishments').notNull(), // JSON string array
+	challenges: text('challenges').notNull(), // JSON string array
+	goals: text('goals').notNull(), // JSON string array
+	notes: text('notes'),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
