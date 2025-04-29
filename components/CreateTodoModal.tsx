@@ -133,9 +133,9 @@ export default function CreateTodoModal({
 
     await handleAsyncOperation(
       async () => {
-        const savedTodo = existingTodo
+        const savedTodo = await (existingTodo
           ? updateTodo(existingTodo.id, todoData)
-          : createTodo(todoData);
+          : createTodo(todoData));
         onSave?.(savedTodo);
         onClose();
       },

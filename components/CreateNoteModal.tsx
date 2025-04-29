@@ -117,9 +117,9 @@ export default function CreateNoteModal({
 
     await handleAsyncOperation(
       async () => {
-        const savedNote = existingNote
+        const savedNote = await (existingNote
           ? updateNote(existingNote.id, noteData)
-          : createNote(noteData);
+          : createNote(noteData));
         onSave?.(savedNote);
         onClose();
       },
