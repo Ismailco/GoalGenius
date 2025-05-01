@@ -42,13 +42,37 @@ export default function CreateCheckInModal({
 
   useEffect(() => {
     if (existingCheckIn) {
-      setDate(existingCheckIn.date);
-      setMood(existingCheckIn.mood);
-      setEnergy(existingCheckIn.energy);
-      setAccomplishments(existingCheckIn.accomplishments.map(a => unescapeForDisplay(a)));
-      setChallenges(existingCheckIn.challenges.map(c => unescapeForDisplay(c)));
-      setGoals(existingCheckIn.goals.map(g => unescapeForDisplay(g)));
-      setNotes(existingCheckIn.notes ? unescapeForDisplay(existingCheckIn.notes) : '');
+      try {
+        setDate(existingCheckIn.date);
+        setMood(existingCheckIn.mood);
+        setEnergy(existingCheckIn.energy);
+
+        // Parse array fields before mapping
+        const parseArrayField = (field: string[] | string): string[] => {
+          if (Array.isArray(field)) return field;
+          try {
+            return JSON.parse(field);
+          } catch {
+            console.error('Error parsing array field:', field);
+            return [''];
+          }
+        };
+
+        const accomplishmentsArray = parseArrayField(existingCheckIn.accomplishments);
+        const challengesArray = parseArrayField(existingCheckIn.challenges);
+        const goalsArray = parseArrayField(existingCheckIn.goals);
+
+        setAccomplishments(accomplishmentsArray.map(a => unescapeForDisplay(a)));
+        setChallenges(challengesArray.map(c => unescapeForDisplay(c)));
+        setGoals(goalsArray.map(g => unescapeForDisplay(g)));
+        setNotes(existingCheckIn.notes ? unescapeForDisplay(existingCheckIn.notes) : '');
+      } catch (error) {
+        console.error('Error setting check-in data:', error);
+        // Set default values in case of error
+        setAccomplishments(['']);
+        setChallenges(['']);
+        setGoals(['']);
+      }
     }
   }, [existingCheckIn]);
 
@@ -184,9 +208,9 @@ export default function CreateCheckInModal({
           notes: notesValidation.sanitizedValue || undefined,
         };
 
-        const savedCheckIn = existingCheckIn
+        const savedCheckIn = await (existingCheckIn
           ? updateCheckIn(existingCheckIn.id, checkInData)
-          : createCheckIn(checkInData);
+          : createCheckIn(checkInData));
 
         onSave?.(savedCheckIn);
         onClose();

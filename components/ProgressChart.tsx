@@ -18,7 +18,7 @@ export default function ProgressChart() {
   const fetchCategoryProgress = useCallback(async () => {
     await handleAsyncOperation(
       async () => {
-        const goals = getGoals();
+        const goals = await getGoals();
         const progressByCategory: Record<GoalCategory, number[]> = {
           health: [],
           career: [],

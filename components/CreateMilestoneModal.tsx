@@ -34,7 +34,7 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
     const loadGoals = async () => {
       await handleAsyncOperation(
         async () => {
-          const loadedGoals = getGoals();
+          const loadedGoals = await getGoals();
           setGoals(loadedGoals);
         },
         setIsLoading,
@@ -86,7 +86,7 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
           description: data.description,
           date: data.date
         };
-        createMilestone(milestone);
+        await createMilestone(milestone);
         hideModal();
         window.location.reload();
       },

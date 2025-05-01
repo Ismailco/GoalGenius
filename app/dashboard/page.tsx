@@ -24,15 +24,24 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    setMounted(true);
-    const goals = getGoals();
-    setStats({
-      totalGoals: goals.length,
-      averageProgress: goals.length > 0
-        ? Math.round(goals.reduce((acc, goal) => acc + goal.progress, 0) / goals.length)
-        : 0,
-      completedMilestones: goals.filter(goal => goal.progress === 100).length
-    });
+    async function fetchGoals() {
+      try {
+        setMounted(true);
+        const goals = await getGoals();
+        setStats({
+          totalGoals: goals.length,
+          averageProgress: goals.length > 0
+            ? Math.round(goals.reduce((acc, goal) => acc + goal.progress, 0) / goals.length)
+            : 0,
+          completedMilestones: goals.filter(goal => goal.progress === 100).length
+        });
+      } catch (error) {
+        console.error('Failed to fetch goals:', error);
+        // Keep the default stats values in case of error
+      }
+    }
+
+    fetchGoals();
   }, []);
 
   if (!mounted) {

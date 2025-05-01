@@ -1,14 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CheckIn } from '@/app/types';
 import { getCheckIns, deleteCheckIn } from '@/app/lib/storage';
 import CreateCheckInModal from '@/components/CreateCheckInModal';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 import AlertModal from '@/components/AlertModal';
 
-export default function CheckInsPage() {
+function parseJsonArray(value: string[] | string | undefined | null): string[] {
+  if (!value) return [];
 
+  // If it's already an array, return it
+  if (Array.isArray(value)) return value;
+
+  // If it's a string, try to parse it
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Error parsing JSON array:', e);
+    return [];
+  }
+}
+
+export default function CheckInsPage() {
   const [mounted, setMounted] = useState(false);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,9 +44,28 @@ export default function CheckInsPage() {
     type: 'info'
   });
 
+  const accomplishments = useMemo(() => parseJsonArray(selectedCheckIn?.accomplishments), [selectedCheckIn?.accomplishments]);
+  const challenges = useMemo(() => parseJsonArray(selectedCheckIn?.challenges), [selectedCheckIn?.challenges]);
+  const goals = useMemo(() => parseJsonArray(selectedCheckIn?.goals), [selectedCheckIn?.goals]);
+
   useEffect(() => {
-    setMounted(true);
-    setCheckIns(getCheckIns());
+    const loadCheckIns = async () => {
+      try {
+        setMounted(true);
+        const loadedCheckIns = await getCheckIns();
+        setCheckIns(loadedCheckIns);
+      } catch (error) {
+        console.error('Error loading check-ins:', error);
+        setAlert({
+          show: true,
+          title: 'Error',
+          message: 'Failed to load check-ins',
+          type: 'error'
+        });
+      }
+    };
+
+    loadCheckIns();
   }, []);
 
   // Don't render anything until mounted to prevent hydration errors
@@ -53,8 +87,19 @@ export default function CheckInsPage() {
     );
   }
 
-  const handleSaveCheckIn = () => {
-    setCheckIns(getCheckIns());
+  const handleSaveCheckIn = async () => {
+    try {
+      const updatedCheckIns = await getCheckIns();
+      setCheckIns(updatedCheckIns);
+    } catch (error) {
+      console.error('Error refreshing check-ins:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to refresh check-ins',
+        type: 'error'
+      });
+    }
   };
 
   const handleEditCheckIn = (checkIn: CheckIn) => {
@@ -69,10 +114,11 @@ export default function CheckInsPage() {
       message: 'Are you sure you want to delete this check-in?',
       type: 'warning',
       isConfirmation: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         try {
-          deleteCheckIn(id);
-          setCheckIns(getCheckIns());
+          await deleteCheckIn(id);
+          const updatedCheckIns = await getCheckIns();
+          setCheckIns(updatedCheckIns);
         } catch (error) {
           console.error('Error deleting check-in:', error);
           setAlert({
@@ -221,80 +267,86 @@ export default function CheckInsPage() {
         <div className="space-y-6">
           {checkIns
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .map((checkIn) => (
-              <div
-                key={checkIn.id}
-                className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 transform hover:scale-[1.01] transition-all duration-200 border border-white/10"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl" title={`Mood: ${checkIn.mood}`}>
-                      {getMoodEmoji(checkIn.mood)}
-                    </span>
-                    <span className="text-2xl" title={`Energy: ${checkIn.energy}`}>
-                      {getEnergyIcon(checkIn.energy)}
-                    </span>
-                    <span className="text-lg font-medium text-white">
-                      {format(new Date(checkIn.date), 'MMMM d, yyyy')}
-                    </span>
+            .map((checkIn) => {
+              const checkInAccomplishments = parseJsonArray(checkIn.accomplishments);
+              const checkInChallenges = parseJsonArray(checkIn.challenges);
+              const checkInGoals = parseJsonArray(checkIn.goals);
+
+              return (
+                <div
+                  key={checkIn.id}
+                  className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 transform hover:scale-[1.01] transition-all duration-200 border border-white/10"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl" title={`Mood: ${checkIn.mood}`}>
+                        {getMoodEmoji(checkIn.mood)}
+                      </span>
+                      <span className="text-2xl" title={`Energy: ${checkIn.energy}`}>
+                        {getEnergyIcon(checkIn.energy)}
+                      </span>
+                      <span className="text-lg font-medium text-white">
+                        {format(new Date(checkIn.date), 'MMMM d, yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleEditCheckIn(checkIn)}
+                        className="text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCheckIn(checkIn.id)}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleEditCheckIn(checkIn)}
-                      className="text-blue-400 hover:text-blue-300 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCheckIn(checkIn.id)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
+
+                  {checkInAccomplishments.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium text-gray-400 mb-2">Accomplishments</h3>
+                      <ul className="list-disc list-inside text-gray-300 space-y-1">
+                        {checkInAccomplishments.map((item: string, index: number) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {checkInChallenges.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium text-gray-400 mb-2">Challenges</h3>
+                      <ul className="list-disc list-inside text-gray-300 space-y-1">
+                        {checkInChallenges.map((item: string, index: number) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {checkInGoals.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium text-gray-400 mb-2">Goals for Tomorrow</h3>
+                      <ul className="list-disc list-inside text-gray-300 space-y-1">
+                        {checkInGoals.map((item: string, index: number) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {checkIn.notes && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-400 mb-2">Additional Notes</h3>
+                      <p className="text-gray-300 whitespace-pre-wrap">{checkIn.notes}</p>
+                    </div>
+                  )}
                 </div>
-
-                {checkIn.accomplishments.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-400 mb-2">Accomplishments</h3>
-                    <ul className="list-disc list-inside text-gray-300 space-y-1">
-                      {checkIn.accomplishments.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {checkIn.challenges.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-400 mb-2">Challenges</h3>
-                    <ul className="list-disc list-inside text-gray-300 space-y-1">
-                      {checkIn.challenges.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {checkIn.goals.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-400 mb-2">Goals for Tomorrow</h3>
-                    <ul className="list-disc list-inside text-gray-300 space-y-1">
-                      {checkIn.goals.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {checkIn.notes && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-2">Additional Notes</h3>
-                    <p className="text-gray-300 whitespace-pre-wrap">{checkIn.notes}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
           {checkIns.length === 0 && (
             <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-12 text-center border border-white/10">

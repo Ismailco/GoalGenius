@@ -30,7 +30,7 @@ export default function GoalsList() {
     const loadGoals = async () => {
       await handleAsyncOperation(
         async () => {
-          const loadedGoals = getGoals();
+          const loadedGoals = await getGoals();
           setGoals(loadedGoals);
         },
         setLoading,
@@ -52,7 +52,8 @@ export default function GoalsList() {
     await handleAsyncOperation(
       async () => {
         await updateGoal(goalId, { progress });
-        setGoals(getGoals());
+        const updatedGoals = await getGoals();
+        setGoals(updatedGoals);
       },
       undefined,
       (error) => {
@@ -76,8 +77,9 @@ export default function GoalsList() {
       onConfirm: async () => {
         await handleAsyncOperation(
           async () => {
-            deleteGoal(id);
-            setGoals(getGoals());
+            await deleteGoal(id);
+            const updatedGoals = await getGoals();
+            setGoals(updatedGoals);
           },
           undefined,
           (error) => {
@@ -96,8 +98,9 @@ export default function GoalsList() {
   const handleUpdateGoal = async (id: string, updates: Partial<Goal>) => {
     await handleAsyncOperation(
       async () => {
-        updateGoal(id, updates);
-        setGoals(getGoals());
+        await updateGoal(id, updates);
+        const updatedGoals = await getGoals();
+        setGoals(updatedGoals);
         setEditingGoal(null);
       },
       undefined,

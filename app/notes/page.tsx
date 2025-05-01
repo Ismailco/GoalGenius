@@ -30,8 +30,23 @@ export default function NotesPage() {
   });
 
   useEffect(() => {
-    setMounted(true);
-    setNotes(getNotes());
+    const loadNotes = async () => {
+      try {
+        setMounted(true);
+        const loadedNotes = await getNotes();
+        setNotes(loadedNotes);
+      } catch (error) {
+        console.error('Error loading notes:', error);
+        setAlert({
+          show: true,
+          title: 'Error',
+          message: 'Failed to load notes',
+          type: 'error'
+        });
+      }
+    };
+
+    loadNotes();
   }, []);
 
   // Don't render anything until mounted to prevent hydration errors
@@ -53,8 +68,19 @@ export default function NotesPage() {
     );
   }
 
-  const handleSaveNote = () => {
-    setNotes(getNotes());
+  const handleSaveNote = async () => {
+    try {
+      const updatedNotes = await getNotes();
+      setNotes(updatedNotes);
+    } catch (error) {
+      console.error('Error refreshing notes:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to refresh notes',
+        type: 'error'
+      });
+    }
   };
 
   const handleEditNote = (note: Note) => {
@@ -69,10 +95,11 @@ export default function NotesPage() {
       message: 'Are you sure you want to delete this note?',
       type: 'warning',
       isConfirmation: true,
-      onConfirm: () => {
+      onConfirm: async () => {
         try {
-          deleteNote(id);
-          setNotes(getNotes());
+          await deleteNote(id);
+          const updatedNotes = await getNotes();
+          setNotes(updatedNotes);
         } catch (error) {
           console.error('Error deleting note:', error);
           setAlert({
@@ -86,9 +113,20 @@ export default function NotesPage() {
     });
   };
 
-  const handlePinNote = (note: Note) => {
-    updateNote(note.id, { isPinned: !note.isPinned });
-    setNotes(getNotes());
+  const handlePinNote = async (note: Note) => {
+    try {
+      await updateNote(note.id, { isPinned: !note.isPinned });
+      const updatedNotes = await getNotes();
+      setNotes(updatedNotes);
+    } catch (error) {
+      console.error('Error pinning note:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to pin note',
+        type: 'error'
+      });
+    }
   };
 
   const categories = Array.from(new Set(notes.map(note => note.category).filter(Boolean)));
