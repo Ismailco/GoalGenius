@@ -34,6 +34,24 @@ const unescapeData = <T extends Record<string, unknown>>(data: T): T => {
   return unescaped as T;
 };
 
+// Add this helper function at the top with the other helpers
+function ensureJsonString(value: string[] | string | undefined | null): string {
+  if (!value) return '[]';
+  if (Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+  // If it's already a string, validate it's a JSON array
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      throw new Error('Not an array');
+    }
+    return value; // Return original string if it's valid
+  } catch {
+    return '[]'; // Return empty array if invalid
+  }
+}
+
 const STORAGE_KEYS = {
   GOALS: 'goals',
   MILESTONES: 'milestones',
@@ -59,6 +77,13 @@ async function apiRequest<T>(
     throw new StorageError('No user ID found');
   }
 
+  // Debug log for request
+  console.log(`[Debug] API Request to ${endpoint}:`, {
+    method,
+    userId,
+    data
+  });
+
   const response = await fetch(`/api/${endpoint}`, {
     method,
     headers: {
@@ -67,9 +92,20 @@ async function apiRequest<T>(
     body: data ? JSON.stringify({ ...data, userId }) : undefined,
   });
 
-  const responseData = await response.json();
+  let responseData;
+  try {
+    responseData = await response.json();
+  } catch (e) {
+    console.error('[Debug] Failed to parse response:', e);
+    throw new StorageError('Invalid response format');
+  }
 
   if (!response.ok) {
+    console.error('[Debug] API Error Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      data: responseData
+    });
     const errorData = responseData as ApiErrorResponse;
     throw new StorageError(errorData.error || 'API request failed');
   }
@@ -558,11 +594,39 @@ export async function getCheckInByDate(date: string): Promise<CheckIn | null> {
 
 export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'updatedAt'>): Promise<CheckIn> {
   try {
-    const sanitizedCheckIn = sanitizeData(checkIn);
+    console.log('[Debug] Creating check-in with data:', checkIn);
+
+    // Process the data before sanitization
+    const processedData = {
+      ...checkIn,
+      accomplishments: ensureJsonString(checkIn.accomplishments),
+      challenges: ensureJsonString(checkIn.challenges),
+      goals: ensureJsonString(checkIn.goals),
+    };
+
+    const sanitizedCheckIn = sanitizeData(processedData);
 
     // Validate required fields
-    if (!sanitizedCheckIn.date || !sanitizedCheckIn.mood || !sanitizedCheckIn.energy) {
-      throw new ValidationError('Date, mood, and energy are required');
+    const requiredFields = ['date', 'mood', 'energy', 'accomplishments', 'challenges', 'goals'] as const;
+    const missingFields = requiredFields.filter(field => !sanitizedCheckIn[field]);
+
+    if (missingFields.length > 0) {
+      console.error('[Debug] Missing required fields:', missingFields);
+      throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+
+    // Validate mood and energy values
+    const validMoods = ['great', 'good', 'okay', 'bad', 'terrible'] as const;
+    const validEnergies = ['high', 'medium', 'low'] as const;
+
+    if (!validMoods.includes(sanitizedCheckIn.mood as any)) {
+      console.error('[Debug] Invalid mood value:', sanitizedCheckIn.mood);
+      throw new ValidationError(`Invalid mood value. Must be one of: ${validMoods.join(', ')}`);
+    }
+
+    if (!validEnergies.includes(sanitizedCheckIn.energy as any)) {
+      console.error('[Debug] Invalid energy value:', sanitizedCheckIn.energy);
+      throw new ValidationError(`Invalid energy value. Must be one of: ${validEnergies.join(', ')}`);
     }
 
     // Create via API
@@ -574,6 +638,7 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
 
     return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
+    console.error('[Debug] Check-in creation error:', error);
     logError(error as Error, { operation: 'createCheckIn', data: checkIn });
     if (error instanceof ValidationError) {
       throw error;
@@ -584,7 +649,15 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
 
 export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Promise<CheckIn> {
   try {
-    const sanitizedUpdates = sanitizeData(updates);
+    // Process array fields if they exist in the updates
+    const processedUpdates = {
+      ...updates,
+      ...(updates.accomplishments !== undefined && { accomplishments: ensureJsonString(updates.accomplishments) }),
+      ...(updates.challenges !== undefined && { challenges: ensureJsonString(updates.challenges) }),
+      ...(updates.goals !== undefined && { goals: ensureJsonString(updates.goals) }),
+    };
+
+    const sanitizedUpdates = sanitizeData(processedUpdates);
 
     // Update via API
     const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
