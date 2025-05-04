@@ -4,7 +4,7 @@ import { goals } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 // Type for goal data with constrained categories and status
 type GoalInput = {
 	userId: string;
@@ -95,8 +95,13 @@ export async function PUT(request: NextRequest) {
 			);
 		}
 
+		console.log('Update payload:', {
+			...updateData,
+			updatedAt: new Date(),
+		});
 		return NextResponse.json(updatedGoal[0]);
 	} catch (error) {
+		console.log('[API Error]: ', error);
 		return NextResponse.json(
 			{ error: 'Failed to update goal' },
 			{ status: 500 }
@@ -130,6 +135,7 @@ export async function DELETE(request: NextRequest) {
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
+		console.error('DELETE /api/goals error:', error);
 		return NextResponse.json(
 			{ error: 'Failed to delete goal' },
 			{ status: 500 }

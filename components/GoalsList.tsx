@@ -69,51 +69,60 @@ export default function GoalsList() {
 
   const handleDeleteGoal = (id: string) => {
     setAlert({
-      show: true,
-      title: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this goal?',
-      type: 'warning',
-      isConfirmation: true,
-      onConfirm: async () => {
-        await handleAsyncOperation(
-          async () => {
-            await deleteGoal(id);
-            const updatedGoals = await getGoals();
-            setGoals(updatedGoals);
-          },
-          undefined,
-          (error) => {
-            setAlert({
-              show: true,
-              title: 'Error',
-              message: getUserFriendlyErrorMessage(error),
-              type: 'error'
-            });
-          }
-        );
-      }
-    });
+			show: true,
+			title: 'Confirm Deletion',
+			message: 'Are you sure you want to delete this goal?',
+			type: 'warning',
+			isConfirmation: true,
+			onConfirm: async () => {
+				try {
+					console.log('Deleting goal with id:', id);
+					await deleteGoal(id);
+					const updatedGoals = await getGoals();
+					setGoals(updatedGoals);
+				} catch (error) {
+					console.error('Delete goal error:', error);
+					setAlert({
+						show: true,
+						title: 'Error',
+						message: getUserFriendlyErrorMessage(error),
+						type: 'error',
+					});
+				}
+			},
+		});
   };
 
   const handleUpdateGoal = async (id: string, updates: Partial<Goal>) => {
-    await handleAsyncOperation(
-      async () => {
-        await updateGoal(id, updates);
-        const updatedGoals = await getGoals();
-        setGoals(updatedGoals);
-        setEditingGoal(null);
-      },
-      undefined,
-      (error) => {
-        setAlert({
-          show: true,
-          title: 'Error',
-          message: getUserFriendlyErrorMessage(error),
-          type: 'error'
-        });
-      }
-    );
+    try {
+      // Filter out  createdAt from updates
+      const { createdAt, ...filteredUpdates } = updates;
+
+      // Call the updateGoal function
+      await updateGoal(id, filteredUpdates);
+
+      // Get updated goals
+      const updatedGoals = await getGoals();
+
+      // Update the state with the new list of goals
+      setGoals(updatedGoals);
+
+      // Clear the editing goal state
+      setEditingGoal(null);
+    } catch (error) {
+      // Log the error
+      console.error('[Update Goal Error]:', error);
+
+      // Set an alert with a user-friendly error message
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: getUserFriendlyErrorMessage(error),
+        type: 'error',
+      });
+    }
   };
+
 
   if (loading) {
     return <LoadingPage />;
