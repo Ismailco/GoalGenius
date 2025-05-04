@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { getGoals } from '@/app/lib/storage';
-import GoalsList from '@/components/GoalsList';
-import ProgressChart from '@/components/ProgressChart';
-import MilestoneTimeline from '@/components/MilestoneTimeline';
-import CreateGoalModal from '@/components/CreateGoalModal';
-import GoalSuggestions from '@/components/GoalSuggestions';
-import CreateMilestoneModal from '@/components/CreateMilestoneModal';
+import GoalsList from '@/components/app/dashboard/GoalsList';
+import ProgressChart from '@/components/app/dashboard/ProgressChart';
+import MilestoneTimeline from '@/components/app/dashboard/MilestoneTimeline';
+import CreateGoalModal from '@/components/app/dashboard/CreateGoalModal';
+import GoalSuggestions from '@/components/app/dashboard/GoalSuggestions';
+import CreateMilestoneModal from '@/components/app/dashboard/CreateMilestoneModal';
 import { useModal } from '@/app/providers/ModalProvider';
-import DashboardCard from '@/components/DashboardCard';
-import SectionHeader from '@/components/SectionHeader';
-import DashboardSection from '@/components/DashboardSection';
+import DashboardCard from '@/components/app/dashboard/DashboardCard';
+import SectionHeader from '@/components/app/dashboard/SectionHeader';
+import DashboardSection from '@/components/app/dashboard/DashboardSection';
 
 export default function DashboardPage() {
 

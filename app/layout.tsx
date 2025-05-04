@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { pageMetadata } from "./metadata";
 import Providers from "../components/Providers";
 import Navbar from "../components/app/shared/Navbar";
 import Sidebar from "../components/app/shared/Sidebar";
@@ -20,8 +19,6 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
 };
-
-export const metadata = pageMetadata.home;
 
 export default function RootLayout({
   children,

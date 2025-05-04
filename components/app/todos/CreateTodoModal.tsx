@@ -5,7 +5,7 @@ import { Todo } from '@/app/types';
 import { createTodo, updateTodo } from '@/app/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingOverlay } from './LoadingSpinner';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateTodoModalProps {
   isOpen: boolean;

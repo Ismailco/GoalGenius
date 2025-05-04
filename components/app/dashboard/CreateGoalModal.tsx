@@ -3,11 +3,11 @@
 import { GoalCategory, TimeFrame } from '@/app/types';
 import { createGoal } from '@/app/lib/storage';
 import { useModal } from '@/app/providers/ModalProvider';
-import GoalInputForm from './GoalInputForm';
-import AlertModal from './AlertModal';
+import GoalInputForm from '@/components/app/dashboard/GoalInputForm';
+import AlertModal from '@/components/common/AlertModal';
 import { useState } from 'react';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingOverlay } from './LoadingSpinner';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 export default function CreateGoalModal() {
   const { showModal, hideModal } = useModal();

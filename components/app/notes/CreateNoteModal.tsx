@@ -5,7 +5,7 @@ import { Note } from '@/app/types';
 import { createNote, updateNote } from '@/app/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingOverlay } from './LoadingSpinner';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateNoteModalProps {
   isOpen: boolean;

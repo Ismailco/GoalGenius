@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { GoalCategory } from '@/app/types';
 import { getGoals } from '@/app/lib/storage';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import LoadingSpinner from './LoadingSpinner';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function ProgressChart() {
   const [loading, setLoading] = useState(true);
