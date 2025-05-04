@@ -39,7 +39,7 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:block fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-lg rounded-full border border-white/20 p-2 z-50">
+      {/* <nav className="hidden md:block fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-lg rounded-full border border-white/20 p-2 z-50">
         <div className="flex space-x-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -61,7 +61,7 @@ export default function Navbar() {
             );
           })}
         </div>
-      </nav>
+      </nav> */}
 
       {/* Mobile Navigation - Native App Style */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-white/10 z-50">
