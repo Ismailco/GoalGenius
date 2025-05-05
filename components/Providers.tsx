@@ -4,7 +4,7 @@ import { ModalProvider } from '../app/providers/ModalProvider';
 import { NotificationProvider } from '../app/providers/NotificationProvider';
 import ServiceWorkerProvider from '../app/providers/ServiceWorkerProvider';
 import { StorageProvider } from '../app/providers/StorageProvider';
-import { ErrorBoundary } from './ErrorBoundary';
+import { ErrorBoundary } from './common/ErrorBoundary';
 import NotificationContainer from './NotificationContainer';
 
 export default function Providers({

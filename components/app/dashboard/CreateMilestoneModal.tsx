@@ -3,11 +3,11 @@
 import { Goal, Milestone } from '@/app/types';
 import { createMilestone, getGoals } from '@/app/lib/storage';
 import { useModal } from '@/app/providers/ModalProvider';
-import MilestoneInputForm from './MilestoneInputForm';
-import AlertModal from './AlertModal';
+import MilestoneInputForm from '@/components/app/dashboard/MilestoneInputForm';
+import AlertModal from '@/components/common/AlertModal';
 import { useState, useEffect } from 'react';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingOverlay } from './LoadingSpinner';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateMilestoneModalProps {
   goal?: Goal;  // Make goal optional

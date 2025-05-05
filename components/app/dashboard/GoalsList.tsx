@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Goal, GoalCategory, TimeFrame } from '@/app/types';
 import { getGoals, updateGoal, deleteGoal } from '@/app/lib/storage';
-import AlertModal from './AlertModal';
+import AlertModal from '@/components/common/AlertModal';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingPage } from './LoadingSpinner';
+import { LoadingPage } from '@/components/common/LoadingSpinner';
 
 export default function GoalsList() {
   const [goals, setGoals] = useState<Goal[]>([]);

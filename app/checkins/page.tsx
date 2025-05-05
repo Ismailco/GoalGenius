@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CheckIn } from '@/app/types';
 import { getCheckIns, deleteCheckIn } from '@/app/lib/storage';
-import CreateCheckInModal from '@/components/CreateCheckInModal';
+import CreateCheckInModal from '@/components/app/checkins/CreateCheckInModal';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
-import AlertModal from '@/components/AlertModal';
+import AlertModal from '@/components/common/AlertModal';
 
 function parseJsonArray(value: string[] | string | undefined | null): string[] {
   if (!value) return [];
