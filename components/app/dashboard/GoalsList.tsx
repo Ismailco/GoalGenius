@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Goal, GoalCategory, TimeFrame } from '@/app/types';
-import { getGoals, updateGoal, deleteGoal } from '@/app/lib/storage';
+import { getGoals, updateGoal, deleteGoal } from '@/lib/storage';
 import AlertModal from '@/components/common/AlertModal';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingPage } from '@/components/common/LoadingSpinner';
 
 export default function GoalsList() {

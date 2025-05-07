@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { CheckIn } from '@/app/types';
-import { createCheckIn, updateCheckIn } from '@/app/lib/storage';
-import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
+import { createCheckIn, updateCheckIn } from '@/lib/storage';
+import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateCheckInModalProps {

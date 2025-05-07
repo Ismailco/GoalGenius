@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { validateAndSanitizeInput, ValidationResult } from '@/app/lib/validation';
+import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 
 interface MilestoneInputFormProps {
   onSubmit: (data: { title: string; description: string; date: string }) => void;

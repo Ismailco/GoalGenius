@@ -1,12 +1,12 @@
 'use client';
 
 import { Goal, Milestone } from '@/app/types';
-import { createMilestone, getGoals } from '@/app/lib/storage';
+import { createMilestone, getGoals } from '@/lib/storage';
 import { useModal } from '@/app/providers/ModalProvider';
 import MilestoneInputForm from '@/components/app/dashboard/MilestoneInputForm';
 import AlertModal from '@/components/common/AlertModal';
 import { useState, useEffect } from 'react';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateMilestoneModalProps {

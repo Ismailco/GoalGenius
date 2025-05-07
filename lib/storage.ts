@@ -1,6 +1,6 @@
 import { Goal, Milestone, Note, Todo, CheckIn } from '@/app/types';
 // import { v4 as uuidv4 } from 'uuid';
-import { sanitizeForStorage } from '@/app/lib/validation';
+import { sanitizeForStorage } from '@/lib/validation';
 import validator from 'validator';
 import { StorageError, ValidationError, logError } from './error';
 

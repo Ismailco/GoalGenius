@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Milestone, Goal, GoalCategory } from '@/app/types';
-import { getMilestones, getGoals } from '@/app/lib/storage';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
+import { getMilestones, getGoals } from '@/lib/storage';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingPage } from '@/components/common/LoadingSpinner';
 // import CreateMilestoneModal from '@/app/components/CreateMilestoneModal';
 // import { useModal } from '@/app/providers/ModalProvider';

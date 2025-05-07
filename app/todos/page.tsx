@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '@/app/types';
-import { getTodos, deleteTodo, toggleTodoComplete } from '@/app/lib/storage';
+import { getTodos, deleteTodo, toggleTodoComplete } from '@/lib/storage';
 import CreateTodoModal from '@/components/app/todos/CreateTodoModal';
 import AlertModal from '@/components/common/AlertModal';
 import { format } from 'date-fns';

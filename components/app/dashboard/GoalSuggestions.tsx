@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GoalCategory, TimeFrame } from '@/app/types';
-import { createGoal } from '@/app/lib/storage';
+import { createGoal } from '@/lib/storage';
 import AlertModal from '@/components/common/AlertModal';
 
 interface SuggestedGoal {

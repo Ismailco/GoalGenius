@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Note } from '@/app/types';
-import { getNotes, deleteNote, updateNote } from '@/app/lib/storage';
+import { getNotes, deleteNote, updateNote } from '@/lib/storage';
 import CreateNoteModal from '@/components/app/notes/CreateNoteModal';
 import AlertModal from '@/components/common/AlertModal';
 import { format } from 'date-fns';
