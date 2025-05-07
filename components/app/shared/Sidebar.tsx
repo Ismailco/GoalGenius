@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import UserProfile from '@/components/UserProfile';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -66,75 +67,39 @@ export default function Sidebar() {
 	];
 
   return (
-    <aside
-      className={`sticky h-screen top-0 bottom-0 bg-slate-900/90 backdrop-blur-lg border-r border-white/10 transition-all duration-300 z-40 hidden md:block ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}
-    >
-      <div className="flex flex-col h-full">
-        {/* Logo/Header */}
-        <div className={`h-16 flex items-center border-b border-white/10 ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
-          {!isCollapsed && (
-            <h1 className="text-xl font-bold text-white truncate">GoalGenius</h1>
-          )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'pr-1' : 'pl-1'} cursor-pointer`}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={isCollapsed ? 'M13 5l7 7-7 7' : 'M11 19l-7-7 7-7'}
-              />
-            </svg>
-          </button>
-        </div>
+		<aside className={`sticky h-screen top-0 bottom-0 bg-slate-900/90 backdrop-blur-lg border-r border-white/10 transition-all duration-300 z-40 hidden md:block ${isCollapsed ? 'w-16' : 'w-64'}`}>
+			<div className="flex flex-col h-full">
+				{/* Logo/Header */}
+				<div className={`h-16 flex items-center border-b border-white/10 ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
+					{!isCollapsed && <h1 className="text-xl font-bold text-white truncate">GoalGenius</h1>}
+					<button onClick={() => setIsCollapsed(!isCollapsed)} className={`w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'pr-1' : 'pl-1'} cursor-pointer`}>
+						<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCollapsed ? 'M13 5l7 7-7 7' : 'M11 19l-7-7 7-7'} />
+						</svg>
+					</button>
+				</div>
+				{/* Navigation Items */}
+				<nav className="flex-1 py-4">
+					<div className={`space-y-1 ${isCollapsed ? 'px-3' : 'px-4'}`}>
+						{sidebarItems.map((item) => {
+							const isActive = pathname === item.href;
+							return (
+								<Link key={item.name} href={item.href} className={`flex items-center ${isCollapsed ? 'justify-center h-10' : ''} rounded-lg transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'text-gray-400 hover:text-white hover:bg-white/10'} ${!isCollapsed ? 'px-3 py-2' : 'p-2'}`}>
+									<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+									</svg>
+									{!isCollapsed && <span className="ml-3 font-medium">{item.name}</span>}
+								</Link>
+							);
+						})}
+					</div>
+				</nav>
+				{/* User Profile Section */}
 
-        {/* Navigation Items */}
-        <nav className="flex-1 py-4">
-          <div className={`space-y-1 ${isCollapsed ? 'px-3' : 'px-4'}`}>
-            {sidebarItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center ${isCollapsed ? 'justify-center h-10' : ''} rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-white/10'
-                  } ${!isCollapsed ? 'px-3 py-2' : 'p-2'}`}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                  </svg>
-                  {!isCollapsed && <span className="ml-3 font-medium">{item.name}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* User Profile Section */}
-        <div className="p-4 border-t border-white/10">
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
-            {!isCollapsed && (
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">User Profile</p>
-                <p className="text-xs text-gray-400">View profile</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
+				<div className="p-2 border-t border-white/10">
+					<UserProfile isMenuButton={isCollapsed} />
+				</div>
+			</div>
+		</aside>
+	);
 }
