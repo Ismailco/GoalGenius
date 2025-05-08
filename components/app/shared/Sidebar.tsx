@@ -2,12 +2,27 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import UserProfile from '@/components/UserProfile';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+	useEffect(() => {
+		const saved = localStorage.getItem('sidebar-collapsed');
+		if (saved !== null) {
+			setIsCollapsed(saved === 'true');
+		}
+	}, []);
+
+
+	const toggleSidebar = () => {
+		const newValue = !isCollapsed;
+		setIsCollapsed(newValue);
+		localStorage.setItem('sidebar-collapsed', newValue.toString());
+	};
+
 
   // Don't show sidebar on these pages
   if (pathname === '/' || pathname === '/auth/signin' || pathname === '/auth/signup' || pathname === '/docs') return null;
@@ -72,7 +87,7 @@ export default function Sidebar() {
 				{/* Logo/Header */}
 				<div className={`h-16 flex items-center border-b border-white/10 ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
 					{!isCollapsed && <h1 className="text-xl font-bold text-white truncate">GoalGenius</h1>}
-					<button onClick={() => setIsCollapsed(!isCollapsed)} className={`w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'pr-1' : 'pl-1'} cursor-pointer`}>
+					<button onClick={toggleSidebar} className={`w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'pr-1' : 'pl-1'} cursor-pointer`}>
 						<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCollapsed ? 'M13 5l7 7-7 7' : 'M11 19l-7-7 7-7'} />
 						</svg>
