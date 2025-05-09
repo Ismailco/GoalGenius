@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '@/app/types';
-import { createTodo, updateTodo } from '@/app/lib/storage';
-import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
+import { createTodo, updateTodo } from '@/lib/storage';
+import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateTodoModalProps {

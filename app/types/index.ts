@@ -18,6 +18,7 @@ export interface Goal {
   timeFrame: TimeFrame;
   status: GoalStatus;
   progress: number;
+  dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }

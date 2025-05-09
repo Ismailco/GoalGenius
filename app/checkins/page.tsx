@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { CheckIn } from '@/app/types';
-import { getCheckIns, deleteCheckIn } from '@/app/lib/storage';
+import { getCheckIns, deleteCheckIn } from '@/lib/storage';
 import CreateCheckInModal from '@/components/app/checkins/CreateCheckInModal';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 import AlertModal from '@/components/common/AlertModal';

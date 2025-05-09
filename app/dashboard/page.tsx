@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getGoals } from '@/app/lib/storage';
+import { getGoals } from '@/lib/storage';
 import GoalsList from '@/components/app/dashboard/GoalsList';
 import ProgressChart from '@/components/app/dashboard/ProgressChart';
 import MilestoneTimeline from '@/components/app/dashboard/MilestoneTimeline';

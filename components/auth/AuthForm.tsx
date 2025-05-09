@@ -5,12 +5,30 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { signIn, signUp, useSession } from '@/lib/auth/auth-client';
 import { redirect } from 'next/navigation';
+import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
+import { Feedback } from '@/components/common/Feedback';
+import { getAuthError } from '@/lib/auth/auth-errors';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
 }
 
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  passwordConfirm?: string;
+  [key: string]: string | undefined;
+}
+
 export function AuthForm({ mode }: AuthFormProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    passwordConfirm: '',
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { data: session } = useSession();
@@ -19,34 +37,160 @@ export function AuthForm({ mode }: AuthFormProps) {
     redirect('/dashboard');
   }
 
+  const validateField = (name: string, value: string): ValidationResult => {
+    switch (name) {
+      case 'name':
+        return validateAndSanitizeInput(value, 'title', mode === 'signup');
+      case 'email':
+        if (!value) {
+          return { isValid: false, sanitizedValue: value, error: 'Email is required' };
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return { isValid: false, sanitizedValue: value, error: 'Please enter a valid email address' };
+        }
+        return { isValid: true, sanitizedValue: value };
+      case 'password':
+        if (!value) {
+          return { isValid: false, sanitizedValue: value, error: 'Password is required' };
+        }
+        if (mode === 'signup' && value.length < 8) {
+          return { isValid: false, sanitizedValue: value, error: 'Password must be at least 8 characters long' };
+        }
+        if (mode === 'signup' && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+          return {
+            isValid: false,
+            sanitizedValue: value,
+            error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+          };
+        }
+        return { isValid: true, sanitizedValue: value };
+      case 'passwordConfirm':
+        if (mode === 'signup') {
+          if (!value) {
+            return { isValid: false, sanitizedValue: value, error: 'Please confirm your password' };
+          }
+          if (value !== formData.password) {
+            return { isValid: false, sanitizedValue: value, error: 'Passwords do not match' };
+          }
+        }
+        return { isValid: true, sanitizedValue: value };
+      default:
+        return { isValid: true, sanitizedValue: value };
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const validationResult = validateField(name, value);
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: validationResult.sanitizedValue
+    }));
+
+    setErrors(prev => ({
+      ...prev,
+      [name]: validationResult.error
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    // Validate all fields
+    const emailValidation = validateField('email', formData.email);
+    const passwordValidation = validateField('password', formData.password);
+    const nameValidation = mode === 'signup'
+      ? validateField('name', formData.name)
+      : { isValid: true, sanitizedValue: '', error: undefined };
+    const passwordConfirmValidation = mode === 'signup'
+      ? validateField('passwordConfirm', formData.passwordConfirm)
+      : { isValid: true, sanitizedValue: '', error: undefined };
+
+    const newErrors: FormErrors = {};
+    if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.error;
+    }
+    if (!passwordValidation.isValid) {
+      newErrors.password = passwordValidation.error;
+    }
+    if (mode === 'signup' && !nameValidation.isValid) {
+      newErrors.name = nameValidation.error;
+    }
+    if (mode === 'signup' && !passwordConfirmValidation.isValid) {
+      newErrors.passwordConfirm = passwordConfirmValidation.error;
+    }
+
+    // If there are any validation errors, don't submit
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       if (mode === 'signin') {
-        await signIn.email({
-          email,
-          password,
+        const result = await signIn.email({
+          email: emailValidation.sanitizedValue,
+          password: passwordValidation.sanitizedValue,
         });
-      } else {
-        const name = formData.get('name') as string;
 
-        // First sign up the user
-        await signUp.email({
-          email,
-          password,
-          name,
+        // Handle error in the result
+        if (result?.error) {
+          const errorMessage = result.error.message || 'Authentication failed. Please try again.';
+          setError(errorMessage);
+
+          // Clear password fields on error
+          setFormData(prev => ({
+            ...prev,
+            password: '',
+            passwordConfirm: '',
+          }));
+          return;
+        }
+
+        if (!result?.data) {
+          throw new Error('Sign in failed');
+        }
+      } else {
+        const result = await signUp.email({
+          email: emailValidation.sanitizedValue,
+          password: passwordValidation.sanitizedValue,
+          name: nameValidation.sanitizedValue,
         });
+
+        // Handle error in the result
+        if (result?.error) {
+          const errorMessage = result.error.message || 'Sign up failed. Please try again.';
+          setError(errorMessage);
+
+          // Clear password fields on error
+          setFormData(prev => ({
+            ...prev,
+            password: '',
+            passwordConfirm: '',
+          }));
+          return;
+        }
+
+        if (!result?.data) {
+          throw new Error('Sign up failed');
+        }
       }
     } catch (err) {
-      console.error('Auth error:', err);
-      setError(err instanceof Error ? err.message : 'Authentication failed');
+      // Get the error details
+      const errorDetails = getAuthError(err);
+      const errorMessage = errorDetails.message || 'Authentication failed. Please try again.';
+      setError(errorMessage);
+
+      // Clear password fields on error
+      setFormData(prev => ({
+        ...prev,
+        password: '',
+        passwordConfirm: '',
+      }));
     } finally {
       setLoading(false);
     }
@@ -127,6 +271,34 @@ export function AuthForm({ mode }: AuthFormProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            {/* Error message */}
+            {error && (
+              <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700 font-medium">{error}</p>
+                  </div>
+                  <div className="ml-auto pl-3">
+                    <button
+                      type="button"
+                      className="inline-flex text-red-400 hover:text-red-500"
+                      onClick={() => setError(null)}
+                    >
+                      <span className="sr-only">Dismiss</span>
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {mode === 'signup' && (
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1">
@@ -136,10 +308,17 @@ export function AuthForm({ mode }: AuthFormProps) {
                   id="name"
                   name="name"
                   type="text"
+                  value={formData.name}
+                  onChange={handleChange}
                   required
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors"
+                  className={`block w-full rounded-lg border ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                   placeholder="John Doe"
                 />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                )}
               </div>
             )}
 
@@ -151,10 +330,17 @@ export function AuthForm({ mode }: AuthFormProps) {
                 id="email"
                 name="email"
                 type="email"
+                value={formData.email}
+                onChange={handleChange}
                 required
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors"
+                className={`block w-full rounded-lg border ${
+                  errors.email ? 'border-red-500' : 'border-gray-300'
+                } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                 placeholder="you@example.com"
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -165,22 +351,54 @@ export function AuthForm({ mode }: AuthFormProps) {
                 id="password"
                 name="password"
                 type="password"
+                value={formData.password}
+                onChange={handleChange}
                 required
-                minLength={8}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors"
+                className={`block w-full rounded-lg border ${
+                  errors.password ? 'border-red-500' : 'border-gray-300'
+                } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                 placeholder="••••••••"
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
+              {mode === 'signup' && !errors.password && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Password must be at least 8 characters long and contain uppercase, lowercase, and numbers
+                </p>
+              )}
             </div>
 
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <p className="text-sm text-red-700">{error}</p>
+            {mode === 'signup' && (
+              <div>
+                <label htmlFor="passwordConfirm" className="block text-sm font-medium mb-1">
+                  Confirm Password
+                </label>
+                <input
+                  id="passwordConfirm"
+                  name="passwordConfirm"
+                  type="password"
+                  value={formData.passwordConfirm}
+                  onChange={handleChange}
+                  required
+                  className={`block w-full rounded-lg border ${
+                    errors.passwordConfirm ? 'border-red-500' : 'border-gray-300'
+                  } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
+                  placeholder="••••••••"
+                />
+                {errors.passwordConfirm && (
+                  <p className="mt-1 text-sm text-red-600">{errors.passwordConfirm}</p>
+                )}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || Object.keys(errors).some(key =>
+                errors[key] && (mode === 'signin'
+                  ? ['email', 'password'].includes(key)
+                  : ['email', 'password', 'passwordConfirm', 'name'].includes(key))
+              )}
               className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign in' : 'Sign up'}
