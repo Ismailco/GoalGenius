@@ -16,7 +16,7 @@ export default function NotFound() {
 
   return (
     <div className="min-h-[100vh] flex items-center justify-center p-4 bg-slate-900">
-      <div className="absolute top-16 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
+      <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
       <div className="max-w-md w-full bg-slate-900/50 backdrop-blur-lg rounded-xl border border-slate-800 p-6 text-center">
         <div className="mb-6">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center">

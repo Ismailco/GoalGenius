@@ -1,7 +1,7 @@
 export default function CalendarLoading() {
   return (
     <div className="min-h-screen p-8 relative bg-slate-900">
-      <div className="absolute top-16 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
+      <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
       <div className="max-w-6xl mx-auto relative">
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg shadow-lg p-6 border border-slate-700/50">
           {/* Calendar Header Skeleton */}
