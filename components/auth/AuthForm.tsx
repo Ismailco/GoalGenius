@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from '@/lib/auth/auth-errors';
+import { Target, Brain, TrendingUp, Users } from 'lucide-react';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -197,9 +198,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Brand Section - Left side on desktop, top on mobile */}
-      <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-8 flex flex-col justify-center items-center text-white relative overflow-hidden">
+    <div className="min-h-[80vh] md:min-h-screen flex flex-row">
+      {/* Brand Section - Left side on desktop, hidden on mobile */}
+      <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-8 flex flex-col justify-center items-center text-white relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -212,45 +213,61 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <div className="max-w-md mx-auto text-center z-10">
-          <div className="mb-6">
-            <div className="relative h-20 w-60 mx-auto mb-4">
+          <div className="mb-8">
+            <div className="relative h-24 w-72 mx-auto mb-6 transform hover:scale-105 transition-transform duration-300">
               <Image
                 src="/images/logo_trans_white.png"
-                alt="NutryFit Logo"
-                width={200}
-                height={100}
+                alt="GoalGenius Logo"
+                width={300}
+                height={120}
                 className="w-full h-full drop-shadow-lg"
                 priority
               />
             </div>
-            <h1 className="text-3xl font-bold mb-2 drop-shadow-sm hidden">NutryFit</h1>
-            <p className="text-lg opacity-90">Your journey to health and wellness begins here</p>
+            <p className="text-xl font-medium opacity-90 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+              Your personal goal achievement companion
+            </p>
           </div>
 
-          <div className="space-y-4 mt-8">
-            <div className="flex items-center space-x-2">
-              <div className="bg-white/20 p-2 rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
+          <div className="space-y-6 mt-12">
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Target className="w-6 h-6" />
               </div>
-              <span>Personalized nutrition plans</span>
+              <div className="text-left">
+                <h3 className="font-semibold">Smart Goal Setting</h3>
+                <p className="text-sm opacity-80">Set and track your personal goals with AI-powered insights</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="bg-white/20 p-2 rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
+
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Brain className="w-6 h-6" />
               </div>
-              <span>Expert guidance from practitioners</span>
+              <div className="text-left">
+                <h3 className="font-semibold">AI-Powered Insights</h3>
+                <p className="text-sm opacity-80">Get personalized recommendations to achieve your goals faster</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="bg-white/20 p-2 rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
+
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <TrendingUp className="w-6 h-6" />
               </div>
-              <span>Track your progress effortlessly</span>
+              <div className="text-left">
+                <h3 className="font-semibold">Progress Tracking</h3>
+                <p className="text-sm opacity-80">Stay motivated with detailed progress analytics and milestones</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Users className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">Community Support</h3>
+                <p className="text-sm opacity-80">Connect with like-minded achievers and share your journey</p>
+              </div>
             </div>
           </div>
         </div>
@@ -399,7 +416,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   ? ['email', 'password'].includes(key)
                   : ['email', 'password', 'passwordConfirm', 'name'].includes(key))
               )}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign in' : 'Sign up'}
             </button>
@@ -417,7 +434,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               <button
                 type="button"
                 onClick={() => signIn.social({ provider: 'google' })}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -430,7 +447,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               <button
                 type="button"
                 onClick={() => signIn.social({ provider: 'github' })}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
