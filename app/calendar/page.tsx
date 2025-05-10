@@ -33,59 +33,103 @@ export default function CalendarPage() {
   const monthName = currentDate.toLocaleString('default', { month: 'long' });
   const year = currentDate.getFullYear();
 
+  const isToday = (day: number) => {
+    const today = new Date();
+    return currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear() &&
+      day === today.getDate();
+  };
+
   return (
-    <div className="min-h-screen p-8 relative bg-slate-900">
+    <div className="min-h-screen bg-slate-900">
       <div className="absolute top-16 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-      <div className="max-w-6xl mx-auto relative">
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg shadow-lg p-6 border border-slate-700/50">
+      <div className="container mx-auto px-4 py-8 relative z-10">
+        {/* Header Section */}
+        <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Calendar</h1>
+              <p className="text-gray-300 mt-2">Plan and track your milestones</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Section */}
+        <div className="bg-white/5 backdrop-blur-lg rounded-3xl border border-white/10 p-6">
           {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold text-slate-100">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-semibold text-white">
               {monthName} {year}
-            </h1>
+            </h2>
             <div className="flex items-center space-x-4">
               <button
                 onClick={previousMonth}
-                className="p-2 hover:bg-slate-700/50 rounded-full transition-colors"
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                aria-label="Previous month"
               >
-                <ChevronLeft className="w-5 h-5 text-slate-300" />
+                <ChevronLeft className="w-5 h-5 text-gray-300" />
               </button>
               <button
                 onClick={nextMonth}
-                className="p-2 hover:bg-slate-700/50 rounded-full transition-colors"
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                aria-label="Next month"
               >
-                <ChevronRight className="w-5 h-5 text-slate-300" />
+                <ChevronRight className="w-5 h-5 text-gray-300" />
               </button>
             </div>
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-4">
             {/* Days of week headers */}
             {daysOfWeek.map((day) => (
               <div
                 key={day}
-                className="text-center py-2 text-sm font-semibold text-slate-400"
+                className="text-center py-2 text-sm font-medium text-gray-400"
               >
                 {day}
               </div>
             ))}
 
-            {/* Calendar days */}
+            {/* Empty cells for days before the first day of the month */}
             {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-              <div key={`empty-${index}`} className="h-24 bg-slate-800/30 rounded-lg border border-slate-700/30" />
+              <div
+                key={`empty-${index}`}
+                className="aspect-square bg-white/5 rounded-2xl border border-white/10"
+              />
             ))}
 
-            {Array.from({ length: daysInMonth }).map((_, index) => (
-              <div
-                key={index + 1}
-                className="h-24 border border-slate-700/50 rounded-lg p-2 hover:bg-slate-700/30 transition-colors backdrop-blur-sm group"
-              >
-                <span className="text-sm font-medium text-slate-300 group-hover:text-slate-100 transition-colors">
-                  {index + 1}
-                </span>
-              </div>
-            ))}
+            {/* Calendar days */}
+            {Array.from({ length: daysInMonth }).map((_, index) => {
+              const day = index + 1;
+              const dayIsToday = isToday(day);
+
+              return (
+                <div
+                  key={day}
+                  className={`aspect-square relative group ${
+                    dayIsToday
+                      ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20'
+                      : 'bg-white/5 hover:bg-white/10'
+                  } rounded-2xl border ${
+                    dayIsToday ? 'border-blue-500/50' : 'border-white/10'
+                  } transition-all duration-200 p-2`}
+                >
+                  <span className={`text-sm font-medium ${
+                    dayIsToday
+                      ? 'text-blue-400'
+                      : 'text-gray-300 group-hover:text-white'
+                  } transition-colors`}>
+                    {day}
+                  </span>
+
+                  {/* Placeholder for events/milestones */}
+                  <div className="mt-2 space-y-1">
+                    {/* We'll add milestone indicators here later */}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
