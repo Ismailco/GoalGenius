@@ -82,7 +82,7 @@ export default function GoalsList({
 			isConfirmation: true,
 			onConfirm: async () => {
 				try {
-					console.log('Deleting goal with id:', id);
+					// console.log('Deleting goal with id:', id);
 					await deleteGoal(id);
 					const updatedGoals = await getGoals();
 					setGoals(updatedGoals);
