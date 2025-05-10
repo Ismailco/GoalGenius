@@ -1,6 +1,6 @@
 import { Goal, Milestone, Note, Todo, CheckIn } from '@/app/types';
 // import { v4 as uuidv4 } from 'uuid';
-import { sanitizeForStorage } from '@/app/lib/validation';
+import { sanitizeForStorage } from '@/lib/validation';
 import validator from 'validator';
 import { StorageError, ValidationError, logError } from './error';
 
@@ -78,11 +78,11 @@ async function apiRequest<T>(
   }
 
   // Debug log for request
-  console.log(`[Debug] API Request to ${endpoint}:`, {
-    method,
-    userId,
-    data
-  });
+  // console.log(`[Debug] API Request to ${endpoint}:`, {
+  //   method,
+  //   userId,
+  //   data
+  // });
 
   const response = await fetch(`/api/${endpoint}`, {
     method,
@@ -594,7 +594,7 @@ export async function getCheckInByDate(date: string): Promise<CheckIn | null> {
 
 export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'updatedAt'>): Promise<CheckIn> {
   try {
-    console.log('[Debug] Creating check-in with data:', checkIn);
+    // console.log('[Debug] Creating check-in with data:', checkIn);
 
     // Process the data before sanitization
     const processedData = {

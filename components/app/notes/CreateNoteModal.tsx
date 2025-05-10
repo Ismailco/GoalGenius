@@ -1,49 +1,46 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Todo } from '@/app/types';
-import { createTodo, updateTodo } from '@/app/lib/storage';
-import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/app/lib/validation';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingOverlay } from './LoadingSpinner';
+import { Note } from '@/app/types';
+import { createNote, updateNote } from '@/lib/storage';
+import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
-interface CreateTodoModalProps {
+interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  existingTodo?: Todo;
-  onSave?: (todo: Todo) => void;
+  existingNote?: Note;
+  onSave?: (note: Note) => void;
 }
 
 interface FormErrors {
   title?: string;
-  description?: string;
+  content?: string;
   category?: string;
-  dueDate?: string;
 }
 
-export default function CreateTodoModal({
+export default function CreateNoteModal({
   isOpen,
   onClose,
-  existingTodo,
+  existingNote,
   onSave,
-}: CreateTodoModalProps) {
+}: CreateNoteModalProps) {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [dueDate, setDueDate] = useState('');
+  const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
+  const [isPinned, setIsPinned] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (existingTodo) {
-      setTitle(unescapeForDisplay(existingTodo.title));
-      setDescription(existingTodo.description ? unescapeForDisplay(existingTodo.description) : '');
-      setPriority(existingTodo.priority);
-      setDueDate(existingTodo.dueDate || '');
-      setCategory(existingTodo.category ? unescapeForDisplay(existingTodo.category) : '');
+    if (existingNote) {
+      setTitle(unescapeForDisplay(existingNote.title));
+      setContent(unescapeForDisplay(existingNote.content));
+      setCategory(existingNote.category ? unescapeForDisplay(existingNote.category) : '');
+      setIsPinned(existingNote.isPinned || false);
     }
-  }, [existingTodo]);
+  }, [existingNote]);
 
   if (!isOpen) return null;
 
@@ -51,19 +48,17 @@ export default function CreateTodoModal({
     switch (name) {
       case 'title':
         return validateAndSanitizeInput(value, 'title', true);
-      case 'description':
-        return validateAndSanitizeInput(value, 'description', false);
+      case 'content':
+        return validateAndSanitizeInput(value, 'description', true);
       case 'category':
         return validateAndSanitizeInput(value, 'category', false);
-      case 'dueDate':
-        return validateAndSanitizeInput(value, 'date', false);
       default:
         return { isValid: true, sanitizedValue: value };
     }
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const validationResult = validateField(name, value);
@@ -73,17 +68,11 @@ export default function CreateTodoModal({
       case 'title':
         setTitle(validationResult.sanitizedValue);
         break;
-      case 'description':
-        setDescription(validationResult.sanitizedValue);
+      case 'content':
+        setContent(validationResult.sanitizedValue);
         break;
       case 'category':
         setCategory(validationResult.sanitizedValue);
-        break;
-      case 'dueDate':
-        setDueDate(validationResult.sanitizedValue);
-        break;
-      case 'priority':
-        setPriority(value as 'low' | 'medium' | 'high');
         break;
     }
 
@@ -99,22 +88,18 @@ export default function CreateTodoModal({
 
     // Validate all fields before submission
     const titleValidation = validateField('title', title);
-    const descriptionValidation = validateField('description', description);
+    const contentValidation = validateField('content', content);
     const categoryValidation = validateField('category', category);
-    const dueDateValidation = validateField('dueDate', dueDate);
 
     const newErrors: FormErrors = {};
     if (!titleValidation.isValid) {
       newErrors.title = titleValidation.error;
     }
-    if (!descriptionValidation.isValid) {
-      newErrors.description = descriptionValidation.error;
+    if (!contentValidation.isValid) {
+      newErrors.content = contentValidation.error;
     }
     if (!categoryValidation.isValid) {
       newErrors.category = categoryValidation.error;
-    }
-    if (!dueDateValidation.isValid) {
-      newErrors.dueDate = dueDateValidation.error;
     }
 
     // If there are any errors, don't submit
@@ -123,20 +108,19 @@ export default function CreateTodoModal({
       return;
     }
 
-    const todoData = {
+    const noteData = {
       title: titleValidation.sanitizedValue,
-      description: descriptionValidation.sanitizedValue || undefined,
-      priority: priority as 'low' | 'medium' | 'high',
-      dueDate: dueDateValidation.sanitizedValue || undefined,
+      content: contentValidation.sanitizedValue,
       category: categoryValidation.sanitizedValue || undefined,
+      isPinned,
     };
 
     await handleAsyncOperation(
       async () => {
-        const savedTodo = await (existingTodo
-          ? updateTodo(existingTodo.id, todoData)
-          : createTodo(todoData));
-        onSave?.(savedTodo);
+        const savedNote = await (existingNote
+          ? updateNote(existingNote.id, noteData)
+          : createNote(noteData));
+        onSave?.(savedNote);
         onClose();
       },
       setIsLoading,
@@ -154,18 +138,18 @@ export default function CreateTodoModal({
     <div
       className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       role="dialog"
-      aria-labelledby="todo-modal-title"
+      aria-labelledby="note-modal-title"
       aria-modal="true"
     >
       <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl w-full max-w-2xl border border-white/10 max-h-[80vh] flex flex-col relative">
-        {isLoading && <LoadingOverlay role="status" aria-label="Saving todo..." />}
+        {isLoading && <LoadingOverlay role="status" aria-label="Saving note..." />}
         <div className="p-6 border-b border-white/10 flex-shrink-0">
-          <h2 id="todo-modal-title" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-            {existingTodo ? 'Edit Todo' : 'Create New Todo'}
+          <h2 id="note-modal-title" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+            {existingNote ? 'Edit Note' : 'Create New Note'}
           </h2>
         </div>
         <div className="p-6 overflow-y-auto">
-          <form onSubmit={handleSubmit} aria-label={existingTodo ? 'Edit todo form' : 'Create todo form'}>
+          <form onSubmit={handleSubmit} aria-label={existingNote ? 'Edit note form' : 'Create note form'}>
             <div className="space-y-6">
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-2">
@@ -192,69 +176,27 @@ export default function CreateTodoModal({
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">
-                  Description (optional)
+                <label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-2">
+                  Content
                 </label>
                 <textarea
-                  id="description"
-                  name="description"
-                  value={description}
+                  id="content"
+                  name="content"
+                  value={content}
                   onChange={handleChange}
-                  rows={3}
+                  rows={6}
                   className={`w-full px-4 py-2 bg-white/10 border ${
-                    errors.description ? 'border-red-500' : 'border-white/20'
+                    errors.content ? 'border-red-500' : 'border-white/20'
                   } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                  aria-invalid={!!errors.description}
-                  aria-describedby={errors.description ? "description-error" : undefined}
+                  required
+                  aria-invalid={!!errors.content}
+                  aria-describedby={errors.content ? "content-error" : undefined}
                 />
-                {errors.description && (
-                  <p id="description-error" className="mt-1 text-sm text-red-500" role="alert">
-                    {errors.description}
+                {errors.content && (
+                  <p id="content-error" className="mt-1 text-sm text-red-500" role="alert">
+                    {errors.content}
                   </p>
                 )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="priority" className="block text-sm font-medium text-gray-300 mb-2">
-                    Priority
-                  </label>
-                  <select
-                    id="priority"
-                    name="priority"
-                    value={priority}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                    aria-label="Select task priority"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="dueDate" className="block text-sm font-medium text-gray-300 mb-2">
-                    Due Date (optional)
-                  </label>
-                  <input
-                    type="date"
-                    id="dueDate"
-                    name="dueDate"
-                    value={dueDate}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2 bg-white/10 border ${
-                      errors.dueDate ? 'border-red-500' : 'border-white/20'
-                    } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                    aria-invalid={!!errors.dueDate}
-                    aria-describedby={errors.dueDate ? "dueDate-error" : undefined}
-                  />
-                  {errors.dueDate && (
-                    <p id="dueDate-error" className="mt-1 text-sm text-red-500" role="alert">
-                      {errors.dueDate}
-                    </p>
-                  )}
-                </div>
               </div>
 
               <div>
@@ -280,6 +222,20 @@ export default function CreateTodoModal({
                   </p>
                 )}
               </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isPinned"
+                  checked={isPinned}
+                  onChange={(e) => setIsPinned(e.target.checked)}
+                  className="w-4 h-4 text-purple-500 bg-white/10 border-white/20 rounded focus:ring-purple-500/50"
+                  aria-label="Pin this note"
+                />
+                <label htmlFor="isPinned" className="ml-2 text-sm font-medium text-gray-300">
+                  Pin this note
+                </label>
+              </div>
             </div>
 
             <div className="mt-8 flex justify-end gap-3">
@@ -287,16 +243,16 @@ export default function CreateTodoModal({
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
-                aria-label="Cancel todo creation"
+                aria-label="Cancel note creation"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:from-indigo-600 hover:to-purple-600 transform hover:scale-[1.02] transition-all duration-200"
-                aria-label={existingTodo ? 'Save todo changes' : 'Create new todo'}
+                aria-label={existingNote ? 'Save note changes' : 'Create new note'}
               >
-                {existingTodo ? 'Save Changes' : 'Create Todo'}
+                {existingNote ? 'Save Changes' : 'Create Note'}
               </button>
             </div>
           </form>

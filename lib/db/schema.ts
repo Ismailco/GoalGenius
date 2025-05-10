@@ -77,7 +77,7 @@ export const goals = sqliteTable('goals', {
 
 export const milestones = sqliteTable('milestones', {
 	id: text('id').primaryKey(),
-	goalId: text('goal_id').notNull().references(() => goals.id),
+	goalId: text('goal_id').notNull().references(() => goals.id, {onDelete: 'cascade'}),
 	userId: text('user_id').notNull(),
 	title: text('title').notNull(),
 	description: text('description'),

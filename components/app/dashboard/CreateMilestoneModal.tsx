@@ -1,16 +1,16 @@
 'use client';
 
 import { Goal, Milestone } from '@/app/types';
-import { createMilestone, getGoals } from '@/app/lib/storage';
+import { createMilestone, getGoals } from '@/lib/storage';
 import { useModal } from '@/app/providers/ModalProvider';
-import MilestoneInputForm from './MilestoneInputForm';
-import AlertModal from './AlertModal';
+import MilestoneInputForm from '@/components/app/dashboard/MilestoneInputForm';
+import AlertModal from '@/components/common/AlertModal';
 import { useState, useEffect } from 'react';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingOverlay } from './LoadingSpinner';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateMilestoneModalProps {
-  goal?: Goal;  // Make goal optional
+  goal?: Goal;
 }
 
 export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilestoneModalProps) {
@@ -49,10 +49,12 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
       );
     };
 
-    loadGoals();
-  }, []);
+    if (!initialGoal) {
+      loadGoals();
+    }
+  }, [initialGoal]);
 
-  if (!selectedGoal && goals.length === 0) {
+  if (!initialGoal && !selectedGoal && goals.length === 0) {
     return (
       <div className="text-center py-8" role="alert" aria-live="polite">
         <p className="text-gray-300 mb-4">Please create a goal first before adding milestones.</p>
@@ -68,7 +70,9 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
   }
 
   const handleSubmit = async (data: { title: string; description: string; date: string }) => {
-    if (!selectedGoal) {
+    const goalToUse = initialGoal || selectedGoal;
+
+    if (!goalToUse) {
       setAlert({
         show: true,
         title: 'Goal Required',
@@ -81,7 +85,7 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
     await handleAsyncOperation(
       async () => {
         const milestone: Omit<Milestone, 'id'> = {
-          goalId: selectedGoal.id,
+          goalId: goalToUse.id,
           title: data.title,
           description: data.description,
           date: data.date
@@ -103,48 +107,46 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
   };
 
   return (
-    <>
-      <div className="space-y-6 relative" role="dialog" aria-label="Create Milestone">
-        {isLoading && <LoadingOverlay />}
-        {!initialGoal && (
-          <div>
-            <label htmlFor="goal" className="block text-sm font-medium text-gray-300 mb-2">
-              Select Goal
-            </label>
-            <select
-              id="goal"
-              value={selectedGoal?.id || ''}
-              onChange={(e) => setSelectedGoal(goals.find(g => g.id === e.target.value))}
-              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              required
-              aria-label="Select a goal for the milestone"
-              aria-invalid={!selectedGoal}
-              aria-describedby={!selectedGoal ? "goal-error" : undefined}
-            >
-              <option value="">Select a goal</option>
-              {Object.entries(
-                goals.reduce((acc, goal) => {
-                  if (!acc[goal.category]) {
-                    acc[goal.category] = [];
-                  }
-                  acc[goal.category].push(goal);
-                  return acc;
-                }, {} as Record<string, Goal[]>)
-              ).map(([category, categoryGoals]) => (
-                <optgroup key={category} label={category.charAt(0).toUpperCase() + category.slice(1)}>
-                  {categoryGoals.map((goal) => (
-                    <option key={goal.id} value={goal.id}>
-                      {goal.title}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-        )}
+    <div className="space-y-6 relative" role="dialog" aria-label="Create Milestone">
+      {isLoading && <LoadingOverlay />}
+      {!initialGoal && (
+        <div>
+          <label htmlFor="goal" className="block text-sm font-medium text-gray-300 mb-2">
+            Select Goal
+          </label>
+          <select
+            id="goal"
+            value={selectedGoal?.id || ''}
+            onChange={(e) => setSelectedGoal(goals.find(g => g.id === e.target.value))}
+            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            required
+            aria-label="Select a goal for the milestone"
+            aria-invalid={!selectedGoal}
+            aria-describedby={!selectedGoal ? "goal-error" : undefined}
+          >
+            <option value="">Select a goal</option>
+            {Object.entries(
+              goals.reduce((acc, goal) => {
+                if (!acc[goal.category]) {
+                  acc[goal.category] = [];
+                }
+                acc[goal.category].push(goal);
+                return acc;
+              }, {} as Record<string, Goal[]>)
+            ).map(([category, categoryGoals]) => (
+              <optgroup key={category} label={category.charAt(0).toUpperCase() + category.slice(1)}>
+                {categoryGoals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.title}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      )}
 
-        <MilestoneInputForm onSubmit={handleSubmit} onCancel={hideModal} />
-      </div>
+      <MilestoneInputForm onSubmit={handleSubmit} onCancel={hideModal} />
 
       {alert.show && (
         <AlertModal
@@ -156,6 +158,6 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
           role="alertdialog"
         />
       )}
-    </>
+    </div>
   );
 }

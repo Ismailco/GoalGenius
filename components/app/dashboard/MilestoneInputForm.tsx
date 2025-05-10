@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { validateAndSanitizeInput, ValidationResult } from '@/app/lib/validation';
+import { useState, useEffect } from 'react';
+import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 
 interface MilestoneInputFormProps {
   onSubmit: (data: { title: string; description: string; date: string }) => void;
   onCancel: () => void;
+  initialData?: {
+    title: string;
+    description: string;
+    date: string;
+  };
 }
 
 interface FormErrors {
@@ -14,11 +19,11 @@ interface FormErrors {
   date?: string;
 }
 
-export default function MilestoneInputForm({ onSubmit, onCancel }: MilestoneInputFormProps) {
+export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: MilestoneInputFormProps) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    date: initialData?.date || new Date().toISOString().split('T')[0],
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -101,6 +106,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel }: MilestoneInpu
           className={`w-full px-4 py-2 bg-white/10 border ${
             errors.title ? 'border-red-500' : 'border-white/20'
           } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+          placeholder="Enter milestone title"
           required
         />
         {errors.title && (
@@ -121,6 +127,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel }: MilestoneInpu
             errors.description ? 'border-red-500' : 'border-white/20'
           } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
           rows={3}
+          placeholder="Enter milestone description"
           required
         />
         {errors.description && (
@@ -142,6 +149,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel }: MilestoneInpu
             errors.date ? 'border-red-500' : 'border-white/20'
           } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
           required
+          min={new Date().toISOString().split('T')[0]}
         />
         {errors.date && (
           <p className="mt-1 text-sm text-red-500">{errors.date}</p>
@@ -160,7 +168,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel }: MilestoneInpu
           type="submit"
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-colors"
         >
-          Create Milestone
+          {initialData ? 'Update' : 'Create'} Milestone
         </button>
       </div>
     </form>

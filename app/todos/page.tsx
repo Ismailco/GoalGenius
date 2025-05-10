@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '@/app/types';
-import { getTodos, deleteTodo, toggleTodoComplete } from '@/app/lib/storage';
-import CreateTodoModal from '@/components/CreateTodoModal';
-import AlertModal from '@/components/AlertModal';
+import { getTodos, deleteTodo, toggleTodoComplete } from '@/lib/storage';
+import CreateTodoModal from '@/components/app/todos/CreateTodoModal';
+import AlertModal from '@/components/common/AlertModal';
 import { format } from 'date-fns';
 
 export default function TodosPage() {
@@ -55,7 +55,7 @@ export default function TodosPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-slate-900">
-        <div className="absolute top-16 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
+        <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
             <div className="animate-pulse flex space-x-4">
@@ -176,7 +176,7 @@ export default function TodosPage() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      <div className="absolute top-16 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
+      <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header Section */}
         <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">

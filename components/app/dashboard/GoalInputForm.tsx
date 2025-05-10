@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { GoalCategory, TimeFrame } from '@/app/types';
-import { validateAndSanitizeInput, ValidationResult } from '@/app/lib/validation';
+import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 
 interface GoalInputFormProps {
   onSubmit: (data: {

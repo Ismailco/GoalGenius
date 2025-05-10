@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { Goal, GoalCategory, TimeFrame } from '@/app/types';
-import { getGoals, updateGoal, deleteGoal } from '@/app/lib/storage';
-import AlertModal from './AlertModal';
-import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/app/lib/error';
-import { LoadingPage } from './LoadingSpinner';
+import { getGoals, updateGoal, deleteGoal } from '@/lib/storage';
+import AlertModal from '@/components/common/AlertModal';
+import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
+import { LoadingPage } from '@/components/common/LoadingSpinner';
 
-export default function GoalsList() {
+export default function GoalsList({
+  searchTerm = '',
+  selectedCategory = 'all'
+}: {
+  searchTerm?: string;
+  selectedCategory?: GoalCategory | 'all';
+}) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -69,62 +75,87 @@ export default function GoalsList() {
 
   const handleDeleteGoal = (id: string) => {
     setAlert({
-      show: true,
-      title: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this goal?',
-      type: 'warning',
-      isConfirmation: true,
-      onConfirm: async () => {
-        await handleAsyncOperation(
-          async () => {
-            await deleteGoal(id);
-            const updatedGoals = await getGoals();
-            setGoals(updatedGoals);
-          },
-          undefined,
-          (error) => {
-            setAlert({
-              show: true,
-              title: 'Error',
-              message: getUserFriendlyErrorMessage(error),
-              type: 'error'
-            });
-          }
-        );
-      }
-    });
+			show: true,
+			title: 'Confirm Deletion',
+			message: 'Are you sure you want to delete this goal?',
+			type: 'warning',
+			isConfirmation: true,
+			onConfirm: async () => {
+				try {
+					// console.log('Deleting goal with id:', id);
+					await deleteGoal(id);
+					const updatedGoals = await getGoals();
+					setGoals(updatedGoals);
+				} catch (error) {
+					console.error('Delete goal error:', error);
+					setAlert({
+						show: true,
+						title: 'Error',
+						message: getUserFriendlyErrorMessage(error),
+						type: 'error',
+					});
+				}
+			},
+		});
   };
 
   const handleUpdateGoal = async (id: string, updates: Partial<Goal>) => {
-    await handleAsyncOperation(
-      async () => {
-        await updateGoal(id, updates);
-        const updatedGoals = await getGoals();
-        setGoals(updatedGoals);
-        setEditingGoal(null);
-      },
-      undefined,
-      (error) => {
-        setAlert({
-          show: true,
-          title: 'Error',
-          message: getUserFriendlyErrorMessage(error),
-          type: 'error'
-        });
-      }
-    );
+    try {
+      // Filter out  createdAt from updates
+      const { createdAt, ...filteredUpdates } = updates;
+
+      // Call the updateGoal function
+      await updateGoal(id, filteredUpdates);
+
+      // Get updated goals
+      const updatedGoals = await getGoals();
+
+      // Update the state with the new list of goals
+      setGoals(updatedGoals);
+
+      // Clear the editing goal state
+      setEditingGoal(null);
+    } catch (error) {
+      // Log the error
+      console.error('[Update Goal Error]:', error);
+
+      // Set an alert with a user-friendly error message
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: getUserFriendlyErrorMessage(error),
+        type: 'error',
+      });
+    }
   };
+
+  // Filter goals based on search term and category
+  const filteredGoals = goals.filter(goal => {
+    const matchesSearch = searchTerm === '' ||
+      goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      goal.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory = selectedCategory === 'all' || goal.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   if (loading) {
     return <LoadingPage />;
   }
 
   return (
-    <div className="space-y-4" role="region" aria-label="Goals list">
-      {goals.length === 0 ? (
-        <p className="text-gray-400" role="status" aria-label="No goals found">No goals yet. Add your first goal!</p>
+    <div className="space-y-4 p-6" role="region" aria-label="Goals list">
+      {filteredGoals.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-400 text-lg" role="status" aria-label="No goals found">
+            {goals.length === 0 ?
+              "No goals yet. Add your first goal!" :
+              "No goals match your search criteria."}
+          </p>
+        </div>
       ) : (
-        goals.map((goal) => (
+        filteredGoals.map((goal) => (
           <div
             key={goal.id}
             className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 hover:scale-[1.02] transition-all duration-200 border border-white/10"
