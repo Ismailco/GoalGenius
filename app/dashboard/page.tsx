@@ -7,11 +7,11 @@ import ProgressChart from '@/components/app/dashboard/ProgressChart';
 import MilestoneTimeline from '@/components/app/dashboard/MilestoneTimeline';
 import CreateGoalModal from '@/components/app/dashboard/CreateGoalModal';
 import GoalSuggestions from '@/components/app/dashboard/GoalSuggestions';
-import CreateMilestoneModal from '@/components/app/dashboard/CreateMilestoneModal';
 import { useModal } from '@/app/providers/ModalProvider';
 import DashboardCard from '@/components/app/dashboard/DashboardCard';
 import SectionHeader from '@/components/app/dashboard/SectionHeader';
 import DashboardSection from '@/components/app/dashboard/DashboardSection';
+import AddMilestone from '@/components/app/milestones/AddMilestone';
 
 export default function DashboardPage() {
 
@@ -144,18 +144,7 @@ export default function DashboardPage() {
             </svg>
           }
           action={
-            <button
-              onClick={() => showModal({
-                title: 'Add Milestone',
-                content: <CreateMilestoneModal />
-              })}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Milestone
-            </button>
+            <AddMilestone />
           }
         />
         <MilestoneTimeline />
