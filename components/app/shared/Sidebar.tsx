@@ -25,7 +25,7 @@ export default function Sidebar() {
 
 
   // Don't show sidebar on these pages
-  if (pathname === '/' || pathname === '/auth/signin' || pathname === '/auth/signup' || pathname === '/docs') return null;
+  if (pathname === '/' || pathname === '/auth/signin' || pathname === '/auth/signup') return null;
 
   const sidebarItems = [
 		{

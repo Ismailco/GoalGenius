@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from '@/lib/auth/auth-errors';
+import { Target, Brain, TrendingUp, Users } from 'lucide-react';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -197,9 +198,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Brand Section - Left side on desktop, top on mobile */}
-      <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-8 flex flex-col justify-center items-center text-white relative overflow-hidden">
+    <div className="min-h-[80vh] md:min-h-screen flex flex-row">
+      {/* Brand Section - Left side on desktop, hidden on mobile */}
+      <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-8 flex flex-col justify-center items-center text-white relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -212,45 +213,61 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <div className="max-w-md mx-auto text-center z-10">
-          <div className="mb-6">
-            <div className="relative h-20 w-60 mx-auto mb-4">
+          <div className="mb-8">
+            <div className="relative h-24 w-72 mx-auto mb-6 transform hover:scale-105 transition-transform duration-300">
               <Image
                 src="/images/logo_trans_white.png"
-                alt="NutryFit Logo"
-                width={200}
-                height={100}
+                alt="GoalGenius Logo"
+                width={300}
+                height={120}
                 className="w-full h-full drop-shadow-lg"
                 priority
               />
             </div>
-            <h1 className="text-3xl font-bold mb-2 drop-shadow-sm hidden">NutryFit</h1>
-            <p className="text-lg opacity-90">Your journey to health and wellness begins here</p>
+            <p className="text-xl font-medium opacity-90 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+              Your personal goal achievement companion
+            </p>
           </div>
 
-          <div className="space-y-4 mt-8">
-            <div className="flex items-center space-x-2">
-              <div className="bg-white/20 p-2 rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
+          <div className="space-y-6 mt-12">
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Target className="w-6 h-6" />
               </div>
-              <span>Personalized nutrition plans</span>
+              <div className="text-left">
+                <h3 className="font-semibold">Smart Goal Setting</h3>
+                <p className="text-sm opacity-80">Set and track your personal goals with AI-powered insights</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="bg-white/20 p-2 rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
+
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Brain className="w-6 h-6" />
               </div>
-              <span>Expert guidance from practitioners</span>
+              <div className="text-left">
+                <h3 className="font-semibold">AI-Powered Insights</h3>
+                <p className="text-sm opacity-80">Get personalized recommendations to achieve your goals faster</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="bg-white/20 p-2 rounded-full">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
+
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <TrendingUp className="w-6 h-6" />
               </div>
-              <span>Track your progress effortlessly</span>
+              <div className="text-left">
+                <h3 className="font-semibold">Progress Tracking</h3>
+                <p className="text-sm opacity-80">Stay motivated with detailed progress analytics and milestones</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 group hover:bg-white/10 p-3 rounded-lg transition-all duration-300">
+              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
+                <Users className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">Community Support</h3>
+                <p className="text-sm opacity-80">Connect with like-minded achievers and share your journey</p>
+              </div>
             </div>
           </div>
         </div>

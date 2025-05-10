@@ -22,7 +22,7 @@ export default function Navbar() {
   }, []);
 
   // Don't show navbar on these pages
-  if (pathname === '/' || pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/docs') return null;
+  if (pathname === '/' || pathname === '/auth/signin' || pathname === '/auth/signup') return null;
 
   const navItems = [
     {
