@@ -1,0 +1,10 @@
+# Load .env.development* files when running `wrangler dev`
+
+NEXTJS_ENV=development
+NODE_ENV=development 
+CLOUDFLARE_D1_ACCOUNT_ID=
+CLOUDFLARE_D1_DATABASE_ID=
+CLOUDFLARE_D1_API_TOKEN=
+
+BETTER_AUTH_URL=
+BETTER_AUTH_SECRET=
