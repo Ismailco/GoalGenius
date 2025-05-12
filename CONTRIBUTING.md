@@ -142,7 +142,7 @@ goalgenius/
 
 If you have any questions, please feel free to:
 
-1. Check the documentation at [https://goalgenius.online/docs](https://goalgenius.online/docs)
+1. Check the documentation at [https://goalgenius.online/docs](https://goalgenius.online/docs) (coming soon)
 2. Create an issue for discussion
 3. Reach out through GitHub issues
 
