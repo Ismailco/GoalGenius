@@ -4,7 +4,7 @@ import { todos } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 type TodoInput = {
   userId: string;
