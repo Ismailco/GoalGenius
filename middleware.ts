@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
 
+// Define public routes that don't require authentication
+const publicRoutes = ['/auth/signin', '/auth/signup'];
+
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip auth check for public routes
+  if (publicRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
+
   // Better-Auth provides a helper to check for session
   const sessionCookie = getSessionCookie(request);
-  console.log('Cookie check for path:', request.nextUrl.pathname);
+  console.log('Cookie check for path:', pathname);
   console.log('Session cookie present:', !!sessionCookie);
 
   // If we have a session, allow access to protected routes
@@ -17,17 +27,20 @@ export function middleware(request: NextRequest) {
   // No valid session, redirect to signin
   console.log('No session found, redirecting to signin');
   const signInUrl = new URL('/auth/signin', request.url);
-  signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+  signInUrl.searchParams.set('callbackUrl', pathname);
   return NextResponse.redirect(signInUrl);
 }
 
-// Only apply middleware to protected routes
+// Apply middleware to all routes
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/todos/:path*',
-    '/notes/:path*',
-    '/checkins/:path*'
+    /*
+     * Match all request paths except:
+     * 1. /_next (Next.js internals)
+     * 2. /static (static files)
+     * 3. /favicon.ico, /robots.txt (static files)
+     * 4. /api/auth/* (auth API routes)
+     */
+    '/((?!_next|static|favicon.ico|robots.txt|api/auth).*)',
   ],
 };
