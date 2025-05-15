@@ -30,8 +30,14 @@ export default function UserProfile({ isMobile = false, isMenuButton = false }: 
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
+    try {
+      const response = await signOut();
+      if (response) {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const toggleMenu = () => {
