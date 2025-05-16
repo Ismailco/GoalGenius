@@ -26,7 +26,6 @@ export const metadata: Metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -37,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content={`${viewport.width}, initial-scale=${viewport.initialScale}, maximum-scale=${viewport.maximumScale}`} />
+        <meta name="viewport" content={`${viewport.width}, initial-scale=${viewport.initialScale}`} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

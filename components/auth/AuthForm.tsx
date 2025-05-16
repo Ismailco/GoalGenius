@@ -9,6 +9,7 @@ import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from '@/lib/auth/auth-errors';
 import { Target, Brain, TrendingUp, Users } from 'lucide-react';
+import { cacheAppPages } from '@/app/providers/ServiceWorkerProvider';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -155,6 +156,9 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (!result?.data) {
           throw new Error('Sign in failed');
         }
+
+        // Trigger caching after successful login
+        await cacheAppPages();
       } else {
         const result = await signUp.email({
           email: emailValidation.sanitizedValue,
@@ -179,6 +183,9 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (!result?.data) {
           throw new Error('Sign up failed');
         }
+
+        // Trigger caching after successful signup
+        await cacheAppPages();
       }
     } catch (err) {
       // Get the error details
