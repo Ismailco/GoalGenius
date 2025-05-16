@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getGoals } from '@/lib/storage';
+import { getGoals, getNotes, getTodos, getCheckIns } from '@/lib/storage';
+// import { Note, Todo, CheckIn } from '@/app/types';
 import GoalsList from '@/components/app/dashboard/GoalsList';
 import ProgressChart from '@/components/app/dashboard/ProgressChart';
 import MilestoneTimeline from '@/components/app/dashboard/MilestoneTimeline';
@@ -14,34 +15,52 @@ import DashboardSection from '@/components/app/dashboard/DashboardSection';
 import AddMilestone from '@/components/app/milestones/AddMilestone';
 
 export default function DashboardPage() {
-
   const { showModal } = useModal();
   const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState({
     totalGoals: 0,
     averageProgress: 0,
-    completedMilestones: 0
+    completedMilestones: 0,
+    totalNotes: 0,
+    activeTodos: 0,
+    completedTodos: 0,
+    lastCheckIn: null as string | null,
   });
 
   useEffect(() => {
-    async function fetchGoals() {
+    async function fetchData() {
       try {
         setMounted(true);
-        const goals = await getGoals();
+        const [goals, notes, todos, checkIns] = await Promise.all([
+          getGoals(),
+          getNotes(),
+          getTodos(),
+          getCheckIns()
+        ]);
+
+        const activeTodosCount = todos.filter(todo => !todo.completed).length;
+        const completedTodosCount = todos.filter(todo => todo.completed).length;
+        const lastCheckIn = checkIns.length > 0
+          ? new Date(checkIns[checkIns.length - 1].createdAt).toLocaleDateString()
+          : null;
+
         setStats({
           totalGoals: goals.length,
           averageProgress: goals.length > 0
             ? Math.round(goals.reduce((acc, goal) => acc + goal.progress, 0) / goals.length)
             : 0,
-          completedMilestones: goals.filter(goal => goal.progress === 100).length
+          completedMilestones: goals.filter(goal => goal.progress === 100).length,
+          totalNotes: notes.length,
+          activeTodos: activeTodosCount,
+          completedTodos: completedTodosCount,
+          lastCheckIn,
         });
       } catch (error) {
-        console.error('Failed to fetch goals:', error);
-        // Keep the default stats values in case of error
+        console.error('Failed to fetch dashboard data:', error);
       }
     }
 
-    fetchGoals();
+    fetchData();
   }, []);
 
   if (!mounted) {
@@ -107,6 +126,40 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Additional Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <DashboardCard
+          title="Notes"
+          value={stats.totalNotes}
+          subtitle="Total notes created"
+          icon={
+            <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          }
+        />
+        <DashboardCard
+          title="Todo Tasks"
+          value={stats.activeTodos}
+          subtitle={`${stats.completedTodos} tasks completed`}
+          icon={
+            <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          }
+        />
+        <DashboardCard
+          title="Last Check-in"
+          value={stats.lastCheckIn || 'No check-ins'}
+          subtitle="Latest activity recorded"
+          icon={
+            <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          }
+        />
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardSection>
@@ -143,9 +196,7 @@ export default function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           }
-          action={
-            <AddMilestone />
-          }
+          action={<AddMilestone />}
         />
         <MilestoneTimeline />
       </DashboardSection>
