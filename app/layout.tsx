@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "../components/Providers";
 import Navbar from "../components/app/shared/Navbar";
 import Sidebar from "../components/app/shared/Sidebar";
+import { Metadata } from "next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,10 +15,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const metadata: Metadata = {
+  title: {
+    template: '%s | GoalGenius',
+    default: 'GoalGenius - Track Your Goals',
+  },
+  description: 'Personal goal tracking and productivity dashboard',
+};
+
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -27,6 +35,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content={`${viewport.width}, initial-scale=${viewport.initialScale}`} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
