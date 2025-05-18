@@ -210,12 +210,17 @@ export function AuthForm({ mode }: AuthFormProps) {
       <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-8 flex flex-col justify-center items-center text-white relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/auth-bg-pattern.svg"
+          {/* <Image
+            src="/images/bg-pattern.svg"
             alt="Background Pattern"
             fill
             priority
             className="object-cover"
+          /> */}
+          <img
+            src="/images/bg-pattern.svg"
+            alt="Background Pattern"
+            className="w-full h-full object-cover"
           />
         </div>
 
