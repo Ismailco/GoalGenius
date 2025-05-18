@@ -2,12 +2,19 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://goalgenius.soultware.com/sitemap.xml
-
 # Prevent crawling of private routes
-Disallow: /api/
 Disallow: /dashboard/
 Disallow: /notes/
 Disallow: /todos/
 Disallow: /checkins/
+Disallow: /goals/
+Disallow: /milestones/
+Disallow: /calendar/
+Disallow: /analytics/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /settings/
+Disallow: /profile/
+Disallow: /notifications/
+Disallow: /integrations/
+Disallow: /billing/
