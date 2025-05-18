@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { signIn, signUp, useSession } from '@/lib/auth/auth-client';
 import { redirect } from 'next/navigation';
 import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
-import { Feedback } from '@/components/common/Feedback';
+// import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from '@/lib/auth/auth-errors';
 import { Target, Brain, TrendingUp, Users } from 'lucide-react';
 import { cacheAppPages } from '@/app/providers/ServiceWorkerProvider';
@@ -211,11 +211,12 @@ export function AuthForm({ mode }: AuthFormProps) {
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/auth-bg-pattern.svg"
+            src="/images/bg-pattern.svg"
             alt="Background Pattern"
             fill
             priority
             className="object-cover"
+            unoptimized
           />
         </div>
 
