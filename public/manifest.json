@@ -13,22 +13,17 @@
 			"type": "image/ico"
 		},
 		{
-			"src": "/images/logo_trans_white.png",
+			"src": "/images/logo_full_trans_white.png",
 			"sizes": "1120x1120",
 			"type": "image/png"
 		},
 		{
-			"src": "/images/logo_trans_white.png",
+			"src": "/images/logo_full_trans_dark.png",
 			"sizes": "1120x1120",
 			"type": "image/png"
 		},
 		{
-			"src": "/images/logo_trans_white.png",
-			"sizes": "1120x1120",
-			"type": "image/png"
-		},
-		{
-			"src": "/images/logo_trans_white.png",
+			"src": "/images/logo_full.png",
 			"sizes": "1120x1120",
 			"type": "image/png"
 		}
@@ -40,6 +35,6 @@
 		"dark_image": "/splash.svg"
 	},
 	"orientation": "portrait",
-	"categories": ["productivity", "lifestyle"],
+	"categories": ["productivity", "lifestyle", "goals", "tasks", "milestones", "checkins", "calendar"],
 	"prefer_related_applications": false
 }

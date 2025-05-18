@@ -211,12 +211,11 @@ export function AuthForm({ mode }: AuthFormProps) {
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/bg-pattern.svg"
+            src="/images/auth-bg-pattern.svg"
             alt="Background Pattern"
             fill
             priority
             className="object-cover"
-            unoptimized
           />
         </div>
 
