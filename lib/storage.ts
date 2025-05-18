@@ -4,6 +4,11 @@ import { sanitizeForStorage } from '@/lib/validation';
 import validator from 'validator';
 import { StorageError, ValidationError, logError } from './error';
 
+// Helper function to check online status
+function isOnline(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine;
+}
+
 // Helper function to sanitize data before storage
 const sanitizeData = <T extends Record<string, unknown>>(data: T): T => {
   const sanitized: Record<string, unknown> = {};
@@ -119,15 +124,15 @@ export async function getGoals(): Promise<Goal[]> {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (!userId) return [];
 
-    // Fetch from API
-    const goals = await apiRequest<Goal[]>(`goals?userId=${userId}`, 'GET');
+    if (isOnline()) {
+      const goals = await apiRequest<Goal[]>(`goals?userId=${userId}`, 'GET');
+      localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
+      return goals.map(goal => unescapeData(goal as unknown as Record<string, unknown>) as unknown as Goal);
+    }
 
-    // Update local storage
-    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
-
-    return goals.map(goal => unescapeData(goal as unknown as Record<string, unknown>) as unknown as Goal);
+    const localGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    return localGoals.map((goal: Record<string, unknown>) => unescapeData(goal));
   } catch (error) {
-    // Fallback to local storage if API fails
     logError(error as Error, { operation: 'getGoals' });
     const localGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
     return localGoals.map((goal: Record<string, unknown>) => unescapeData(goal));
@@ -156,13 +161,21 @@ export async function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedA
       throw new ValidationError('Goal title is required');
     }
 
-    // Create via API
-    const newGoal = await apiRequest<Goal>('goals', 'POST', sanitizedGoal);
+    if (isOnline()) {
+      const newGoal = await apiRequest<Goal>('goals', 'POST', sanitizedGoal);
+      const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+      localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...goals, newGoal]));
+      return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
+    }
 
-    // Update local storage
     const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+    const newGoal = {
+      ...sanitizedGoal,
+      id: `temp_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify([...goals, newGoal]));
-
     return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
     logError(error as Error, { operation: 'createGoal', data: goal });
@@ -177,16 +190,22 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
   try {
     const sanitizedUpdates = sanitizeData(updates);
 
-    // Update via API
-    const updatedGoal = await apiRequest<Goal>('goals', 'PUT', { id, ...sanitizedUpdates });
+    if (isOnline()) {
+      const updatedGoal = await apiRequest<Goal>('goals', 'PUT', { id, ...sanitizedUpdates });
+      const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+      const updatedGoals = goals.map((goal: Goal) => goal.id === id ? updatedGoal : goal);
+      localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
+      return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
+    }
 
-    // Update local storage
     const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
-    const updatedGoals = goals.map((goal: Goal) =>
-      goal.id === id ? updatedGoal : goal
-    );
+    const existingGoal = goals.find((goal: Goal) => goal.id === id);
+    if (!existingGoal) {
+      throw new StorageError('Goal not found');
+    }
+    const updatedGoal = { ...existingGoal, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    const updatedGoals = goals.map((goal: Goal) => goal.id === id ? updatedGoal : goal);
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(updatedGoals));
-
     return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
     logError(error as Error, { operation: 'updateGoal', goalId: id, updates });
@@ -196,14 +215,13 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
 
 export async function deleteGoal(id: string): Promise<boolean> {
   try {
-    // Delete via API
-    await apiRequest<{ success: true }>(`goals?id=${id}`, 'DELETE');
+    if (isOnline()) {
+      await apiRequest<{ success: true }>(`goals?id=${id}`, 'DELETE');
+    }
 
-    // Update local storage
     const goals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
     const filtered = goals.filter((goal: Goal) => goal.id !== id);
     localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(filtered));
-
     return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteGoal', goalId: id });
@@ -217,20 +235,17 @@ export async function getMilestones(): Promise<Milestone[]> {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (!userId) return [];
 
-    // Fetch from API
-    const milestones = await apiRequest<Milestone[]>(`milestones?userId=${userId}`, 'GET');
+    if (isOnline()) {
+      const milestones = await apiRequest<Milestone[]>(`milestones?userId=${userId}`, 'GET');
+      localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
+      return milestones.map(milestone => unescapeData(milestone as unknown as Record<string, unknown>) as unknown as Milestone);
+    }
 
-    // Update local storage
-    localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
-
-    return milestones.map(milestone =>
-      unescapeData(milestone as unknown as Record<string, unknown>) as unknown as Milestone
-    );
+    const localMilestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+    return localMilestones.map((milestone: Record<string, unknown>) => unescapeData(milestone));
   } catch (error) {
-    // Fallback to local storage
     logError(error as Error, { operation: 'getMilestones' });
-    const stored = localStorage.getItem(STORAGE_KEYS.MILESTONES);
-    const localMilestones = stored ? JSON.parse(stored) : [];
+    const localMilestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
     return localMilestones.map((milestone: Record<string, unknown>) => unescapeData(milestone));
   }
 }
@@ -252,18 +267,25 @@ export async function createMilestone(milestone: Omit<Milestone, 'id' | 'created
   try {
     const sanitizedMilestone = sanitizeData(milestone);
 
-    // Validate required fields
     if (!sanitizedMilestone.goalId || !sanitizedMilestone.title || !sanitizedMilestone.date) {
       throw new ValidationError('Missing required fields');
     }
 
-    // Create via API
-    const newMilestone = await apiRequest<Milestone>('milestones', 'POST', sanitizedMilestone);
+    if (isOnline()) {
+      const newMilestone = await apiRequest<Milestone>('milestones', 'POST', sanitizedMilestone);
+      const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+      localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify([...milestones, newMilestone]));
+      return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+    }
 
-    // Update local storage
     const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+    const newMilestone = {
+      ...sanitizedMilestone,
+      id: `temp_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify([...milestones, newMilestone]));
-
     return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
   } catch (error) {
     logError(error as Error, { operation: 'createMilestone', data: milestone });
@@ -278,16 +300,22 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
   try {
     const sanitizedUpdates = sanitizeData(updates);
 
-    // Update via API
-    const updatedMilestone = await apiRequest<Milestone>('milestones', 'PUT', { id, ...sanitizedUpdates });
+    if (isOnline()) {
+      const updatedMilestone = await apiRequest<Milestone>('milestones', 'PUT', { id, ...sanitizedUpdates });
+      const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
+      const updatedMilestones = milestones.map((milestone: Milestone) => milestone.id === id ? updatedMilestone : milestone);
+      localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(updatedMilestones));
+      return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+    }
 
-    // Update local storage
     const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
-    const updatedMilestones = milestones.map((milestone: Milestone) =>
-      milestone.id === id ? updatedMilestone : milestone
-    );
+    const existingMilestone = milestones.find((milestone: Milestone) => milestone.id === id);
+    if (!existingMilestone) {
+      throw new StorageError('Milestone not found');
+    }
+    const updatedMilestone = { ...existingMilestone, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    const updatedMilestones = milestones.map((milestone: Milestone) => milestone.id === id ? updatedMilestone : milestone);
     localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(updatedMilestones));
-
     return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
   } catch (error) {
     logError(error as Error, { operation: 'updateMilestone', milestoneId: id, updates });
@@ -297,14 +325,13 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
 
 export async function deleteMilestone(id: string): Promise<boolean> {
   try {
-    // Delete via API
-    await apiRequest<{ success: true }>(`milestones?id=${id}`, 'DELETE');
+    if (isOnline()) {
+      await apiRequest<{ success: true }>(`milestones?id=${id}`, 'DELETE');
+    }
 
-    // Update local storage
     const milestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
     const filtered = milestones.filter((milestone: Milestone) => milestone.id !== id);
     localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(filtered));
-
     return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteMilestone', milestoneId: id });
@@ -318,17 +345,15 @@ export async function getNotes(): Promise<Note[]> {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (!userId) return [];
 
-    // Fetch from API
-    const notes = await apiRequest<Note[]>(`notes?userId=${userId}`, 'GET');
+    if (isOnline()) {
+      const notes = await apiRequest<Note[]>(`notes?userId=${userId}`, 'GET');
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
+      return notes.map(note => unescapeData(note as unknown as Record<string, unknown>) as unknown as Note);
+    }
 
-    // Update local storage
-    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
-
-    return notes.map(note =>
-      unescapeData(note as unknown as Record<string, unknown>) as unknown as Note
-    );
+    const localNotes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    return localNotes.map((note: Record<string, unknown>) => unescapeData(note));
   } catch (error) {
-    // Fallback to local storage
     logError(error as Error, { operation: 'getNotes' });
     const localNotes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
     return localNotes.map((note: Record<string, unknown>) => unescapeData(note));
@@ -352,21 +377,29 @@ export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedA
   try {
     const sanitizedNote = sanitizeData(note);
 
-    // Validate required fields
     if (!sanitizedNote.title || !sanitizedNote.content) {
       throw new ValidationError('Title and content are required');
     }
 
-    // Create via API
-    const newNote = await apiRequest<Note>('notes', 'POST', {
-      ...sanitizedNote,
-      isPinned: sanitizedNote.isPinned ?? false
-    });
+    if (isOnline()) {
+      const newNote = await apiRequest<Note>('notes', 'POST', {
+        ...sanitizedNote,
+        isPinned: sanitizedNote.isPinned ?? false
+      });
+      const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify([...notes, newNote]));
+      return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
+    }
 
-    // Update local storage
     const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+    const newNote = {
+      ...sanitizedNote,
+      id: `temp_${Date.now()}`,
+      isPinned: sanitizedNote.isPinned ?? false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify([...notes, newNote]));
-
     return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
   } catch (error) {
     logError(error as Error, { operation: 'createNote', data: note });
@@ -381,16 +414,22 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
   try {
     const sanitizedUpdates = sanitizeData(updates);
 
-    // Update via API
-    const updatedNote = await apiRequest<Note>('notes', 'PUT', { id, ...sanitizedUpdates });
+    if (isOnline()) {
+      const updatedNote = await apiRequest<Note>('notes', 'PUT', { id, ...sanitizedUpdates });
+      const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
+      const updatedNotes = notes.map((note: Note) => note.id === id ? updatedNote : note);
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
+      return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
+    }
 
-    // Update local storage
     const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
-    const updatedNotes = notes.map((note: Note) =>
-      note.id === id ? updatedNote : note
-    );
+    const existingNote = notes.find((note: Note) => note.id === id);
+    if (!existingNote) {
+      throw new StorageError('Note not found');
+    }
+    const updatedNote = { ...existingNote, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    const updatedNotes = notes.map((note: Note) => note.id === id ? updatedNote : note);
     localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(updatedNotes));
-
     return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
   } catch (error) {
     logError(error as Error, { operation: 'updateNote', noteId: id, updates });
@@ -400,14 +439,13 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
 
 export async function deleteNote(id: string): Promise<boolean> {
   try {
-    // Delete via API
-    await apiRequest<{ success: true }>(`notes?id=${id}`, 'DELETE');
+    if (isOnline()) {
+      await apiRequest<{ success: true }>(`notes?id=${id}`, 'DELETE');
+    }
 
-    // Update local storage
     const notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
     const filtered = notes.filter((note: Note) => note.id !== id);
     localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(filtered));
-
     return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteNote', noteId: id });
@@ -421,17 +459,15 @@ export async function getTodos(): Promise<Todo[]> {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (!userId) return [];
 
-    // Fetch from API
-    const todos = await apiRequest<Todo[]>(`todos?userId=${userId}`, 'GET');
+    if (isOnline()) {
+      const todos = await apiRequest<Todo[]>(`todos?userId=${userId}`, 'GET');
+      localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(todos));
+      return todos.map(todo => unescapeData(todo as unknown as Record<string, unknown>) as unknown as Todo);
+    }
 
-    // Update local storage
-    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(todos));
-
-    return todos.map(todo =>
-      unescapeData(todo as unknown as Record<string, unknown>) as unknown as Todo
-    );
+    const localTodos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    return localTodos.map((todo: Record<string, unknown>) => unescapeData(todo));
   } catch (error) {
-    // Fallback to local storage
     logError(error as Error, { operation: 'getTodos' });
     const localTodos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
     return localTodos.map((todo: Record<string, unknown>) => unescapeData(todo));
@@ -455,26 +491,33 @@ export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedA
   try {
     const sanitizedTodo = sanitizeData(todo);
 
-    // Validate required fields
     if (!sanitizedTodo.title || !sanitizedTodo.priority) {
       throw new ValidationError('Title and priority are required');
     }
 
-    // Validate priority
     if (!['low', 'medium', 'high'].includes(sanitizedTodo.priority)) {
       throw new ValidationError('Invalid priority level');
     }
 
-    // Create via API
-    const newTodo = await apiRequest<Todo>('todos', 'POST', {
-      ...sanitizedTodo,
-      completed: false
-    });
+    if (isOnline()) {
+      const newTodo = await apiRequest<Todo>('todos', 'POST', {
+        ...sanitizedTodo,
+        completed: false
+      });
+      const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+      localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify([...todos, newTodo]));
+      return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
+    }
 
-    // Update local storage
     const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+    const newTodo = {
+      ...sanitizedTodo,
+      id: `temp_${Date.now()}`,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify([...todos, newTodo]));
-
     return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
   } catch (error) {
     logError(error as Error, { operation: 'createTodo', data: todo });
@@ -489,21 +532,26 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
   try {
     const sanitizedUpdates = sanitizeData(updates);
 
-    // Validate priority if it's being updated
     if (sanitizedUpdates.priority && !['low', 'medium', 'high'].includes(sanitizedUpdates.priority)) {
       throw new ValidationError('Invalid priority level');
     }
 
-    // Update via API
-    const updatedTodo = await apiRequest<Todo>('todos', 'PUT', { id, ...sanitizedUpdates });
+    if (isOnline()) {
+      const updatedTodo = await apiRequest<Todo>('todos', 'PUT', { id, ...sanitizedUpdates });
+      const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
+      const updatedTodos = todos.map((todo: Todo) => todo.id === id ? updatedTodo : todo);
+      localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(updatedTodos));
+      return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
+    }
 
-    // Update local storage
     const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
-    const updatedTodos = todos.map((todo: Todo) =>
-      todo.id === id ? updatedTodo : todo
-    );
+    const existingTodo = todos.find((todo: Todo) => todo.id === id);
+    if (!existingTodo) {
+      throw new StorageError('Todo not found');
+    }
+    const updatedTodo = { ...existingTodo, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    const updatedTodos = todos.map((todo: Todo) => todo.id === id ? updatedTodo : todo);
     localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(updatedTodos));
-
     return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
   } catch (error) {
     logError(error as Error, { operation: 'updateTodo', todoId: id, updates });
@@ -513,14 +561,13 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
 
 export async function deleteTodo(id: string): Promise<boolean> {
   try {
-    // Delete via API
-    await apiRequest<{ success: true }>(`todos?id=${id}`, 'DELETE');
+    if (isOnline()) {
+      await apiRequest<{ success: true }>(`todos?id=${id}`, 'DELETE');
+    }
 
-    // Update local storage
     const todos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
     const filtered = todos.filter((todo: Todo) => todo.id !== id);
     localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(filtered));
-
     return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteTodo', todoId: id });
@@ -528,14 +575,12 @@ export async function deleteTodo(id: string): Promise<boolean> {
   }
 }
 
-// Helper function for toggling todo completion status
 export async function toggleTodoComplete(id: string): Promise<Todo> {
   try {
     const todo = await getTodo(id);
     if (!todo) {
       throw new ValidationError('Todo not found');
     }
-
     return updateTodo(id, { completed: !todo.completed });
   } catch (error) {
     logError(error as Error, { operation: 'toggleTodoComplete', todoId: id });
@@ -549,17 +594,15 @@ export async function getCheckIns(): Promise<CheckIn[]> {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (!userId) return [];
 
-    // Fetch from API
-    const checkIns = await apiRequest<CheckIn[]>(`checkins?userId=${userId}`, 'GET');
+    if (isOnline()) {
+      const checkIns = await apiRequest<CheckIn[]>(`checkins?userId=${userId}`, 'GET');
+      localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(checkIns));
+      return checkIns.map(checkIn => unescapeData(checkIn as unknown as Record<string, unknown>) as unknown as CheckIn);
+    }
 
-    // Update local storage
-    localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(checkIns));
-
-    return checkIns.map(checkIn =>
-      unescapeData(checkIn as unknown as Record<string, unknown>) as unknown as CheckIn
-    );
+    const localCheckIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    return localCheckIns.map((checkIn: Record<string, unknown>) => unescapeData(checkIn));
   } catch (error) {
-    // Fallback to local storage
     logError(error as Error, { operation: 'getCheckIns' });
     const localCheckIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
     return localCheckIns.map((checkIn: Record<string, unknown>) => unescapeData(checkIn));
@@ -594,9 +637,6 @@ export async function getCheckInByDate(date: string): Promise<CheckIn | null> {
 
 export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'updatedAt'>): Promise<CheckIn> {
   try {
-    // console.log('[Debug] Creating check-in with data:', checkIn);
-
-    // Process the data before sanitization
     const processedData = {
       ...checkIn,
       accomplishments: ensureJsonString(checkIn.accomplishments),
@@ -606,39 +646,41 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
 
     const sanitizedCheckIn = sanitizeData(processedData);
 
-    // Validate required fields
     const requiredFields = ['date', 'mood', 'energy', 'accomplishments', 'challenges', 'goals'] as const;
     const missingFields = requiredFields.filter(field => !sanitizedCheckIn[field]);
 
     if (missingFields.length > 0) {
-      console.error('[Debug] Missing required fields:', missingFields);
       throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
     }
 
-    // Validate mood and energy values
     const validMoods = ['great', 'good', 'okay', 'bad', 'terrible'] as const;
     const validEnergies = ['high', 'medium', 'low'] as const;
 
     if (!validMoods.includes(sanitizedCheckIn.mood as any)) {
-      console.error('[Debug] Invalid mood value:', sanitizedCheckIn.mood);
       throw new ValidationError(`Invalid mood value. Must be one of: ${validMoods.join(', ')}`);
     }
 
     if (!validEnergies.includes(sanitizedCheckIn.energy as any)) {
-      console.error('[Debug] Invalid energy value:', sanitizedCheckIn.energy);
       throw new ValidationError(`Invalid energy value. Must be one of: ${validEnergies.join(', ')}`);
     }
 
-    // Create via API
-    const newCheckIn = await apiRequest<CheckIn>('checkins', 'POST', sanitizedCheckIn);
+    if (isOnline()) {
+      const newCheckIn = await apiRequest<CheckIn>('checkins', 'POST', sanitizedCheckIn);
+      const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+      localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify([...checkIns, newCheckIn]));
+      return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+    }
 
-    // Update local storage
     const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+    const newCheckIn = {
+      ...sanitizedCheckIn,
+      id: `temp_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify([...checkIns, newCheckIn]));
-
     return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
-    console.error('[Debug] Check-in creation error:', error);
     logError(error as Error, { operation: 'createCheckIn', data: checkIn });
     if (error instanceof ValidationError) {
       throw error;
@@ -649,7 +691,6 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
 
 export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Promise<CheckIn> {
   try {
-    // Process array fields if they exist in the updates
     const processedUpdates = {
       ...updates,
       ...(updates.accomplishments !== undefined && { accomplishments: ensureJsonString(updates.accomplishments) }),
@@ -659,16 +700,22 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
 
     const sanitizedUpdates = sanitizeData(processedUpdates);
 
-    // Update via API
-    const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
+    if (isOnline()) {
+      const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
+      const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
+      const updatedCheckIns = checkIns.map((checkIn: CheckIn) => checkIn.id === id ? updatedCheckIn : checkIn);
+      localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(updatedCheckIns));
+      return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+    }
 
-    // Update local storage
     const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
-    const updatedCheckIns = checkIns.map((checkIn: CheckIn) =>
-      checkIn.id === id ? updatedCheckIn : checkIn
-    );
+    const existingCheckIn = checkIns.find((checkIn: CheckIn) => checkIn.id === id);
+    if (!existingCheckIn) {
+      throw new StorageError('Check-in not found');
+    }
+    const updatedCheckIn = { ...existingCheckIn, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+    const updatedCheckIns = checkIns.map((checkIn: CheckIn) => checkIn.id === id ? updatedCheckIn : checkIn);
     localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(updatedCheckIns));
-
     return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
     logError(error as Error, { operation: 'updateCheckIn', checkInId: id, updates });
@@ -678,14 +725,13 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
 
 export async function deleteCheckIn(id: string): Promise<boolean> {
   try {
-    // Delete via API
-    await apiRequest<{ success: true }>(`checkins?id=${id}`, 'DELETE');
+    if (isOnline()) {
+      await apiRequest<{ success: true }>(`checkins?id=${id}`, 'DELETE');
+    }
 
-    // Update local storage
     const checkIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
     const filtered = checkIns.filter((checkIn: CheckIn) => checkIn.id !== id);
     localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(filtered));
-
     return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteCheckIn', checkInId: id });
