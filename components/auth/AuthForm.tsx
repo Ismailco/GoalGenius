@@ -10,6 +10,7 @@ import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 import { getAuthError } from '@/lib/auth/auth-errors';
 import { Target, Brain, TrendingUp, Users } from 'lucide-react';
 import { cacheAppPages } from '@/app/providers/ServiceWorkerProvider';
+import logoTransWhite from '@/public/images/logo_full_trans_white.png';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -210,24 +211,39 @@ export function AuthForm({ mode }: AuthFormProps) {
       <div className="hidden md:flex w-full md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-8 flex flex-col justify-center items-center text-white relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/auth-bg-pattern.svg"
-            alt="Background Pattern"
-            fill
-            priority
-            className="object-cover"
-          />
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+              </pattern>
+              <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+                <rect width="100" height="100" fill="url(#smallGrid)"/>
+                <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            {/* <!-- Abstract shapes --> */}
+            <circle cx="80%" cy="20%" r="100" fill="rgba(255,255,255,0.05)" />
+            <circle cx="20%" cy="80%" r="150" fill="rgba(255,255,255,0.05)" />
+            <circle cx="10%" cy="30%" r="50" fill="rgba(255,255,255,0.05)" />
+            <circle cx="90%" cy="70%" r="70" fill="rgba(255,255,255,0.05)" />
+
+            {/* <!-- Curved lines --> */}
+            <path d="M0,50 Q400,400 800,100" stroke="rgba(255,255,255,0.1)" fill="none" stroke-width="2" />
+            <path d="M0,200 Q300,100 600,300" stroke="rgba(255,255,255,0.1)" fill="none" stroke-width="2" />
+          </svg>
         </div>
 
         <div className="max-w-md mx-auto text-center z-10">
           <div className="mb-8">
-            <div className="relative h-24 w-72 mx-auto mb-6 transform hover:scale-105 transition-transform duration-300">
+            <div className="relative h-24 w-72 mx-auto mb-30 transform hover:scale-105 transition-transform duration-300">
               <Image
-                src="/images/logo_trans_white.png"
+                src={logoTransWhite}
                 alt="GoalGenius Logo"
                 width={300}
                 height={120}
-                className="w-full h-full drop-shadow-lg"
+                className="object-contain drop-shadow-lg"
                 priority
               />
             </div>
