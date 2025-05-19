@@ -27,9 +27,9 @@ export default defineConfig({
 		? {
 				driver: 'd1-http',
 				dbCredentials: {
-					accountId: process.env.NEXT_PUBLIC_CLOUDFLARE_D1_ACCOUNT_ID,
-					databaseId: process.env.NEXT_PUBLIC_CLOUDFLARE_D1_DATABASE_ID,
-					token: process.env.NEXT_PUBLIC_CLOUDFLARE_D1_API_TOKEN,
+					accountId: process.env.CLOUDFLARE_D1_ACCOUNT_ID,
+					databaseId: process.env.CLOUDFLARE_D1_DATABASE_ID,
+					token: process.env.CLOUDFLARE_D1_API_TOKEN,
 				},
 		  }
 		: {

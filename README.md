@@ -116,15 +116,15 @@ Create a `.env.local` file in the root directory with the following variables:
 
 ```env
 # Cloudflare D1 Configuration
-NEXT_PUBLIC_CLOUDFLARE_D1_ACCOUNT_ID=your_account_id
-NEXT_PUBLIC_CLOUDFLARE_D1_DATABASE_ID=your_database_id
-NEXT_PUBLIC_CLOUDFLARE_D1_API_TOKEN=your_api_token
+CLOUDFLARE_D1_ACCOUNT_ID=your_account_id
+CLOUDFLARE_D1_DATABASE_ID=your_database_id
+CLOUDFLARE_D1_API_TOKEN=your_api_token
 
 # Authentication
-NEXT_PUBLIC_AUTH_GITHUB_CLIENT_ID=your_github_client_id
-NEXT_PUBLIC_AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
-NEXT_PUBLIC_AUTH_GOOGLE_CLIENT_ID=your_google_client_id
-NEXT_PUBLIC_AUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
+AUTH_GITHUB_CLIENT_ID=your_github_client_id
+AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
+AUTH_GOOGLE_CLIENT_ID=your_google_client_id
+AUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 ### Database Setup
