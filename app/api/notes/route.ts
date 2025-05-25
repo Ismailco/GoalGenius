@@ -4,8 +4,6 @@ import { notes } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-export const runtime = "edge";
-
 type NoteInput = {
   userId: string;
   title: string;
