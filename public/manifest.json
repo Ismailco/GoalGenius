@@ -26,6 +26,12 @@
 			"src": "/images/logo_full.png",
 			"sizes": "1120x1120",
 			"type": "image/png"
+		},
+		{
+			"src": "/images/logo_full.png",
+			"sizes": "1120x1120",
+			"type": "image/png",
+			"purpose": "any maskable"
 		}
 	],
 	"splash_screen": {

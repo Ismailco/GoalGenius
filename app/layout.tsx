@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "../components/Providers";
 import Navbar from "../components/app/shared/Navbar";
 import Sidebar from "../components/app/shared/Sidebar";
+import { InstallPWA } from "@/components/common/InstallPWA";
 import { Metadata } from "next";
 
 const geistSans = Geist({
@@ -49,6 +50,9 @@ export default function RootLayout({
             </main>
           </div>
           <Navbar />
+          <div className="fixed bottom-20 right-4 z-50">
+            <InstallPWA />
+          </div>
         </Providers>
       </body>
     </html>
