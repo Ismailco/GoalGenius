@@ -13,9 +13,18 @@
 		"db:migrate:prod": "wrangler d1 migrations apply goalgenius_db --remote --config wrangler.jsonc",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+		"build:cap": "next build",
+		"sync:cap": "npm exec cap copy",
+		"open:android": "npm exec cap open android",
+		"open:ios": "npm exec cap open ios",
+		"dev:android": "npm run build:cap && pnpm run sync:cap && pnpm run open:android",
+		"dev:ios": "npm run build:cap && pnpm run sync:cap && pnpm run open:ios"
 	},
 	"dependencies": {
+		"@capacitor/android": "^7.2.0",
+		"@capacitor/cli": "^7.2.0",
+		"@capacitor/core": "^7.2.0",
 		"@types/uuid": "^10.0.0",
 		"@types/validator": "^13.12.2",
 		"better-auth": "^1.2.7",

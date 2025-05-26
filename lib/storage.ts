@@ -89,13 +89,13 @@ async function apiRequest<T>(
   //   data
   // });
 
-  const response = await fetch(`/api/${endpoint}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: data ? JSON.stringify({ ...data, userId }) : undefined,
-  });
+  const response = await fetch(`https://app.goalgenius.online/api/${endpoint}`, {
+		method,
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: data ? JSON.stringify({ ...data, userId }) : undefined,
+	});
 
   let responseData;
   try {

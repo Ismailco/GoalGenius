@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
 
   // No valid session, redirect to signin
   console.log('No session found, redirecting to signin');
-  const signInUrl = new URL('/auth/signin', request.url);
+  const signInUrl = new URL('https://app.goalgenius.online/auth/signin', request.url);
   signInUrl.searchParams.set('callbackUrl', pathname);
   return NextResponse.redirect(signInUrl);
 }
