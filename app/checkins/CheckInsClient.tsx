@@ -205,12 +205,12 @@ export default function CheckInsPage() {
 
 				{/* Calendar Section */}
 				<div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
-					<div className="flex justify-between items-center mb-4">
-						<div>
+					<div className="flex flex-col md:flex-row justify-between md:items-center mb-4">
+						<div className="flex flex-col items-center md:items-start">
 							<h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Progress & Growth Timeline</h2>
 							<p className="text-sm text-gray-400 mt-1">Track your daily journey and personal development</p>
 						</div>
-						<div className="mt-4 flex justify-end">
+						<div className="mt-4 flex justify-end md:self-end">
 							<p className="text-xs text-gray-400">
 								{format(yearStartDate, 'MMM d, yyyy')} — {format(new Date(), 'MMM d, yyyy')}
 							</p>
@@ -228,7 +228,7 @@ export default function CheckInsPage() {
 						</div>
 
 						{/* Scrollable calendar area */}
-						<div ref={calendarRef} className="overflow-x-auto flex-grow scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+						<div ref={calendarRef} className="overflow-x-auto flex-grow scrollbar-hide max-w-[calc(100vw-140px)]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
 							<div className="flex min-w-max pb-2">
 								{/* Calendar grid */}
 								<div className="flex">
