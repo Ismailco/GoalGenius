@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
+import { readJsonBodyWithLimit } from '@/lib/server/request-body';
 
 export const runtime = "nodejs";
 
@@ -35,6 +36,8 @@ const createCheckInSchema = z
   .passthrough();
 
 const updateCheckInSchema = createCheckInSchema.partial().extend({ id: z.string().min(1) }).passthrough();
+
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 // Add this helper function at the top
 function decodeAndParseJsonArray(value: string[] | string | undefined | null): string[] {
@@ -86,14 +89,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let json: unknown;
-    try {
-      json = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+    if (!bodyResult.ok) {
+      return bodyResult.response;
     }
 
-    const parsed = createCheckInSchema.safeParse(json);
+    const parsed = createCheckInSchema.safeParse(bodyResult.data);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid request', details: parsed.error.flatten() },
@@ -147,14 +148,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let json: unknown;
-    try {
-      json = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+    if (!bodyResult.ok) {
+      return bodyResult.response;
     }
 
-    const parsed = updateCheckInSchema.safeParse(json);
+    const parsed = updateCheckInSchema.safeParse(bodyResult.data);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid request', details: parsed.error.flatten() },

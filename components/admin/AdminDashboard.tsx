@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { signOut } from '@/lib/auth/auth-client';
 
-export default function AdminDashboard({ user }: { user: any }) {
+export default function AdminDashboard({ user }: { user: { name?: string | null; image?: string | null } | null }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Mock data for demonstration

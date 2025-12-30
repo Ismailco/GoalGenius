@@ -814,11 +814,17 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
     const validMoods = ['great', 'good', 'okay', 'bad', 'terrible'] as const;
     const validEnergies = ['high', 'medium', 'low'] as const;
 
-    if (!validMoods.includes(sanitizedCheckIn.mood as any)) {
+    if (
+      typeof sanitizedCheckIn.mood !== 'string' ||
+      !validMoods.includes(sanitizedCheckIn.mood as (typeof validMoods)[number])
+    ) {
       throw new ValidationError(`Invalid mood value. Must be one of: ${validMoods.join(', ')}`);
     }
 
-    if (!validEnergies.includes(sanitizedCheckIn.energy as any)) {
+    if (
+      typeof sanitizedCheckIn.energy !== 'string' ||
+      !validEnergies.includes(sanitizedCheckIn.energy as (typeof validEnergies)[number])
+    ) {
       throw new ValidationError(`Invalid energy value. Must be one of: ${validEnergies.join(', ')}`);
     }
 

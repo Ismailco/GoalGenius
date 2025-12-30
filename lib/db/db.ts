@@ -1,6 +1,7 @@
 import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import { drizzle as drizzleLibSQL } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+import type { D1Database } from "@cloudflare/workers-types";
 import * as schema from "./schema";
 // import { getLocalD1DB } from "../../drizzle.config";
 
@@ -9,11 +10,11 @@ let db: ReturnType<typeof drizzleD1<typeof schema>> | ReturnType<typeof drizzleL
 
 if (process.env.NODE_ENV === "production") {
   // Access D1 in production through Cloudflare bindings
-  // @ts-ignore - Cloudflare bindings are injected at runtime
-  if (typeof globalThis.DB !== "undefined") {
+  const cloudflareDbBinding = (globalThis as unknown as { DB?: D1Database }).DB;
+
+  if (typeof cloudflareDbBinding !== "undefined") {
     // We're in a Cloudflare Pages/Workers environment with D1 binding
-    // @ts-ignore
-    db = drizzleD1(globalThis.DB, { schema });
+    db = drizzleD1(cloudflareDbBinding, { schema });
   } else {
     // Fallback for other production environments if needed
     db = drizzleD1(process.env.DB, { schema });

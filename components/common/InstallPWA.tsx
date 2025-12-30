@@ -2,18 +2,23 @@
 
 import { useEffect, useState } from 'react';
 
-let deferredPrompt: any;
+type BeforeInstallPromptEvent = Event & {
+	prompt: () => Promise<void>;
+	userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform?: string }>;
+};
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
 export const InstallPWA = () => {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
     // Listen for the beforeinstallprompt event
-    window.addEventListener('beforeinstallprompt', (e) => {
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Stash the event so it can be triggered later
-      deferredPrompt = e;
+			deferredPrompt = e as BeforeInstallPromptEvent;
       // Show the install button
       setIsInstallable(true);
     });
