@@ -3,8 +3,9 @@ import { db } from '@/lib/db/db';
 import { milestones } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type MilestoneInput = {
   goalId: string;
@@ -16,22 +17,17 @@ type MilestoneInput = {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const goalId = searchParams.get('goalId');
 
-    if (!userId && !goalId) {
-      return NextResponse.json(
-        { error: 'Either User ID or Goal ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Build conditions array
-    const conditions = [];
-    if (userId) {
-      conditions.push(eq(milestones.userId, userId));
-    }
+    // Always scope to current user; optionally filter by goalId
+    const conditions = [eq(milestones.userId, userId)];
     if (goalId) {
       conditions.push(eq(milestones.goalId, goalId));
     }
@@ -50,10 +46,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as MilestoneInput;
 
     // Validate required fields
-    if (!data.goalId || !data.userId || !data.title || !data.date) {
+    if (!data.goalId || !data.title || !data.date) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
     const newMilestone = await db.insert(milestones).values({
       id: uuidv4(),
       goalId: data.goalId,
-      userId: data.userId,
+      userId,
       title: data.title,
       description: data.description,
       date: data.date,
@@ -77,6 +79,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as Partial<MilestoneInput> & { id: string };
 
     if (!data.id) {
@@ -86,14 +94,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { id, ...updateData } = data;
+    const { id, userId: _ignoredUserId, ...updateData } = data;
 
     const updatedMilestone = await db.update(milestones)
       .set({
         ...updateData,
         updatedAt: new Date(),
       })
-      .where(eq(milestones.id, id))
+      .where(and(eq(milestones.id, id), eq(milestones.userId, userId)))
       .returning();
 
     if (!updatedMilestone.length) {
@@ -114,6 +122,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
@@ -125,7 +139,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deletedMilestone = await db.delete(milestones)
-      .where(eq(milestones.id, id))
+      .where(and(eq(milestones.id, id), eq(milestones.userId, userId)))
       .returning();
 
     if (!deletedMilestone.length) {

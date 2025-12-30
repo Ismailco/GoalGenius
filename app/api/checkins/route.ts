@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
 import { checkIns } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type CheckInInput = {
   userId: string;
@@ -46,11 +47,10 @@ function ensureJsonString(value: string[] | string | undefined | null): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userCheckIns = await db.select().from(checkIns).where(eq(checkIns.userId, userId));
@@ -62,25 +62,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Debug] Received check-in POST request');
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const data = await request.json() as CheckInInput;
-    console.log('[Debug] Received check-in data:', data);
-
-    // Log the decoded array fields for debugging
-    console.log('[Debug] Decoded arrays:', {
-      accomplishments: decodeAndParseJsonArray(data.accomplishments),
-      challenges: decodeAndParseJsonArray(data.challenges),
-      goals: decodeAndParseJsonArray(data.goals),
-    });
 
     // Validate required fields
-    if (!data.userId || !data.date || !data.mood || !data.energy ||
+    if (!data.date || !data.mood || !data.energy ||
         !data.accomplishments || !data.challenges || !data.goals) {
-      const missingFields = ['userId', 'date', 'mood', 'energy', 'accomplishments', 'challenges', 'goals']
+      const missingFields = ['date', 'mood', 'energy', 'accomplishments', 'challenges', 'goals']
         .filter(field => !data[field as keyof CheckInInput]);
 
-      console.error('[Debug] Missing required fields:', missingFields);
       return NextResponse.json(
         { error: `Missing required fields: ${missingFields.join(', ')}` },
         { status: 400 }
@@ -92,7 +87,6 @@ export async function POST(request: NextRequest) {
     const validEnergies = ['high', 'medium', 'low'] as const;
 
     if (!validMoods.includes(data.mood)) {
-      console.error('[Debug] Invalid mood value:', data.mood);
       return NextResponse.json(
         { error: `Invalid mood value. Must be one of: ${validMoods.join(', ')}` },
         { status: 400 }
@@ -100,7 +94,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!validEnergies.includes(data.energy)) {
-      console.error('[Debug] Invalid energy value:', data.energy);
       return NextResponse.json(
         { error: `Invalid energy value. Must be one of: ${validEnergies.join(', ')}` },
         { status: 400 }
@@ -110,7 +103,7 @@ export async function POST(request: NextRequest) {
     // Create base insert data without array fields
     const baseData = {
       id: uuidv4(),
-      userId: data.userId,
+      userId,
       date: data.date,
       mood: data.mood,
       energy: data.energy,
@@ -130,16 +123,12 @@ export async function POST(request: NextRequest) {
       ...arrayFields,
     };
 
-    console.log('[Debug] Attempting to insert check-in into database with processed data:', insertData);
     const newCheckIn = await db.insert(checkIns)
       .values(insertData)
       .returning();
 
-    console.log('[Debug] Successfully created check-in:', newCheckIn[0]);
-
     return NextResponse.json(newCheckIn[0], { status: 201 });
   } catch (error) {
-    console.error('[Debug] Server error creating check-in:', error);
     return NextResponse.json(
       { error: 'Failed to create check-in', details: (error as Error).message },
       { status: 500 }
@@ -149,6 +138,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as Partial<CheckInInput> & { id: string };
 
     if (!data.id) {
@@ -158,11 +153,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { id, ...updateFields } = data;
+    const { id, userId: _ignoredUserId, ...updateFields } = data;
 
     // First, create a clean update object without the array fields
     const baseUpdate = {
-      ...(updateFields.userId && { userId: updateFields.userId }),
       ...(updateFields.date && { date: updateFields.date }),
       ...(updateFields.mood && { mood: updateFields.mood }),
       ...(updateFields.energy && { energy: updateFields.energy }),
@@ -191,7 +185,7 @@ export async function PUT(request: NextRequest) {
 
     const updatedCheckIn = await db.update(checkIns)
       .set(updateData)
-      .where(eq(checkIns.id, id))
+      .where(and(eq(checkIns.id, id), eq(checkIns.userId, userId)))
       .returning();
 
     if (!updatedCheckIn.length) {
@@ -203,7 +197,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(updatedCheckIn[0]);
   } catch (error) {
-    console.error('[Debug] Error updating check-in:', error);
     return NextResponse.json(
       { error: 'Failed to update check-in' },
       { status: 500 }
@@ -213,6 +206,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
@@ -224,7 +223,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deletedCheckIn = await db.delete(checkIns)
-      .where(eq(checkIns.id, id))
+      .where(and(eq(checkIns.id, id), eq(checkIns.userId, userId)))
       .returning();
 
     if (!deletedCheckIn.length) {

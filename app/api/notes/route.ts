@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
 import { notes } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type NoteInput = {
   userId: string;
@@ -16,14 +17,10 @@ type NoteInput = {
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userNotes = await db
@@ -42,10 +39,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as NoteInput;
 
     // Validate required fields
-    if (!data.userId || !data.title || !data.content) {
+    if (!data.title || !data.content) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const newNote = await db.insert(notes).values({
       id: uuidv4(),
-      userId: data.userId,
+      userId,
       title: data.title,
       content: data.content,
       category: data.category,
@@ -72,6 +75,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as Partial<NoteInput> & { id: string };
 
     if (!data.id) {
@@ -81,14 +90,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { id, ...updateData } = data;
+    const { id, userId: _ignoredUserId, ...updateData } = data;
 
     const updatedNote = await db.update(notes)
       .set({
         ...updateData,
         updatedAt: new Date(),
       })
-      .where(eq(notes.id, id))
+      .where(and(eq(notes.id, id), eq(notes.userId, userId)))
       .returning();
 
     if (!updatedNote.length) {
@@ -109,6 +118,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
@@ -120,7 +135,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deletedNote = await db.delete(notes)
-      .where(eq(notes.id, id))
+      .where(and(eq(notes.id, id), eq(notes.userId, userId)))
       .returning();
 
     if (!deletedNote.length) {

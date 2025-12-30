@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db/db';
 import { goals } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 // Type for goal data with constrained categories and status
 type GoalInput = {
@@ -21,11 +22,10 @@ type GoalInput = {
 // GET /api/goals - Get all goals for a user
 export async function GET(request: NextRequest) {
 	try {
-		const searchParams = request.nextUrl.searchParams;
-		const userId = searchParams.get('userId');
-
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user?.id;
 		if (!userId) {
-			return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
 		const userGoals = await db.select().from(goals).where(eq(goals.userId, userId));
@@ -38,10 +38,16 @@ export async function GET(request: NextRequest) {
 // POST /api/goals - Create a new goal
 export async function POST(request: NextRequest) {
 	try {
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user?.id;
+		if (!userId) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const data = await request.json() as GoalInput;
 
 		// Validate required fields
-		if (!data.userId || !data.title || !data.category || !data.timeFrame || !data.status) {
+		if (!data.title || !data.category || !data.timeFrame || !data.status) {
 			return NextResponse.json(
 				{ error: 'Missing required fields' },
 				{ status: 400 }
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest) {
 
 		const newGoal = await db.insert(goals).values({
 			id: uuidv4(),
-			userId: data.userId,
+			userId,
 			title: data.title,
 			description: data.description,
 			category: data.category,
@@ -70,6 +76,12 @@ export async function POST(request: NextRequest) {
 // PUT /api/goals - Update a goal
 export async function PUT(request: NextRequest) {
 	try {
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user?.id;
+		if (!userId) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const data = await request.json() as Partial<GoalInput> & { id: string };
 
 		if (!data.id) {
@@ -79,14 +91,14 @@ export async function PUT(request: NextRequest) {
 			);
 		}
 
-		const { id, ...updateData } = data;
+		const { id, userId: _ignoredUserId, ...updateData } = data;
 
 		const updatedGoal = await db.update(goals)
 			.set({
 				...updateData,
 				updatedAt: new Date(),
 			})
-			.where(eq(goals.id, id))
+			.where(and(eq(goals.id, id), eq(goals.userId, userId)))
 			.returning();
 
 		if (!updatedGoal.length) {
@@ -96,13 +108,8 @@ export async function PUT(request: NextRequest) {
 			);
 		}
 
-		console.log('Update payload:', {
-			...updateData,
-			updatedAt: new Date(),
-		});
 		return NextResponse.json(updatedGoal[0]);
 	} catch (error) {
-		console.log('[API Error]: ', error);
 		return NextResponse.json(
 			{ error: 'Failed to update goal' },
 			{ status: 500 }
@@ -113,6 +120,12 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/goals - Delete a goal
 export async function DELETE(request: NextRequest) {
 	try {
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user?.id;
+		if (!userId) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
 		const searchParams = request.nextUrl.searchParams;
 		const id = searchParams.get('id');
 
@@ -124,7 +137,7 @@ export async function DELETE(request: NextRequest) {
 		}
 
 		const deletedGoal = await db.delete(goals)
-			.where(eq(goals.id, id))
+			.where(and(eq(goals.id, id), eq(goals.userId, userId)))
 			.returning();
 
 		if (!deletedGoal.length) {
@@ -136,7 +149,6 @@ export async function DELETE(request: NextRequest) {
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
-		console.error('DELETE /api/goals error:', error);
 		return NextResponse.json(
 			{ error: 'Failed to delete goal' },
 			{ status: 500 }

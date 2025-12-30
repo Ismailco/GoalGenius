@@ -77,15 +77,9 @@ async function apiRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   data?: unknown
 ): Promise<T> {
-  const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-  if (!userId) {
-    throw new StorageError('No user ID found');
-  }
-
   // Debug log for request
   // console.log(`[Debug] API Request to ${endpoint}:`, {
   //   method,
-  //   userId,
   //   data
   // });
 
@@ -94,7 +88,7 @@ async function apiRequest<T>(
     headers: {
       'Content-Type': 'application/json',
     },
-    body: data ? JSON.stringify({ ...data, userId }) : undefined,
+    body: data ? JSON.stringify(data) : undefined,
   });
 
   let responseData;
@@ -122,13 +116,13 @@ async function apiRequest<T>(
 export async function getGoals(): Promise<Goal[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (!userId) return [];
-
     if (isOnline()) {
-      const goals = await apiRequest<Goal[]>(`goals?userId=${userId}`, 'GET');
+      const goals = await apiRequest<Goal[]>('goals', 'GET');
       localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
       return goals.map(goal => unescapeData(goal as unknown as Record<string, unknown>) as unknown as Goal);
     }
+
+    if (!userId) return [];
 
     const localGoals = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
     return localGoals.map((goal: Record<string, unknown>) => unescapeData(goal));
@@ -233,13 +227,13 @@ export async function deleteGoal(id: string): Promise<boolean> {
 export async function getMilestones(): Promise<Milestone[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (!userId) return [];
-
     if (isOnline()) {
-      const milestones = await apiRequest<Milestone[]>(`milestones?userId=${userId}`, 'GET');
+      const milestones = await apiRequest<Milestone[]>('milestones', 'GET');
       localStorage.setItem(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
       return milestones.map(milestone => unescapeData(milestone as unknown as Record<string, unknown>) as unknown as Milestone);
     }
+
+    if (!userId) return [];
 
     const localMilestones = JSON.parse(localStorage.getItem(STORAGE_KEYS.MILESTONES) || '[]');
     return localMilestones.map((milestone: Record<string, unknown>) => unescapeData(milestone));
@@ -343,13 +337,13 @@ export async function deleteMilestone(id: string): Promise<boolean> {
 export async function getNotes(): Promise<Note[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (!userId) return [];
-
     if (isOnline()) {
-      const notes = await apiRequest<Note[]>(`notes?userId=${userId}`, 'GET');
+      const notes = await apiRequest<Note[]>('notes', 'GET');
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
       return notes.map(note => unescapeData(note as unknown as Record<string, unknown>) as unknown as Note);
     }
+
+    if (!userId) return [];
 
     const localNotes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES) || '[]');
     return localNotes.map((note: Record<string, unknown>) => unescapeData(note));
@@ -457,13 +451,13 @@ export async function deleteNote(id: string): Promise<boolean> {
 export async function getTodos(): Promise<Todo[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (!userId) return [];
-
     if (isOnline()) {
-      const todos = await apiRequest<Todo[]>(`todos?userId=${userId}`, 'GET');
+      const todos = await apiRequest<Todo[]>('todos', 'GET');
       localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(todos));
       return todos.map(todo => unescapeData(todo as unknown as Record<string, unknown>) as unknown as Todo);
     }
+
+    if (!userId) return [];
 
     const localTodos = JSON.parse(localStorage.getItem(STORAGE_KEYS.TODOS) || '[]');
     return localTodos.map((todo: Record<string, unknown>) => unescapeData(todo));
@@ -592,13 +586,13 @@ export async function toggleTodoComplete(id: string): Promise<Todo> {
 export async function getCheckIns(): Promise<CheckIn[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (!userId) return [];
-
     if (isOnline()) {
-      const checkIns = await apiRequest<CheckIn[]>(`checkins?userId=${userId}`, 'GET');
+      const checkIns = await apiRequest<CheckIn[]>('checkins', 'GET');
       localStorage.setItem(STORAGE_KEYS.CHECKINS, JSON.stringify(checkIns));
       return checkIns.map(checkIn => unescapeData(checkIn as unknown as Record<string, unknown>) as unknown as CheckIn);
     }
+
+    if (!userId) return [];
 
     const localCheckIns = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKINS) || '[]');
     return localCheckIns.map((checkIn: Record<string, unknown>) => unescapeData(checkIn));

@@ -3,8 +3,9 @@ import { db } from '@/lib/db/db';
 import { todos } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type TodoInput = {
   userId: string;
@@ -19,14 +20,12 @@ type TodoInput = {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const completed = searchParams.get('completed');
 
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Build conditions array
@@ -53,10 +52,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as TodoInput;
 
     // Validate required fields
-    if (!data.userId || !data.title || !data.priority) {
+    if (!data.title || !data.priority) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const newTodo = await db.insert(todos).values({
       id: uuidv4(),
-      userId: data.userId,
+      userId,
       title: data.title,
       description: data.description,
       priority: data.priority,
@@ -93,6 +98,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json() as Partial<TodoInput> & { id: string };
 
     if (!data.id) {
@@ -110,14 +121,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { id, ...updateData } = data;
+    const { id, userId: _ignoredUserId, ...updateData } = data;
 
     const updatedTodo = await db.update(todos)
       .set({
         ...updateData,
         updatedAt: new Date(),
       })
-      .where(eq(todos.id, id))
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)))
       .returning();
 
     if (!updatedTodo.length) {
@@ -138,6 +149,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
@@ -149,7 +166,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deletedTodo = await db.delete(todos)
-      .where(eq(todos.id, id))
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)))
       .returning();
 
     if (!deletedTodo.length) {
