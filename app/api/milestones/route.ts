@@ -4,6 +4,7 @@ import { milestones } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,18 @@ type MilestoneInput = {
   date: string;
 };
 
+const createMilestoneSchema = z
+  .object({
+    goalId: z.string().min(1),
+    title: z.string().min(1),
+    description: z.string().optional(),
+    date: z.string().min(1),
+    userId: z.string().optional(),
+  })
+  .passthrough();
+
+const updateMilestoneSchema = createMilestoneSchema.partial().extend({ id: z.string().min(1) }).passthrough();
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -25,6 +38,16 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const goalId = searchParams.get('goalId');
+
+    if (goalId !== null) {
+      const goalIdParsed = z.string().min(1).safeParse(goalId);
+      if (!goalIdParsed.success) {
+        return NextResponse.json(
+          { error: 'Invalid request', details: goalIdParsed.error.flatten() },
+          { status: 400 }
+        );
+      }
+    }
 
     // Always scope to current user; optionally filter by goalId
     const conditions = [eq(milestones.userId, userId)];
@@ -52,15 +75,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as MilestoneInput;
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    // Validate required fields
-    if (!data.goalId || !data.title || !data.date) {
+    const parsed = createMilestoneSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+
+    const data = parsed.data as unknown as MilestoneInput;
 
     const newMilestone = await db.insert(milestones).values({
       id: uuidv4(),
@@ -85,14 +115,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as Partial<MilestoneInput> & { id: string };
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    if (!data.id) {
+    const parsed = updateMilestoneSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Milestone ID is required' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+
+    const data = parsed.data as unknown as Partial<MilestoneInput> & { id: string };
 
     const { id, userId: _ignoredUserId, ...updateData } = data;
 
@@ -131,15 +169,18 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
-    if (!id) {
+    const idParsed = z.string().min(1).safeParse(id);
+    if (!idParsed.success) {
       return NextResponse.json(
         { error: 'Milestone ID is required' },
         { status: 400 }
       );
     }
 
+    const validatedId = idParsed.data;
+
     const deletedMilestone = await db.delete(milestones)
-      .where(and(eq(milestones.id, id), eq(milestones.userId, userId)))
+      .where(and(eq(milestones.id, validatedId), eq(milestones.userId, userId)))
       .returning();
 
     if (!deletedMilestone.length) {

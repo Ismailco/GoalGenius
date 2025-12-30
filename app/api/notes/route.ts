@@ -4,6 +4,7 @@ import { notes } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,18 @@ type NoteInput = {
   category?: string;
   isPinned?: boolean;
 };
+
+const createNoteSchema = z
+  .object({
+    title: z.string().min(1),
+    content: z.string().min(1),
+    category: z.string().optional(),
+    isPinned: z.boolean().optional(),
+    userId: z.string().optional(),
+  })
+  .passthrough();
+
+const updateNoteSchema = createNoteSchema.partial().extend({ id: z.string().min(1) }).passthrough();
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,15 +58,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as NoteInput;
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    // Validate required fields
-    if (!data.title || !data.content) {
+    const parsed = createNoteSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+
+    const data = parsed.data as unknown as NoteInput;
 
     const newNote = await db.insert(notes).values({
       id: uuidv4(),
@@ -81,14 +101,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as Partial<NoteInput> & { id: string };
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    if (!data.id) {
+    const parsed = updateNoteSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Note ID is required' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+
+    const data = parsed.data as unknown as Partial<NoteInput> & { id: string };
 
     const { id, userId: _ignoredUserId, ...updateData } = data;
 

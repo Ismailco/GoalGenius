@@ -4,6 +4,7 @@ import { todos } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,20 @@ type TodoInput = {
   category?: string;
   completed?: boolean;
 };
+
+const createTodoSchema = z
+  .object({
+    title: z.string().min(1),
+    description: z.string().optional(),
+    priority: z.enum(['low', 'medium', 'high']),
+    dueDate: z.string().optional(),
+    category: z.string().optional(),
+    completed: z.boolean().optional(),
+    userId: z.string().optional(),
+  })
+  .passthrough();
+
+const updateTodoSchema = createTodoSchema.partial().extend({ id: z.string().min(1) }).passthrough();
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,23 +73,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as TodoInput;
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    // Validate required fields
-    if (!data.title || !data.priority) {
+    const parsed = createTodoSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // Validate priority
-    if (!['low', 'medium', 'high'].includes(data.priority)) {
-      return NextResponse.json(
-        { error: 'Invalid priority level' },
-        { status: 400 }
-      );
-    }
+    const data = parsed.data as unknown as TodoInput;
 
     const newTodo = await db.insert(todos).values({
       id: uuidv4(),
@@ -104,22 +118,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as Partial<TodoInput> & { id: string };
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    if (!data.id) {
+    const parsed = updateTodoSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Todo ID is required' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // Validate priority if provided
-    if (data.priority && !['low', 'medium', 'high'].includes(data.priority)) {
-      return NextResponse.json(
-        { error: 'Invalid priority level' },
-        { status: 400 }
-      );
-    }
+    const data = parsed.data as unknown as Partial<TodoInput> & { id: string };
 
     const { id, userId: _ignoredUserId, ...updateData } = data;
 

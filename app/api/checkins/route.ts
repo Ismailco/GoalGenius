@@ -4,6 +4,7 @@ import { checkIns } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,23 @@ type CheckInInput = {
   goals: string[] | string; // Can be either array or JSON string
   notes?: string;
 };
+
+const jsonArrayInputSchema = z.union([z.array(z.string()), z.string()]);
+
+const createCheckInSchema = z
+  .object({
+    date: z.string().min(1),
+    mood: z.enum(['great', 'good', 'okay', 'bad', 'terrible']),
+    energy: z.enum(['high', 'medium', 'low']),
+    accomplishments: jsonArrayInputSchema,
+    challenges: jsonArrayInputSchema,
+    goals: jsonArrayInputSchema,
+    notes: z.string().optional(),
+    userId: z.string().optional(),
+  })
+  .passthrough();
+
+const updateCheckInSchema = createCheckInSchema.partial().extend({ id: z.string().min(1) }).passthrough();
 
 // Add this helper function at the top
 function decodeAndParseJsonArray(value: string[] | string | undefined | null): string[] {
@@ -68,37 +86,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as CheckInInput;
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    // Validate required fields
-    if (!data.date || !data.mood || !data.energy ||
-        !data.accomplishments || !data.challenges || !data.goals) {
-      const missingFields = ['date', 'mood', 'energy', 'accomplishments', 'challenges', 'goals']
-        .filter(field => !data[field as keyof CheckInInput]);
-
+    const parsed = createCheckInSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: `Missing required fields: ${missingFields.join(', ')}` },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // Validate mood and energy values
-    const validMoods = ['great', 'good', 'okay', 'bad', 'terrible'] as const;
-    const validEnergies = ['high', 'medium', 'low'] as const;
-
-    if (!validMoods.includes(data.mood)) {
-      return NextResponse.json(
-        { error: `Invalid mood value. Must be one of: ${validMoods.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    if (!validEnergies.includes(data.energy)) {
-      return NextResponse.json(
-        { error: `Invalid energy value. Must be one of: ${validEnergies.join(', ')}` },
-        { status: 400 }
-      );
-    }
+    const data = parsed.data as unknown as CheckInInput;
 
     // Create base insert data without array fields
     const baseData = {
@@ -144,14 +147,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json() as Partial<CheckInInput> & { id: string };
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    if (!data.id) {
+    const parsed = updateCheckInSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Check-in ID is required' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+
+    const data = parsed.data as unknown as Partial<CheckInInput> & { id: string };
 
     const { id, userId: _ignoredUserId, ...updateFields } = data;
 
@@ -215,15 +226,18 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
-    if (!id) {
+    const idParsed = z.string().min(1).safeParse(id);
+    if (!idParsed.success) {
       return NextResponse.json(
         { error: 'Check-in ID is required' },
         { status: 400 }
       );
     }
 
+    const validatedId = idParsed.data;
+
     const deletedCheckIn = await db.delete(checkIns)
-      .where(and(eq(checkIns.id, id), eq(checkIns.userId, userId)))
+      .where(and(eq(checkIns.id, validatedId), eq(checkIns.userId, userId)))
       .returning();
 
     if (!deletedCheckIn.length) {

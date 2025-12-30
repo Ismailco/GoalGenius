@@ -4,6 +4,7 @@ import { goals } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,21 @@ type GoalInput = {
 	progress: number;
 	dueDate?: string;
 };
+
+const createGoalSchema = z
+	.object({
+		title: z.string().min(1),
+		description: z.string().optional(),
+		category: z.enum(['health', 'career', 'learning', 'relationships']),
+		timeFrame: z.string().min(1),
+		status: z.enum(['not-started', 'in-progress', 'completed']),
+		progress: z.number().optional(),
+		dueDate: z.string().optional(),
+		userId: z.string().optional(),
+	})
+	.passthrough();
+
+const updateGoalSchema = createGoalSchema.partial().extend({ id: z.string().min(1) }).passthrough();
 
 // GET /api/goals - Get all goals for a user
 export async function GET(request: NextRequest) {
@@ -44,15 +60,22 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const data = await request.json() as GoalInput;
+		let json: unknown;
+		try {
+			json = await request.json();
+		} catch {
+			return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+		}
 
-		// Validate required fields
-		if (!data.title || !data.category || !data.timeFrame || !data.status) {
+		const parsed = createGoalSchema.safeParse(json);
+		if (!parsed.success) {
 			return NextResponse.json(
-				{ error: 'Missing required fields' },
+				{ error: 'Invalid request', details: parsed.error.flatten() },
 				{ status: 400 }
 			);
 		}
+
+		const data = parsed.data as unknown as GoalInput;
 
 		const newGoal = await db.insert(goals).values({
 			id: uuidv4(),
@@ -82,14 +105,22 @@ export async function PUT(request: NextRequest) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const data = await request.json() as Partial<GoalInput> & { id: string };
+		let json: unknown;
+		try {
+			json = await request.json();
+		} catch {
+			return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+		}
 
-		if (!data.id) {
+		const parsed = updateGoalSchema.safeParse(json);
+		if (!parsed.success) {
 			return NextResponse.json(
-				{ error: 'Goal ID is required' },
+				{ error: 'Invalid request', details: parsed.error.flatten() },
 				{ status: 400 }
 			);
 		}
+
+		const data = parsed.data as unknown as Partial<GoalInput> & { id: string };
 
 		const { id, userId: _ignoredUserId, ...updateData } = data;
 
@@ -129,15 +160,17 @@ export async function DELETE(request: NextRequest) {
 		const searchParams = request.nextUrl.searchParams;
 		const id = searchParams.get('id');
 
-		if (!id) {
+		const idParsed = z.string().min(1).safeParse(id);
+		if (!idParsed.success) {
 			return NextResponse.json(
 				{ error: 'Goal ID is required' },
 				{ status: 400 }
 			);
 		}
+		const validatedId = idParsed.data;
 
 		const deletedGoal = await db.delete(goals)
-			.where(and(eq(goals.id, id), eq(goals.userId, userId)))
+			.where(and(eq(goals.id, validatedId), eq(goals.userId, userId)))
 			.returning();
 
 		if (!deletedGoal.length) {
