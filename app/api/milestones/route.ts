@@ -3,6 +3,9 @@ import { db } from '@/lib/db/db';
 import { milestones } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
+import { readJsonBodyWithLimit } from '@/lib/server/request-body';
 
 export const runtime = "edge";
 
@@ -14,24 +17,43 @@ type MilestoneInput = {
   date: string;
 };
 
+const createMilestoneSchema = z
+  .object({
+    goalId: z.string().min(1),
+    title: z.string().min(1),
+    description: z.string().optional(),
+    date: z.string().min(1),
+    userId: z.string().optional(),
+  })
+  .passthrough();
+
+const updateMilestoneSchema = createMilestoneSchema.partial().extend({ id: z.string().min(1) }).passthrough();
+
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const goalId = searchParams.get('goalId');
 
-    if (!userId && !goalId) {
-      return NextResponse.json(
-        { error: 'Either User ID or Goal ID is required' },
-        { status: 400 }
-      );
+    if (goalId !== null) {
+      const goalIdParsed = z.string().min(1).safeParse(goalId);
+      if (!goalIdParsed.success) {
+        return NextResponse.json(
+          { error: 'Invalid request', details: goalIdParsed.error.flatten() },
+          { status: 400 }
+        );
+      }
     }
 
-    // Build conditions array
-    const conditions = [];
-    if (userId) {
-      conditions.push(eq(milestones.userId, userId));
-    }
+    // Always scope to current user; optionally filter by goalId
+    const conditions = [eq(milestones.userId, userId)];
     if (goalId) {
       conditions.push(eq(milestones.goalId, goalId));
     }
@@ -50,20 +72,31 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json() as MilestoneInput;
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Validate required fields
-    if (!data.goalId || !data.userId || !data.title || !data.date) {
+    const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+    if (!bodyResult.ok) {
+      return bodyResult.response;
+    }
+
+    const parsed = createMilestoneSchema.safeParse(bodyResult.data);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
+    const data = parsed.data as unknown as MilestoneInput;
+
     const newMilestone = await db.insert(milestones).values({
       id: uuidv4(),
       goalId: data.goalId,
-      userId: data.userId,
+      userId,
       title: data.title,
       description: data.description,
       date: data.date,
@@ -77,23 +110,35 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const data = await request.json() as Partial<MilestoneInput> & { id: string };
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!data.id) {
+    const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+    if (!bodyResult.ok) {
+      return bodyResult.response;
+    }
+
+    const parsed = updateMilestoneSchema.safeParse(bodyResult.data);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Milestone ID is required' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    const { id, ...updateData } = data;
+    const data = parsed.data as unknown as Partial<MilestoneInput> & { id: string };
+
+    const { id, userId: _ignoredUserId, ...updateData } = data;
 
     const updatedMilestone = await db.update(milestones)
       .set({
         ...updateData,
         updatedAt: new Date(),
       })
-      .where(eq(milestones.id, id))
+      .where(and(eq(milestones.id, id), eq(milestones.userId, userId)))
       .returning();
 
     if (!updatedMilestone.length) {
@@ -114,18 +159,27 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
-    if (!id) {
+    const idParsed = z.string().min(1).safeParse(id);
+    if (!idParsed.success) {
       return NextResponse.json(
         { error: 'Milestone ID is required' },
         { status: 400 }
       );
     }
 
+    const validatedId = idParsed.data;
+
     const deletedMilestone = await db.delete(milestones)
-      .where(eq(milestones.id, id))
+      .where(and(eq(milestones.id, validatedId), eq(milestones.userId, userId)))
       .returning();
 
     if (!deletedMilestone.length) {

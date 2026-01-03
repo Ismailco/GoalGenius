@@ -105,7 +105,7 @@ export default function CalendarPage() {
             <h2 className="text-2xl font-bold text-white">Calendar Integration Coming Soon!</h2>
           </div>
           <p className="text-gray-300 max-w-2xl mx-auto">
-            We're working on integrating with your favorite calendar services! Soon you'll be able to sync your milestones
+            We&apos;re working on integrating with your favorite calendar services! Soon you&apos;ll be able to sync your milestones
             with Google Calendar, Outlook, Apple Calendar, and more. Stay organized across all your platforms!
           </p>
         </div>

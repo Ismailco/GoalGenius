@@ -3,6 +3,9 @@ import { db } from '@/lib/db/db';
 import { todos } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { auth } from '@/lib/auth/auth';
+import { z } from 'zod';
+import { readJsonBodyWithLimit } from '@/lib/server/request-body';
 
 export const runtime = "edge";
 
@@ -16,17 +19,31 @@ type TodoInput = {
   completed?: boolean;
 };
 
+const createTodoSchema = z
+  .object({
+    title: z.string().min(1),
+    description: z.string().optional(),
+    priority: z.enum(['low', 'medium', 'high']),
+    dueDate: z.string().optional(),
+    category: z.string().optional(),
+    completed: z.boolean().optional(),
+    userId: z.string().optional(),
+  })
+  .passthrough();
+
+const updateTodoSchema = createTodoSchema.partial().extend({ id: z.string().min(1) }).passthrough();
+
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const completed = searchParams.get('completed');
 
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Build conditions array
@@ -53,27 +70,30 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json() as TodoInput;
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Validate required fields
-    if (!data.userId || !data.title || !data.priority) {
+    const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+    if (!bodyResult.ok) {
+      return bodyResult.response;
+    }
+
+    const parsed = createTodoSchema.safeParse(bodyResult.data);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // Validate priority
-    if (!['low', 'medium', 'high'].includes(data.priority)) {
-      return NextResponse.json(
-        { error: 'Invalid priority level' },
-        { status: 400 }
-      );
-    }
+    const data = parsed.data as unknown as TodoInput;
 
     const newTodo = await db.insert(todos).values({
       id: uuidv4(),
-      userId: data.userId,
+      userId,
       title: data.title,
       description: data.description,
       priority: data.priority,
@@ -93,31 +113,35 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const data = await request.json() as Partial<TodoInput> & { id: string };
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!data.id) {
+    const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+    if (!bodyResult.ok) {
+      return bodyResult.response;
+    }
+
+    const parsed = updateTodoSchema.safeParse(bodyResult.data);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Todo ID is required' },
+        { error: 'Invalid request', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // Validate priority if provided
-    if (data.priority && !['low', 'medium', 'high'].includes(data.priority)) {
-      return NextResponse.json(
-        { error: 'Invalid priority level' },
-        { status: 400 }
-      );
-    }
+    const data = parsed.data as unknown as Partial<TodoInput> & { id: string };
 
-    const { id, ...updateData } = data;
+    const { id, userId: _ignoredUserId, ...updateData } = data;
 
     const updatedTodo = await db.update(todos)
       .set({
         ...updateData,
         updatedAt: new Date(),
       })
-      .where(eq(todos.id, id))
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)))
       .returning();
 
     if (!updatedTodo.length) {
@@ -138,6 +162,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
 
@@ -149,7 +179,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deletedTodo = await db.delete(todos)
-      .where(eq(todos.id, id))
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)))
       .returning();
 
     if (!deletedTodo.length) {

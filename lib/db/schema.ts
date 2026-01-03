@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 export const user = sqliteTable('user', {
 	id: text('id').primaryKey(),
@@ -73,7 +73,9 @@ export const goals = sqliteTable('goals', {
 	dueDate: text('due_date'),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-});
+}, (table) => ({
+	userIdIdx: index('goals_user_id_idx').on(table.userId),
+}));
 
 export const milestones = sqliteTable('milestones', {
 	id: text('id').primaryKey(),
@@ -84,7 +86,10 @@ export const milestones = sqliteTable('milestones', {
 	date: text('date').notNull(),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-});
+}, (table) => ({
+	userIdIdx: index('milestones_user_id_idx').on(table.userId),
+	goalIdIdx: index('milestones_goal_id_idx').on(table.goalId),
+}));
 
 export const notes = sqliteTable('notes', {
 	id: text('id').primaryKey(),
@@ -95,7 +100,9 @@ export const notes = sqliteTable('notes', {
 	isPinned: integer('is_pinned', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-});
+}, (table) => ({
+	userIdIdx: index('notes_user_id_idx').on(table.userId),
+}));
 
 export const todos = sqliteTable('todos', {
 	id: text('id').primaryKey(),
@@ -108,7 +115,10 @@ export const todos = sqliteTable('todos', {
 	completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-});
+}, (table) => ({
+	userIdIdx: index('todos_user_id_idx').on(table.userId),
+	userIdCompletedIdx: index('todos_user_id_completed_idx').on(table.userId, table.completed),
+}));
 
 export const checkIns = sqliteTable('check_ins', {
 	id: text('id').primaryKey(),
@@ -122,5 +132,7 @@ export const checkIns = sqliteTable('check_ins', {
 	notes: text('notes'),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-});
+}, (table) => ({
+	userIdIdx: index('check_ins_user_id_idx').on(table.userId),
+}));
 

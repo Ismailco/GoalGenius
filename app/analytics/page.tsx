@@ -39,7 +39,7 @@ export default function AnalyticsPage() {
         <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-lg rounded-3xl p-8 mb-8 border border-white/10 text-center">
           <h2 className="text-2xl font-bold text-white mb-4">🚀 Coming Soon!</h2>
           <p className="text-gray-300 max-w-2xl mx-auto">
-            We're working on bringing you powerful analytics tools to help you track and improve your progress.
+            We&apos;re working on bringing you powerful analytics tools to help you track and improve your progress.
             Stay tuned for detailed insights, progress tracking, and performance metrics!
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
           <div className="text-center">
             <h3 className="text-xl font-semibold text-white mb-4">Have suggestions?</h3>
             <p className="text-gray-400 mb-6">
-              We're building this analytics dashboard for you! Let us know what metrics and insights would be most valuable for your goal tracking journey.
+              We&apos;re building this analytics dashboard for you! Let us know what metrics and insights would be most valuable for your goal tracking journey.
             </p>
             <button
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
