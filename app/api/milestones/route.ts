@@ -7,7 +7,7 @@ import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
 import { readJsonBodyWithLimit } from '@/lib/server/request-body';
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 type MilestoneInput = {
   goalId: string;
