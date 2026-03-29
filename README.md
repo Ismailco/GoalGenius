@@ -109,7 +109,8 @@ CLOUDFLARE_D1_DATABASE_ID=your_database_id
 CLOUDFLARE_D1_API_TOKEN=your_api_token
 
 # Authentication
-BETTER_AUTH_URL=http://localhost:3000
+# Use the Wrangler/OpenNext preview origin for `pnpm run cf:preview`.
+BETTER_AUTH_URL=http://localhost:8787
 BETTER_AUTH_SECRET=your_auth_secret
 ```
 Create a `.env.local` file in the root directory with the following variables:
@@ -131,6 +132,8 @@ AUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=your_auth_secret
 ```
+
+Use `.env.local` for `pnpm dev` on `http://localhost:3000`, and `.dev.vars` for `pnpm run cf:preview` on `http://localhost:8787`.
 
 ### Database Setup
 

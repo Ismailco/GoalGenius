@@ -6,6 +6,6 @@ CLOUDFLARE_D1_ACCOUNT_ID=
 CLOUDFLARE_D1_DATABASE_ID=
 CLOUDFLARE_D1_API_TOKEN=
 
-# Use the app origin. The auth config already mounts Better Auth at /api/auth.
-BETTER_AUTH_URL=http://localhost:3000
+# Use the Wrangler preview origin. The auth config already mounts Better Auth at /api/auth.
+BETTER_AUTH_URL=http://localhost:8787
 BETTER_AUTH_SECRET=
