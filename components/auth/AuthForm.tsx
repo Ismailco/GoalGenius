@@ -172,9 +172,8 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         // Handle error in the result
         if (result?.error) {
-          const errorMessage =
-            result.error.message || "Authentication failed. Please try again.";
-          setError(errorMessage);
+          const errorDetails = getAuthError(result.error, mode);
+          setError(errorDetails.message);
 
           // Clear password fields on error
           setFormData((prev) => ({
@@ -200,9 +199,8 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         // Handle error in the result
         if (result?.error) {
-          const errorMessage =
-            result.error.message || "Sign up failed. Please try again.";
-          setError(errorMessage);
+          const errorDetails = getAuthError(result.error, mode);
+          setError(errorDetails.message);
 
           // Clear password fields on error
           setFormData((prev) => ({
@@ -222,10 +220,8 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
     } catch (err) {
       // Get the error details
-      const errorDetails = getAuthError(err);
-      const errorMessage =
-        errorDetails.message || "Authentication failed. Please try again.";
-      setError(errorMessage);
+      const errorDetails = getAuthError(err, mode);
+      setError(errorDetails.message);
 
       // Clear password fields on error
       setFormData((prev) => ({
