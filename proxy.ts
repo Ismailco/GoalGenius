@@ -5,7 +5,7 @@ import { getSessionCookie } from 'better-auth/cookies';
 // Define public routes that don't require authentication
 const publicRoutes = ['/auth/signin', '/auth/signup'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Skip auth check for public routes
@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.redirect(signInUrl);
 }
 
-// Apply middleware to all routes
+// Apply proxy to all routes
 export const config = {
   matcher: [
     /*

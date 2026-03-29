@@ -109,7 +109,7 @@ CLOUDFLARE_D1_DATABASE_ID=your_database_id
 CLOUDFLARE_D1_API_TOKEN=your_api_token
 
 # Authentication
-BETTER_AUTH_URL=your_auth_url
+BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=your_auth_secret
 ```
 Create a `.env.local` file in the root directory with the following variables:
@@ -125,6 +125,11 @@ AUTH_GITHUB_CLIENT_ID=your_github_client_id
 AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
 AUTH_GOOGLE_CLIENT_ID=your_google_client_id
 AUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Better Auth server config
+# Use the app origin. The auth config already mounts Better Auth at /api/auth.
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your_auth_secret
 ```
 
 ### Database Setup

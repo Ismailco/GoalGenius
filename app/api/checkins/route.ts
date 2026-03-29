@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db/db';
-import { checkIns } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
-import { auth } from '@/lib/auth/auth';
-import { z } from 'zod';
-import { readJsonBodyWithLimit } from '@/lib/server/request-body';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db/db";
+import { checkIns } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
+import { auth } from "@/lib/auth/auth";
+import { z } from "zod";
+import { readJsonBodyWithLimit } from "@/lib/server/request-body";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type CheckInInput = {
   userId: string;
   date: string;
-  mood: 'great' | 'good' | 'okay' | 'bad' | 'terrible';
-  energy: 'high' | 'medium' | 'low';
+  mood: "great" | "good" | "okay" | "bad" | "terrible";
+  energy: "high" | "medium" | "low";
   accomplishments: string[] | string; // Can be either array or JSON string
   challenges: string[] | string; // Can be either array or JSON string
   goals: string[] | string; // Can be either array or JSON string
@@ -25,8 +25,8 @@ const jsonArrayInputSchema = z.union([z.array(z.string()), z.string()]);
 const createCheckInSchema = z
   .object({
     date: z.string().min(1),
-    mood: z.enum(['great', 'good', 'okay', 'bad', 'terrible']),
-    energy: z.enum(['high', 'medium', 'low']),
+    mood: z.enum(["great", "good", "okay", "bad", "terrible"]),
+    energy: z.enum(["high", "medium", "low"]),
     accomplishments: jsonArrayInputSchema,
     challenges: jsonArrayInputSchema,
     goals: jsonArrayInputSchema,
@@ -35,12 +35,17 @@ const createCheckInSchema = z
   })
   .passthrough();
 
-const updateCheckInSchema = createCheckInSchema.partial().extend({ id: z.string().min(1) }).passthrough();
+const updateCheckInSchema = createCheckInSchema
+  .partial()
+  .extend({ id: z.string().min(1) })
+  .passthrough();
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 // Add this helper function at the top
-function decodeAndParseJsonArray(value: string[] | string | undefined | null): string[] {
+function decodeAndParseJsonArray(
+  value: string[] | string | undefined | null,
+): string[] {
   if (!value) return [];
 
   // If it's already an array, return it stringified
@@ -55,7 +60,7 @@ function decodeAndParseJsonArray(value: string[] | string | undefined | null): s
     const parsed = JSON.parse(decoded);
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    console.error('Error parsing JSON array:', e);
+    console.error("Error parsing JSON array:", e);
     return [];
   }
 }
@@ -71,13 +76,19 @@ export async function GET(request: NextRequest) {
     const session = await auth.api.getSession({ headers: request.headers });
     const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userCheckIns = await db.select().from(checkIns).where(eq(checkIns.userId, userId));
+    const userCheckIns = await db
+      .select()
+      .from(checkIns)
+      .where(eq(checkIns.userId, userId));
     return NextResponse.json(userCheckIns);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch check-ins' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch check-ins" },
+      { status: 500 },
+    );
   }
 }
 
@@ -86,7 +97,7 @@ export async function POST(request: NextRequest) {
     const session = await auth.api.getSession({ headers: request.headers });
     const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
@@ -97,8 +108,8 @@ export async function POST(request: NextRequest) {
     const parsed = createCheckInSchema.safeParse(bodyResult.data);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid request', details: parsed.error.flatten() },
-        { status: 400 }
+        { error: "Invalid request", details: parsed.error.flatten() },
+        { status: 400 },
       );
     }
 
@@ -127,15 +138,13 @@ export async function POST(request: NextRequest) {
       ...arrayFields,
     };
 
-    const newCheckIn = await db.insert(checkIns)
-      .values(insertData)
-      .returning();
+    const newCheckIn = await db.insert(checkIns).values(insertData).returning();
 
     return NextResponse.json(newCheckIn[0], { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to create check-in', details: (error as Error).message },
-      { status: 500 }
+      { error: "Failed to create check-in", details: (error as Error).message },
+      { status: 500 },
     );
   }
 }
@@ -145,7 +154,7 @@ export async function PUT(request: NextRequest) {
     const session = await auth.api.getSession({ headers: request.headers });
     const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const bodyResult = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
@@ -156,12 +165,14 @@ export async function PUT(request: NextRequest) {
     const parsed = updateCheckInSchema.safeParse(bodyResult.data);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid request', details: parsed.error.flatten() },
-        { status: 400 }
+        { error: "Invalid request", details: parsed.error.flatten() },
+        { status: 400 },
       );
     }
 
-    const data = parsed.data as unknown as Partial<CheckInInput> & { id: string };
+    const data = parsed.data as unknown as Partial<CheckInInput> & {
+      id: string;
+    };
 
     const { id, userId: _ignoredUserId, ...updateFields } = data;
 
@@ -177,39 +188,40 @@ export async function PUT(request: NextRequest) {
     // Then handle the array fields separately
     const arrayFields = {
       ...(updateFields.accomplishments !== undefined && {
-        accomplishments: ensureJsonString(updateFields.accomplishments)
+        accomplishments: ensureJsonString(updateFields.accomplishments),
       }),
       ...(updateFields.challenges !== undefined && {
-        challenges: ensureJsonString(updateFields.challenges)
+        challenges: ensureJsonString(updateFields.challenges),
       }),
       ...(updateFields.goals !== undefined && {
-        goals: ensureJsonString(updateFields.goals)
+        goals: ensureJsonString(updateFields.goals),
       }),
     };
 
     // Combine both objects for the final update
     const updateData = {
       ...baseUpdate,
-      ...arrayFields
+      ...arrayFields,
     };
 
-    const updatedCheckIn = await db.update(checkIns)
+    const updatedCheckIn = await db
+      .update(checkIns)
       .set(updateData)
       .where(and(eq(checkIns.id, id), eq(checkIns.userId, userId)))
       .returning();
 
     if (!updatedCheckIn.length) {
       return NextResponse.json(
-        { error: 'Check-in not found' },
-        { status: 404 }
+        { error: "Check-in not found" },
+        { status: 404 },
       );
     }
 
     return NextResponse.json(updatedCheckIn[0]);
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to update check-in' },
-      { status: 500 }
+      { error: "Failed to update check-in" },
+      { status: 500 },
     );
   }
 }
@@ -219,38 +231,39 @@ export async function DELETE(request: NextRequest) {
     const session = await auth.api.getSession({ headers: request.headers });
     const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     const idParsed = z.string().min(1).safeParse(id);
     if (!idParsed.success) {
       return NextResponse.json(
-        { error: 'Check-in ID is required' },
-        { status: 400 }
+        { error: "Check-in ID is required" },
+        { status: 400 },
       );
     }
 
     const validatedId = idParsed.data;
 
-    const deletedCheckIn = await db.delete(checkIns)
+    const deletedCheckIn = await db
+      .delete(checkIns)
       .where(and(eq(checkIns.id, validatedId), eq(checkIns.userId, userId)))
       .returning();
 
     if (!deletedCheckIn.length) {
       return NextResponse.json(
-        { error: 'Check-in not found' },
-        { status: 404 }
+        { error: "Check-in not found" },
+        { status: 404 },
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to delete check-in' },
-      { status: 500 }
+      { error: "Failed to delete check-in" },
+      { status: 500 },
     );
   }
 }
