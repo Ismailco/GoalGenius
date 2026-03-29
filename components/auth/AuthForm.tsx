@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { signIn, signUp, useSession } from '@/lib/auth/auth-client';
-import { redirect } from 'next/navigation';
-import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { signIn, signUp, useSession } from "@/lib/auth/auth-client";
+import { redirect } from "next/navigation";
+import { validateAndSanitizeInput, ValidationResult } from "@/lib/validation";
 // import { Feedback } from '@/components/common/Feedback';
-import { getAuthError } from '@/lib/auth/auth-errors';
-import { Target, Brain, TrendingUp, Users } from 'lucide-react';
-import { cacheAppPages } from '@/app/providers/ServiceWorkerProvider';
-import logoTransWhite from '@/public/images/logo_full_trans_white.png';
+import { getAuthError } from "@/lib/auth/auth-errors";
+import { Target, Brain, TrendingUp, Users } from "lucide-react";
+import { cacheAppPages } from "@/app/providers/ServiceWorkerProvider";
+import logoTransWhite from "@/public/images/logo_full_trans_white.png";
 
 interface AuthFormProps {
-  mode: 'signin' | 'signup';
+  mode: "signin" | "signup";
 }
 
 interface FormErrors {
@@ -26,10 +26,10 @@ interface FormErrors {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    passwordConfirm: '',
+    name: "",
+    email: "",
+    password: "",
+    passwordConfirm: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
@@ -37,43 +37,71 @@ export function AuthForm({ mode }: AuthFormProps) {
   const { data: session } = useSession();
 
   if (session) {
-    redirect('/dashboard');
+    redirect("/dashboard");
   }
 
   const validateField = (name: string, value: string): ValidationResult => {
     switch (name) {
-      case 'name':
-        return validateAndSanitizeInput(value, 'title', mode === 'signup');
-      case 'email':
+      case "name":
+        return validateAndSanitizeInput(value, "title", mode === "signup");
+      case "email":
         if (!value) {
-          return { isValid: false, sanitizedValue: value, error: 'Email is required' };
-        }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          return { isValid: false, sanitizedValue: value, error: 'Please enter a valid email address' };
-        }
-        return { isValid: true, sanitizedValue: value };
-      case 'password':
-        if (!value) {
-          return { isValid: false, sanitizedValue: value, error: 'Password is required' };
-        }
-        if (mode === 'signup' && value.length < 8) {
-          return { isValid: false, sanitizedValue: value, error: 'Password must be at least 8 characters long' };
-        }
-        if (mode === 'signup' && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
           return {
             isValid: false,
             sanitizedValue: value,
-            error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+            error: "Email is required",
+          };
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return {
+            isValid: false,
+            sanitizedValue: value,
+            error: "Please enter a valid email address",
           };
         }
         return { isValid: true, sanitizedValue: value };
-      case 'passwordConfirm':
-        if (mode === 'signup') {
+      case "password":
+        if (!value) {
+          return {
+            isValid: false,
+            sanitizedValue: value,
+            error: "Password is required",
+          };
+        }
+        if (mode === "signup" && value.length < 8) {
+          return {
+            isValid: false,
+            sanitizedValue: value,
+            error: "Password must be at least 8 characters long",
+          };
+        }
+        if (
+          mode === "signup" &&
+          !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)
+        ) {
+          return {
+            isValid: false,
+            sanitizedValue: value,
+            error:
+              "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+          };
+        }
+        return { isValid: true, sanitizedValue: value };
+      case "passwordConfirm":
+        if (mode === "signup") {
           if (!value) {
-            return { isValid: false, sanitizedValue: value, error: 'Please confirm your password' };
+            return {
+              isValid: false,
+              sanitizedValue: value,
+              error: "Please confirm your password",
+            };
           }
           if (value !== formData.password) {
-            return { isValid: false, sanitizedValue: value, error: 'Passwords do not match' };
+            return {
+              isValid: false,
+              sanitizedValue: value,
+              error: "Passwords do not match",
+            };
           }
         }
         return { isValid: true, sanitizedValue: value };
@@ -86,14 +114,14 @@ export function AuthForm({ mode }: AuthFormProps) {
     const { name, value } = e.target;
     const validationResult = validateField(name, value);
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: validationResult.sanitizedValue
+      [name]: validationResult.sanitizedValue,
     }));
 
-    setErrors(prev => ({
+    setErrors((prev) => ({
       ...prev,
-      [name]: validationResult.error
+      [name]: validationResult.error,
     }));
   };
 
@@ -102,14 +130,16 @@ export function AuthForm({ mode }: AuthFormProps) {
     setError(null);
 
     // Validate all fields
-    const emailValidation = validateField('email', formData.email);
-    const passwordValidation = validateField('password', formData.password);
-    const nameValidation = mode === 'signup'
-      ? validateField('name', formData.name)
-      : { isValid: true, sanitizedValue: '', error: undefined };
-    const passwordConfirmValidation = mode === 'signup'
-      ? validateField('passwordConfirm', formData.passwordConfirm)
-      : { isValid: true, sanitizedValue: '', error: undefined };
+    const emailValidation = validateField("email", formData.email);
+    const passwordValidation = validateField("password", formData.password);
+    const nameValidation =
+      mode === "signup"
+        ? validateField("name", formData.name)
+        : { isValid: true, sanitizedValue: "", error: undefined };
+    const passwordConfirmValidation =
+      mode === "signup"
+        ? validateField("passwordConfirm", formData.passwordConfirm)
+        : { isValid: true, sanitizedValue: "", error: undefined };
 
     const newErrors: FormErrors = {};
     if (!emailValidation.isValid) {
@@ -118,10 +148,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     if (!passwordValidation.isValid) {
       newErrors.password = passwordValidation.error;
     }
-    if (mode === 'signup' && !nameValidation.isValid) {
+    if (mode === "signup" && !nameValidation.isValid) {
       newErrors.name = nameValidation.error;
     }
-    if (mode === 'signup' && !passwordConfirmValidation.isValid) {
+    if (mode === "signup" && !passwordConfirmValidation.isValid) {
       newErrors.passwordConfirm = passwordConfirmValidation.error;
     }
 
@@ -134,7 +164,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
 
     try {
-      if (mode === 'signin') {
+      if (mode === "signin") {
         const result = await signIn.email({
           email: emailValidation.sanitizedValue,
           password: passwordValidation.sanitizedValue,
@@ -142,20 +172,21 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         // Handle error in the result
         if (result?.error) {
-          const errorMessage = result.error.message || 'Authentication failed. Please try again.';
+          const errorMessage =
+            result.error.message || "Authentication failed. Please try again.";
           setError(errorMessage);
 
           // Clear password fields on error
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            password: '',
-            passwordConfirm: '',
+            password: "",
+            passwordConfirm: "",
           }));
           return;
         }
 
         if (!result?.data) {
-          throw new Error('Sign in failed');
+          throw new Error("Sign in failed");
         }
 
         // Trigger caching after successful login
@@ -169,20 +200,21 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         // Handle error in the result
         if (result?.error) {
-          const errorMessage = result.error.message || 'Sign up failed. Please try again.';
+          const errorMessage =
+            result.error.message || "Sign up failed. Please try again.";
           setError(errorMessage);
 
           // Clear password fields on error
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            password: '',
-            passwordConfirm: '',
+            password: "",
+            passwordConfirm: "",
           }));
           return;
         }
 
         if (!result?.data) {
-          throw new Error('Sign up failed');
+          throw new Error("Sign up failed");
         }
 
         // Trigger caching after successful signup
@@ -191,14 +223,15 @@ export function AuthForm({ mode }: AuthFormProps) {
     } catch (err) {
       // Get the error details
       const errorDetails = getAuthError(err);
-      const errorMessage = errorDetails.message || 'Authentication failed. Please try again.';
+      const errorMessage =
+        errorDetails.message || "Authentication failed. Please try again.";
       setError(errorMessage);
 
       // Clear password fields on error
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        password: '',
-        passwordConfirm: '',
+        password: "",
+        passwordConfirm: "",
       }));
     } finally {
       setLoading(false);
@@ -213,12 +246,32 @@ export function AuthForm({ mode }: AuthFormProps) {
         <div className="absolute inset-0 z-0">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="smallGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+              <pattern
+                id="smallGrid"
+                width="10"
+                height="10"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 10 0 L 0 0 0 10"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.1)"
+                  strokeWidth="0.5"
+                />
               </pattern>
-              <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
-                <rect width="100" height="100" fill="url(#smallGrid)"/>
-                <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+              <pattern
+                id="grid"
+                width="100"
+                height="100"
+                patternUnits="userSpaceOnUse"
+              >
+                <rect width="100" height="100" fill="url(#smallGrid)" />
+                <path
+                  d="M 100 0 L 0 0 0 100"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -230,8 +283,18 @@ export function AuthForm({ mode }: AuthFormProps) {
             <circle cx="90%" cy="70%" r="70" fill="rgba(255,255,255,0.05)" />
 
             {/* <!-- Curved lines --> */}
-            <path d="M0,50 Q400,400 800,100" stroke="rgba(255,255,255,0.1)" fill="none" stroke-width="2" />
-            <path d="M0,200 Q300,100 600,300" stroke="rgba(255,255,255,0.1)" fill="none" stroke-width="2" />
+            <path
+              d="M0,50 Q400,400 800,100"
+              stroke="rgba(255,255,255,0.1)"
+              fill="none"
+              strokeWidth="2"
+            />
+            <path
+              d="M0,200 Q300,100 600,300"
+              stroke="rgba(255,255,255,0.1)"
+              fill="none"
+              strokeWidth="2"
+            />
           </svg>
         </div>
 
@@ -259,7 +322,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">Smart Goal Setting</h3>
-                <p className="text-sm opacity-80">Set and track your personal goals with AI-powered insights</p>
+                <p className="text-sm opacity-80">
+                  Set and track your personal goals with AI-powered insights
+                </p>
               </div>
             </div>
 
@@ -269,7 +334,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">AI-Powered Insights</h3>
-                <p className="text-sm opacity-80">Get personalized recommendations to achieve your goals faster</p>
+                <p className="text-sm opacity-80">
+                  Get personalized recommendations to achieve your goals faster
+                </p>
               </div>
             </div>
 
@@ -279,7 +346,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">Progress Tracking</h3>
-                <p className="text-sm opacity-80">Stay motivated with detailed progress analytics and milestones</p>
+                <p className="text-sm opacity-80">
+                  Stay motivated with detailed progress analytics and milestones
+                </p>
               </div>
             </div>
 
@@ -289,7 +358,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">Community Support</h3>
-                <p className="text-sm opacity-80">Connect with like-minded achievers and share your journey</p>
+                <p className="text-sm opacity-80">
+                  Connect with like-minded achievers and share your journey
+                </p>
               </div>
             </div>
           </div>
@@ -301,12 +372,12 @@ export function AuthForm({ mode }: AuthFormProps) {
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold">
-              {mode === 'signin' ? 'Welcome back' : 'Create account'}
+              {mode === "signin" ? "Welcome back" : "Create account"}
             </h1>
             <p className="mt-2 text-gray-600">
-              {mode === 'signin'
-                ? 'Sign in to your account'
-                : 'Sign up for a new account'}
+              {mode === "signin"
+                ? "Sign in to your account"
+                : "Sign up for a new account"}
             </p>
           </div>
 
@@ -316,8 +387,16 @@ export function AuthForm({ mode }: AuthFormProps) {
               <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <svg
+                      className="h-5 w-5 text-red-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div className="ml-3">
@@ -330,8 +409,16 @@ export function AuthForm({ mode }: AuthFormProps) {
                       onClick={() => setError(null)}
                     >
                       <span className="sr-only">Dismiss</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -339,9 +426,12 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
             )}
 
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium mb-1"
+                >
                   Full Name
                 </label>
                 <input
@@ -352,7 +442,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   onChange={handleChange}
                   required
                   className={`block w-full rounded-lg border ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
+                    errors.name ? "border-red-500" : "border-gray-300"
                   } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                   placeholder="John Doe"
                 />
@@ -374,7 +464,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 onChange={handleChange}
                 required
                 className={`block w-full rounded-lg border ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
+                  errors.email ? "border-red-500" : "border-gray-300"
                 } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                 placeholder="you@example.com"
               />
@@ -384,7 +474,10 @@ export function AuthForm({ mode }: AuthFormProps) {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium mb-1"
+              >
                 Password
               </label>
               <input
@@ -395,23 +488,27 @@ export function AuthForm({ mode }: AuthFormProps) {
                 onChange={handleChange}
                 required
                 className={`block w-full rounded-lg border ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
+                  errors.password ? "border-red-500" : "border-gray-300"
                 } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                 placeholder="••••••••"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
-              {mode === 'signup' && !errors.password && (
+              {mode === "signup" && !errors.password && (
                 <p className="mt-1 text-sm text-gray-500">
-                  Password must be at least 8 characters long and contain uppercase, lowercase, and numbers
+                  Password must be at least 8 characters long and contain
+                  uppercase, lowercase, and numbers
                 </p>
               )}
             </div>
 
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <div>
-                <label htmlFor="passwordConfirm" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="passwordConfirm"
+                  className="block text-sm font-medium mb-1"
+                >
                   Confirm Password
                 </label>
                 <input
@@ -422,26 +519,44 @@ export function AuthForm({ mode }: AuthFormProps) {
                   onChange={handleChange}
                   required
                   className={`block w-full rounded-lg border ${
-                    errors.passwordConfirm ? 'border-red-500' : 'border-gray-300'
+                    errors.passwordConfirm
+                      ? "border-red-500"
+                      : "border-gray-300"
                   } px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition-colors`}
                   placeholder="••••••••"
                 />
                 {errors.passwordConfirm && (
-                  <p className="mt-1 text-sm text-red-600">{errors.passwordConfirm}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.passwordConfirm}
+                  </p>
                 )}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading || Object.keys(errors).some(key =>
-                errors[key] && (mode === 'signin'
-                  ? ['email', 'password'].includes(key)
-                  : ['email', 'password', 'passwordConfirm', 'name'].includes(key))
-              )}
+              disabled={
+                loading ||
+                Object.keys(errors).some(
+                  (key) =>
+                    errors[key] &&
+                    (mode === "signin"
+                      ? ["email", "password"].includes(key)
+                      : [
+                          "email",
+                          "password",
+                          "passwordConfirm",
+                          "name",
+                        ].includes(key)),
+                )
+              }
               className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
-              {loading ? 'Loading...' : mode === 'signin' ? 'Sign in' : 'Sign up'}
+              {loading
+                ? "Loading..."
+                : mode === "signin"
+                  ? "Sign in"
+                  : "Sign up"}
             </button>
 
             <div className="relative">
@@ -449,31 +564,59 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                <span className="bg-white px-2 text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => signIn.social({ provider: 'google' })}
+                onClick={() => signIn.social({ provider: "google" })}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
                 </svg>
                 <span>Google</span>
               </button>
               <button
                 type="button"
-                onClick={() => signIn.social({ provider: 'github' })}
+                onClick={() => signIn.social({ provider: "github" })}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"
+                  />
                 </svg>
                 <span>GitHub</span>
               </button>
@@ -481,17 +624,23 @@ export function AuthForm({ mode }: AuthFormProps) {
           </form>
 
           <p className="text-center text-sm text-gray-600">
-            {mode === 'signin' ? (
+            {mode === "signin" ? (
               <>
-                Don&apos;t have an account?{' '}
-                <Link href="/auth/signup" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/auth/signup"
+                  className="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                >
                   Sign up
                 </Link>
               </>
             ) : (
               <>
-                Already have an account?{' '}
-                <Link href="/auth/signin" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                Already have an account?{" "}
+                <Link
+                  href="/auth/signin"
+                  className="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                >
                   Sign in
                 </Link>
               </>

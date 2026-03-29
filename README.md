@@ -109,7 +109,8 @@ CLOUDFLARE_D1_DATABASE_ID=your_database_id
 CLOUDFLARE_D1_API_TOKEN=your_api_token
 
 # Authentication
-BETTER_AUTH_URL=your_auth_url
+# Use the Wrangler/OpenNext preview origin for `pnpm run cf:preview`.
+BETTER_AUTH_URL=http://localhost:8787
 BETTER_AUTH_SECRET=your_auth_secret
 ```
 Create a `.env.local` file in the root directory with the following variables:
@@ -125,7 +126,14 @@ AUTH_GITHUB_CLIENT_ID=your_github_client_id
 AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
 AUTH_GOOGLE_CLIENT_ID=your_google_client_id
 AUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Better Auth server config
+# Use the app origin. The auth config already mounts Better Auth at /api/auth.
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your_auth_secret
 ```
+
+Use `.env.local` for `pnpm dev` on `http://localhost:3000`, and `.dev.vars` for `pnpm run cf:preview` on `http://localhost:8787`.
 
 ### Database Setup
 
@@ -137,7 +145,11 @@ The project uses Cloudflare D1 as the database. To set up:
 
 ## 🚀 Deployment
 
-### Deploy to Cloudflare
+### Deploy to Cloudflare Workers
+
+This project targets **Cloudflare Workers** via OpenNext.
+
+Do **not** deploy it as a **Cloudflare Pages** project. Pages uses a different Next.js adapter path and can fail with errors like `/_middleware` needing the Edge Runtime. This repository is configured for the OpenNext Workers flow through [wrangler.jsonc](/home/ismail/Developer/Personal/GoalGenius/wrangler.jsonc) and the `opennextjs-cloudflare` scripts in [package.json](/home/ismail/Developer/Personal/GoalGenius/package.json).
 
 1. Install Wrangler CLI
    ```bash
@@ -149,10 +161,12 @@ The project uses Cloudflare D1 as the database. To set up:
    wrangler login
    ```
 
-3. Deploy to Cloudflare (Don't deploy this way, use the Cloudflare dashboard)
+3. Deploy to Cloudflare Workers
    ```bash
-   pnpm deploy
+   pnpm run cf:deploy
    ```
+
+`pnpm deploy` will not work here because `deploy` is a built-in `pnpm` workspace command. Use `pnpm run cf:deploy` instead.
 
 ## 👥 Contributing
 
