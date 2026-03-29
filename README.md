@@ -142,7 +142,11 @@ The project uses Cloudflare D1 as the database. To set up:
 
 ## 🚀 Deployment
 
-### Deploy to Cloudflare
+### Deploy to Cloudflare Workers
+
+This project targets **Cloudflare Workers** via OpenNext.
+
+Do **not** deploy it as a **Cloudflare Pages** project. Pages uses a different Next.js adapter path and can fail with errors like `/_middleware` needing the Edge Runtime. This repository is configured for the OpenNext Workers flow through [wrangler.jsonc](/home/ismail/Developer/Personal/GoalGenius/wrangler.jsonc) and the `opennextjs-cloudflare` scripts in [package.json](/home/ismail/Developer/Personal/GoalGenius/package.json).
 
 1. Install Wrangler CLI
    ```bash
@@ -154,10 +158,12 @@ The project uses Cloudflare D1 as the database. To set up:
    wrangler login
    ```
 
-3. Deploy to Cloudflare (Don't deploy this way, use the Cloudflare dashboard)
+3. Deploy to Cloudflare Workers
    ```bash
-   pnpm deploy
+   pnpm run cf:deploy
    ```
+
+`pnpm deploy` will not work here because `deploy` is a built-in `pnpm` workspace command. Use `pnpm run cf:deploy` instead.
 
 ## 👥 Contributing
 

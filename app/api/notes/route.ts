@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth/auth";
 import { z } from "zod";
 import { readJsonBodyWithLimit } from "@/lib/server/request-body";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type NoteInput = {
   userId: string;
