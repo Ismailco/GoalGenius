@@ -16,13 +16,24 @@ const authBaseURL =
   readEnv("NEXT_PUBLIC_SITE_URL");
 
 const authSecret = readEnv("BETTER_AUTH_SECRET");
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      "http://localhost",
+      "http://localhost:3000",
+      "http://localhost:8787",
+      "https://app.goalgenius.online",
+      "https://www.app.goalgenius.online",
+      authBaseURL ? new URL(authBaseURL).origin : undefined,
+    ].filter((origin): origin is string => Boolean(origin)),
+  ),
+);
 
 export const auth = betterAuth({
-  // trustedOrigins: ["http://localhost:3000", "https://goalgenius.online"],
-  // trustHost: true,
   basePath: AUTH_BASE_PATH,
   ...(authBaseURL ? { baseURL: authBaseURL } : {}),
   ...(authSecret ? { secret: authSecret } : {}),
+  trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "sqlite",
   }),

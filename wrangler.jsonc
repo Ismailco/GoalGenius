@@ -18,6 +18,14 @@
       "custom_domain": true,
     },
   ],
+  // Keep local Wrangler development on localhost instead of inheriting
+  // the first custom-domain route as the upstream host.
+  "dev": {
+    "port": 8787,
+    "local_protocol": "http",
+    "upstream_protocol": "http",
+    "host": "localhost",
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",
