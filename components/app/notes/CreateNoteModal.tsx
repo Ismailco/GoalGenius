@@ -49,7 +49,7 @@ export default function CreateNoteModal({
       case 'title':
         return validateAndSanitizeInput(value, 'title', true);
       case 'content':
-        return validateAndSanitizeInput(value, 'description', true);
+        return validateAndSanitizeInput(value, 'noteContent', true);
       case 'category':
         return validateAndSanitizeInput(value, 'category', false);
       default:
@@ -177,7 +177,7 @@ export default function CreateNoteModal({
 
               <div>
                 <label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-2">
-                  Content
+                  Content (Markdown supported)
                 </label>
                 <textarea
                   id="content"

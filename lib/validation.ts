@@ -9,6 +9,7 @@ export interface ValidationResult {
 
 const MAX_TITLE_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_NOTE_CONTENT_LENGTH = 20000;
 const MAX_CATEGORY_LENGTH = 50;
 
 // Function to sanitize data before storage
@@ -29,7 +30,7 @@ export const unescapeForDisplay = (value: string): string => {
 
 export const validateAndSanitizeInput = (
   input: string,
-  type: 'title' | 'description' | 'category' | 'date',
+  type: 'title' | 'description' | 'noteContent' | 'category' | 'date',
   required: boolean = true
 ): ValidationResult => {
   // Keep original input for validation
@@ -70,6 +71,16 @@ export const validateAndSanitizeInput = (
           isValid: false,
           sanitizedValue: value,
           error: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`,
+        };
+      }
+      break;
+
+    case 'noteContent':
+      if (value.length > MAX_NOTE_CONTENT_LENGTH) {
+        return {
+          isValid: false,
+          sanitizedValue: value,
+          error: `Note content must be ${MAX_NOTE_CONTENT_LENGTH} characters or less`,
         };
       }
       break;
