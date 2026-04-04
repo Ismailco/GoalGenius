@@ -4,7 +4,6 @@ import { env } from "better-auth";
 import { getCookieCache } from "better-auth/cookies";
 
 const publicRoutes = ["/auth/signin", "/auth/signup"];
-const DEFAULT_AUTH_SECRET = "better-auth-secret-12345678901234567890";
 
 function readEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -14,10 +13,13 @@ function readEnv(name: string) {
 const authSecret =
   readEnv("BETTER_AUTH_SECRET") ??
   env.BETTER_AUTH_SECRET ??
-  readEnv("AUTH_SECRET") ??
-  DEFAULT_AUTH_SECRET;
+  readEnv("AUTH_SECRET");
 
 async function hasValidSession(request: NextRequest) {
+  if (!authSecret) {
+    return false;
+  }
+
   const session = await getCookieCache(request, {
     isSecure: request.nextUrl.protocol === "https:",
     secret: authSecret,
