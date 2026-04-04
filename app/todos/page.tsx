@@ -7,6 +7,10 @@ import { Todo } from '@/app/types';
 import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
 import CreateTodoModal from '@/components/app/todos/CreateTodoModal';
 import AlertModal from '@/components/common/AlertModal';
+import {
+  readAppSettings,
+  subscribeToAppSettings,
+} from '@/lib/app-settings';
 import { deleteTodo, getTodos, toggleTodoComplete } from '@/lib/storage';
 
 export default function TodosPage() {
@@ -35,6 +39,7 @@ export default function TodosPage() {
   useEffect(() => {
     const loadTodos = async () => {
       try {
+        setShowCompleted(readAppSettings().showCompletedTodosByDefault);
         setMounted(true);
         const loadedTodos = await getTodos();
         setTodos(loadedTodos);
@@ -50,6 +55,12 @@ export default function TodosPage() {
     };
 
     loadTodos();
+
+    const unsubscribe = subscribeToAppSettings(() => {
+      setShowCompleted(readAppSettings().showCompletedTodosByDefault);
+    });
+
+    return unsubscribe;
   }, []);
 
   async function handleSaveTodo() {

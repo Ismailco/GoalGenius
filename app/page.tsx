@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import AppLogoMark from '@/components/app/shared/AppLogoMark';
 import { useSession } from '@/lib/auth/auth-client';
 
 export default function Home() {
@@ -23,7 +24,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="surface-panel max-w-md p-10 text-center">
-        <div className="mx-auto mb-4 brand-mark">G</div>
+        <AppLogoMark className="mx-auto mb-4" />
         <p className="page-kicker">Redirecting</p>
         <h1 className="text-2xl font-semibold text-white">Opening your workspace</h1>
         <p className="mt-3 animate-pulse text-sm text-[var(--text-secondary)]">

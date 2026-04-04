@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import AppLogoMark from '@/components/app/shared/AppLogoMark';
 import UserProfile from '@/components/UserProfile';
 import {
   APP_NAV_ITEMS,
@@ -81,7 +82,7 @@ export default function Navbar() {
         <div ref={drawerRef} className="surface-panel flex h-full flex-col p-4">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="brand-mark">G</div>
+              <AppLogoMark />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   GoalGenius

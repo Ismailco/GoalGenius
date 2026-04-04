@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import AppLogoMark from '@/components/app/shared/AppLogoMark';
 import UserProfile from '@/components/UserProfile';
+import {
+  readSidebarCollapsed,
+  subscribeToAppSettings,
+  writeSidebarCollapsed,
+} from '@/lib/app-settings';
 import {
   APP_NAV_ITEMS,
   isNavigationItemActive,
@@ -15,16 +21,18 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
-    const savedValue = localStorage.getItem('sidebar-collapsed');
-    if (savedValue !== null) {
-      setIsCollapsed(savedValue === 'true');
-    }
+    const syncSidebarState = () => {
+      setIsCollapsed(readSidebarCollapsed());
+    };
+
+    syncSidebarState();
+    return subscribeToAppSettings(syncSidebarState);
   }, []);
 
   function toggleSidebar() {
     const nextValue = !isCollapsed;
     setIsCollapsed(nextValue);
-    localStorage.setItem('sidebar-collapsed', String(nextValue));
+    writeSidebarCollapsed(nextValue);
   }
 
   return (
@@ -35,13 +43,13 @@ export default function Sidebar() {
     >
       <div className="surface-panel flex h-full w-full flex-col px-3 py-4">
         <div
-          className={`flex items-center gap-3 px-2 pb-5 ${
-            isCollapsed ? 'justify-center' : 'justify-between'
+          className={`flex items-center px-2 pb-5 ${
+            isCollapsed ? 'justify-center' : 'justify-between gap-3'
           }`}
         >
           {!isCollapsed ? (
-            <div className="flex items-center gap-3">
-              <div className="brand-mark">G</div>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <AppLogoMark className="shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   GoalGenius
@@ -51,14 +59,12 @@ export default function Sidebar() {
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="brand-mark">G</div>
-          )}
+          ) : null}
 
           <button
             type="button"
             onClick={toggleSidebar}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/5 bg-white/5 text-[var(--text-secondary)] hover:border-white/10 hover:bg-white/10 hover:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/5 bg-white/5 text-[var(--text-secondary)] hover:border-white/10 hover:bg-white/10 hover:text-white"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
@@ -97,18 +103,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className="mt-4 space-y-3 border-t border-white/5 pt-4">
-          {!isCollapsed ? (
-            <div className="surface-panel-muted rounded-[20px] px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                Theme
-              </p>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Clean dark-blue workspace built for planning without noise.
-              </p>
-            </div>
-          ) : null}
-
+        <div className="mt-4 border-t border-white/5 pt-4">
           <div className={isCollapsed ? 'flex justify-center' : ''}>
             <UserProfile isMenuButton={isCollapsed} />
           </div>

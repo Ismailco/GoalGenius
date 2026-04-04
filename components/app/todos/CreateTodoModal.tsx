@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '@/app/types';
+import { readAppSettings } from '@/lib/app-settings';
 import { createTodo, updateTodo } from '@/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
@@ -29,21 +30,37 @@ export default function CreateTodoModal({
 }: CreateTodoModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(
+    readAppSettings().defaultTodoPriority
+  );
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     if (existingTodo) {
       setTitle(unescapeForDisplay(existingTodo.title));
       setDescription(existingTodo.description ? unescapeForDisplay(existingTodo.description) : '');
       setPriority(existingTodo.priority);
       setDueDate(existingTodo.dueDate || '');
       setCategory(existingTodo.category ? unescapeForDisplay(existingTodo.category) : '');
+      setErrors({});
+      return;
     }
-  }, [existingTodo]);
+
+    const settings = readAppSettings();
+    setTitle('');
+    setDescription('');
+    setPriority(settings.defaultTodoPriority);
+    setDueDate('');
+    setCategory('');
+    setErrors({});
+  }, [existingTodo, isOpen]);
 
   if (!isOpen) return null;
 
