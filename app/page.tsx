@@ -21,8 +21,15 @@ export default function Home() {
 
   // Show loading state while redirecting
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-      <div className="animate-pulse text-white text-2xl">Loading...</div>
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <div className="surface-panel max-w-md p-10 text-center">
+        <div className="mx-auto mb-4 brand-mark">G</div>
+        <p className="page-kicker">Redirecting</p>
+        <h1 className="text-2xl font-semibold text-white">Opening your workspace</h1>
+        <p className="mt-3 animate-pulse text-sm text-[var(--text-secondary)]">
+          Loading...
+        </p>
+      </div>
     </div>
   );
 }

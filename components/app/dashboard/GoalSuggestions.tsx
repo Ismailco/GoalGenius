@@ -162,14 +162,14 @@ export default function GoalSuggestions() {
 
   const modal = isOpen ? (
     <div className="fixed inset-0 z-[9999]">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+      <div className="fixed inset-0 bg-[rgba(3,8,16,0.72)] backdrop-blur-sm" onClick={() => setIsOpen(false)} />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg bg-slate-900/95 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-xl">
+        <div className="app-modal-panel w-full max-w-lg p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Goal Suggestions</h2>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="app-button-secondary !h-10 !w-10 !rounded-[16px] !p-0"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -183,10 +183,10 @@ export default function GoalSuggestions() {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category as GoalCategory)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
                   selectedCategory === category
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                    ? 'bg-[rgba(93,166,255,0.18)] text-white'
+                    : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10'
                 }`}
               >
                 {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -199,24 +199,24 @@ export default function GoalSuggestions() {
             {suggestions[selectedCategory].map((suggestion, index) => (
               <div
                 key={index}
-                className="bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 hover:scale-[1.02] transition-all duration-200"
+                className="surface-card p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1">
-                    <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl">
-                      <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="icon-chip h-10 w-10 rounded-[16px]">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
                     <div>
                       <h3 className="text-white font-medium">{suggestion.title}</h3>
-                      <p className="text-gray-400 text-sm mt-1">{suggestion.description}</p>
-                      <span className="text-sm text-gray-500 mt-2 block">Timeline: {suggestion.timeFrame}</span>
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">{suggestion.description}</p>
+                      <span className="mt-2 block text-sm text-[var(--text-muted)]">Timeline: {suggestion.timeFrame}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => handleAddGoal(suggestion)}
-                    className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm hover:from-blue-600 hover:to-purple-600 transition-colors"
+                    className="app-button !px-4 !py-2"
                   >
                     Add Goal
                   </button>
@@ -228,7 +228,7 @@ export default function GoalSuggestions() {
           <div className="mt-6 flex justify-end">
             <button
               onClick={() => setIsOpen(false)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-colors"
+              className="app-button-secondary"
             >
               Close
             </button>
@@ -242,10 +242,10 @@ export default function GoalSuggestions() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center px-4 py-2 border border-white/10 text-sm font-medium rounded-full text-white bg-white/5 hover:bg-white/10 backdrop-blur-lg transform hover:scale-105 transition-all duration-200"
+        className="app-button-secondary"
       >
         <svg
-          className="w-5 h-5 mr-2 text-blue-400"
+          className="h-5 w-5 text-[var(--accent)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

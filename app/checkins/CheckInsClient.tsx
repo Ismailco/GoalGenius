@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CheckIn } from '@/app/types';
 import { getCheckIns, deleteCheckIn } from '@/lib/storage';
 import CreateCheckInModal from '@/components/app/checkins/CreateCheckInModal';
 import { format, eachDayOfInterval, isSameDay, isToday, subWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import AlertModal from '@/components/common/AlertModal';
+import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
 
 function parseJsonArray(value: string[] | string | undefined | null): string[] {
 	if (!value) return [];
@@ -42,7 +43,7 @@ export default function CheckInsPage() {
 		message: '',
 		type: 'info',
 	});
-	const [yearStartDate, setYearStartDate] = useState(() => {
+	const [yearStartDate] = useState(() => {
 		const today = new Date();
 		return startOfWeek(subWeeks(today, 51));
 	});
@@ -81,19 +82,13 @@ export default function CheckInsPage() {
 	// Don't render anything until mounted to prevent hydration errors
 	if (!mounted) {
 		return (
-			<div className="min-h-screen bg-slate-900">
-				<div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-				<div className="container mx-auto px-4 py-8 relative z-10">
-					<div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
-						<div className="animate-pulse flex space-x-4">
-							<div className="flex-1 space-y-4 py-1">
-								<div className="h-8 bg-white/10 rounded-xl w-3/4"></div>
-								<div className="h-4 bg-white/5 rounded-xl w-1/2"></div>
-							</div>
-						</div>
-					</div>
+			<AppPage>
+				<div className="page-skeleton animate-pulse p-6">
+					<div className="h-3 w-24 rounded-full bg-white/10" />
+					<div className="mt-4 h-10 w-2/5 rounded-2xl bg-white/10" />
+					<div className="mt-3 h-4 w-1/3 rounded-full bg-white/5" />
 				</div>
-			</div>
+			</AppPage>
 		);
 	}
 
@@ -177,41 +172,36 @@ export default function CheckInsPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-slate-900">
-			<div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-			<div className="container mx-auto px-4 py-8 relative z-10">
-				{/* Header Section */}
-				<div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
-					<div className="flex flex-col md:flex-row justify-between items-center gap-4">
-						<div>
-							<h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Daily Check-ins</h1>
-							<p className="text-gray-300 mt-2">Track your progress and reflect on your journey</p>
-						</div>
-						<button
-							onClick={() => {
-								setSelectedCheckIn(undefined);
-								setSelectedDate(undefined);
-								setIsModalOpen(true);
-							}}
-							className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
-						>
-							<svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-							</svg>
-							New Check-in
-						</button>
-					</div>
-				</div>
+		<AppPage>
+			<AppPageHeader
+				eyebrow="Check-ins"
+				title="Review the days behind you"
+				description="Track consistency, mood, and energy without turning reflection into noise."
+				action={
+					<button
+						onClick={() => {
+							setSelectedCheckIn(undefined);
+							setSelectedDate(undefined);
+							setIsModalOpen(true);
+						}}
+						className="app-button"
+					>
+						<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+						</svg>
+						New Check-in
+					</button>
+				}
+			/>
 
-				{/* Calendar Section */}
-				<div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
+			<div className="surface-panel p-6">
 					<div className="flex flex-col md:flex-row justify-between md:items-center mb-4">
 						<div className="flex flex-col items-center md:items-start">
-							<h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Progress & Growth Timeline</h2>
-							<p className="text-sm text-gray-400 mt-1">Track your daily journey and personal development</p>
+							<h2 className="text-xl font-semibold text-white">Progress & Growth Timeline</h2>
+							<p className="mt-1 text-sm text-[var(--text-secondary)]">Track your daily journey and personal development</p>
 						</div>
 						<div className="mt-4 flex justify-end md:self-end">
-							<p className="text-xs text-gray-400">
+							<p className="text-xs text-[var(--text-muted)]">
 								{format(yearStartDate, 'MMM d, yyyy')} — {format(new Date(), 'MMM d, yyyy')}
 							</p>
 						</div>
@@ -222,7 +212,7 @@ export default function CheckInsPage() {
 						<div className="flex flex-col pr-4">
 							{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
 								<div key={day} className="h-7 flex items-center">
-									<span className="text-xs font-medium text-gray-400 w-10">{day}</span>
+									<span className="w-10 text-xs font-medium text-[var(--text-muted)]">{day}</span>
 								</div>
 							))}
 						</div>
@@ -280,11 +270,11 @@ export default function CheckInsPage() {
 																}
 																setIsModalOpen(true);
 															}}
-															className={`h-7 w-7 flex flex-col items-center justify-center transition-all group relative ${isCurrentDay ? 'bg-purple-500/20 ring-1 ring-purple-500/50' : `${moodColor} ring-1 ${checkIn ? 'ring-white/20' : 'ring-white/10'} hover:ring-white/30`}`}
+															className={`group relative flex h-7 w-7 flex-col items-center justify-center transition-all ${isCurrentDay ? 'bg-[rgba(93,166,255,0.18)] ring-1 ring-[rgba(93,166,255,0.38)]' : `${moodColor} ring-1 ${checkIn ? 'ring-white/20' : 'ring-white/10'} hover:ring-white/30`}`}
 														>
-															<div className="font-medium text-gray-300 text-[10px]">{format(date, 'd')}</div>
+															<div className="text-[10px] font-medium text-[var(--text-secondary)]">{format(date, 'd')}</div>
 															{checkIn && (
-																<div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+																<div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
 																	<span className="text-[10px]" title={`${checkIn.mood} / ${checkIn.energy}`}>
 																		{getMoodEmoji(checkIn.mood)}
 																	</span>
@@ -300,10 +290,9 @@ export default function CheckInsPage() {
 							</div>
 						</div>
 					</div>
-				</div>
+			</div>
 
-				{/* Recent Check-ins */}
-				<div className="space-y-3">
+			<div className="space-y-3">
 					{checkIns
 						.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 						.map((checkIn) => {
@@ -312,7 +301,7 @@ export default function CheckInsPage() {
 							const checkInGoals = parseJsonArray(checkIn.goals);
 
 							return (
-								<details key={checkIn.id} className="group bg-white/5 backdrop-blur-lg rounded-xl transition-all duration-200 border border-white/10">
+								<details key={checkIn.id} className="group surface-card rounded-[20px]">
 									<summary className="flex items-center justify-between p-4 cursor-pointer list-none">
 										<div className="flex items-center gap-3">
 											<span className="text-2xl" title={`Mood: ${checkIn.mood}`}>
@@ -329,7 +318,7 @@ export default function CheckInsPage() {
 													e.preventDefault();
 													handleEditCheckIn(checkIn);
 												}}
-												className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
+												className="text-sm text-[var(--accent)] transition-colors hover:text-white"
 											>
 												Edit
 											</button>
@@ -338,23 +327,23 @@ export default function CheckInsPage() {
 													e.preventDefault();
 													handleDeleteCheckIn(checkIn.id);
 												}}
-												className="text-red-400 hover:text-red-300 transition-colors text-sm"
+												className="text-sm text-[rgb(255,220,226)] transition-colors hover:text-white"
 											>
 												Delete
 											</button>
-											<svg className="w-5 h-5 text-gray-400 transform transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<svg className="w-5 h-5 transform text-[var(--text-secondary)] transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
 											</svg>
 										</div>
 									</summary>
-									<div className="px-4 pb-4 pt-2 border-t border-white/10">
+									<div className="border-t border-white/10 px-4 pb-4 pt-2">
 										<div className="space-y-4">
 											{checkInAccomplishments.length > 0 && (
 												<div className="space-y-2">
-													<h3 className="text-sm font-medium text-gray-400">Accomplishments</h3>
+													<h3 className="text-sm font-medium text-[var(--text-secondary)]">Accomplishments</h3>
 													<ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
 														{checkInAccomplishments.map((item: string, index: number) => (
-															<li key={index} className="flex items-start gap-2 text-gray-300">
+															<li key={index} className="flex items-start gap-2 text-[var(--text-secondary)]">
 																<span className="text-green-400 mt-1">✓</span>
 																{item}
 															</li>
@@ -365,10 +354,10 @@ export default function CheckInsPage() {
 
 											{checkInChallenges.length > 0 && (
 												<div className="space-y-2">
-													<h3 className="text-sm font-medium text-gray-400">Challenges</h3>
+													<h3 className="text-sm font-medium text-[var(--text-secondary)]">Challenges</h3>
 													<ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
 														{checkInChallenges.map((item: string, index: number) => (
-															<li key={index} className="flex items-start gap-2 text-gray-300">
+															<li key={index} className="flex items-start gap-2 text-[var(--text-secondary)]">
 																<span className="text-yellow-400 mt-1">!</span>
 																{item}
 															</li>
@@ -379,10 +368,10 @@ export default function CheckInsPage() {
 
 											{checkInGoals.length > 0 && (
 												<div className="space-y-2">
-													<h3 className="text-sm font-medium text-gray-400">Goals for Tomorrow</h3>
+													<h3 className="text-sm font-medium text-[var(--text-secondary)]">Goals for Tomorrow</h3>
 													<ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
 														{checkInGoals.map((item: string, index: number) => (
-															<li key={index} className="flex items-start gap-2 text-gray-300">
+															<li key={index} className="flex items-start gap-2 text-[var(--text-secondary)]">
 																<span className="text-blue-400 mt-1">○</span>
 																{item}
 															</li>
@@ -393,8 +382,8 @@ export default function CheckInsPage() {
 
 											{checkIn.notes && (
 												<div className="space-y-2">
-													<h3 className="text-sm font-medium text-gray-400">Additional Notes</h3>
-													<p className="text-gray-300 whitespace-pre-wrap bg-white/5 rounded-xl p-4 border border-white/10">{checkIn.notes}</p>
+													<h3 className="text-sm font-medium text-[var(--text-secondary)]">Additional Notes</h3>
+													<p className="whitespace-pre-wrap rounded-xl border border-white/10 bg-white/5 p-4 text-[var(--text-secondary)]">{checkIn.notes}</p>
 												</div>
 											)}
 										</div>
@@ -404,11 +393,11 @@ export default function CheckInsPage() {
 						})}
 
 					{checkIns.length === 0 && (
-						<div className="bg-white/5 backdrop-blur-lg rounded-xl p-12 text-center border border-white/10">
-							<p className="text-gray-300 text-lg">No check-ins yet. Start tracking your daily progress!</p>
+						<div className="surface-empty rounded-[20px] p-12 text-center">
+							<p className="text-lg">No check-ins yet. Start tracking your daily progress!</p>
 						</div>
 					)}
-				</div>
+			</div>
 
 				<CreateCheckInModal
 					isOpen={isModalOpen}
@@ -423,7 +412,6 @@ export default function CheckInsPage() {
 				/>
 
 				{alert.show && <AlertModal title={alert.title} message={alert.message} type={alert.type} onClose={() => setAlert({ ...alert, show: false })} isConfirmation={alert.isConfirmation} onConfirm={alert.onConfirm} />}
-			</div>
-		</div>
+		</AppPage>
 	);
 }

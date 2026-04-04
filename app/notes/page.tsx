@@ -10,6 +10,7 @@ import { getUserFriendlyErrorMessage } from '@/lib/error';
 import { stripMarkdown } from '@/lib/markdown';
 import { createNote, deleteNote, getNotes, updateNote } from '@/lib/storage';
 import { validateAndSanitizeInput } from '@/lib/validation';
+import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
 
 type ActiveNoteId = string | 'new' | null;
 
@@ -384,53 +385,38 @@ export default function NotesPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-slate-900">
-        <div className="absolute left-0 h-full w-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl" />
-        <div className="container relative z-10 mx-auto px-4 py-8">
-          <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="h-[72vh] animate-pulse rounded-3xl border border-white/10 bg-white/5" />
-            <div className="h-[72vh] animate-pulse rounded-3xl border border-white/10 bg-white/5" />
-          </div>
+      <AppPage>
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="page-skeleton h-[72vh] animate-pulse" />
+          <div className="page-skeleton h-[72vh] animate-pulse" />
         </div>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <div className="absolute left-0 h-full w-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl" />
+    <AppPage>
+      <AppPageHeader
+        eyebrow="Notes"
+        title="Write, pin, and review"
+        description="Keep notes readable and searchable. Select a note on the left and render the final markdown on the right."
+        meta={<span className="app-pill app-pill-blue">{notes.length} notes</span>}
+        action={
+          <button type="button" onClick={handleCreateNewNote} className="app-button">
+            New Note
+          </button>
+        }
+      />
 
-      <div className="container relative z-10 mx-auto px-4 py-8">
-        <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                Your Notes
-              </h1>
-              <p className="mt-2 text-sm text-gray-300">
-                Select a note on the left. Markdown is rendered on the right.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCreateNewNote}
-              className="inline-flex items-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-600"
-            >
-              New Note
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg">
-            <div className="border-b border-white/10 p-5">
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="surface-panel overflow-hidden">
+            <div className="border-b border-white/5 p-5">
               <input
                 type="text"
                 placeholder="Search notes..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-blue-400/50 focus:outline-none"
+                className="app-field"
               />
             </div>
 
@@ -444,10 +430,10 @@ export default function NotesPage() {
                       key={note.id}
                       type="button"
                       onClick={() => handleSelectNote(note)}
-                      className={`w-full rounded-2xl border p-4 text-left transition-colors ${
+                      className={`w-full rounded-[20px] border p-4 text-left transition-colors ${
                         isSelected
-                          ? 'border-blue-400/50 bg-blue-500/10'
-                          : 'border-white/10 bg-slate-950/30 hover:border-white/20 hover:bg-white/5'
+                          ? 'border-[rgba(93,166,255,0.28)] bg-[rgba(93,166,255,0.12)]'
+                          : 'border-white/10 bg-[rgba(8,17,30,0.46)] hover:border-white/20 hover:bg-white/5'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -455,19 +441,19 @@ export default function NotesPage() {
                           <p className="truncate text-sm font-semibold text-white">
                             {note.title}
                           </p>
-                          <p className="mt-2 text-xs leading-5 text-gray-400">
+                          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
                             {summarizeNote(note.content)}
                           </p>
                         </div>
 
                         {note.isPinned && (
-                          <span className="mt-0.5 text-[10px] uppercase tracking-[0.24em] text-purple-300">
+                          <span className="mt-0.5 text-[10px] uppercase tracking-[0.24em] text-[var(--accent)]">
                             Pin
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                      <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]">
                         <span>{note.category || 'General'}</span>
                         <span>{format(new Date(note.updatedAt), 'MMM d')}</span>
                       </div>
@@ -475,7 +461,7 @@ export default function NotesPage() {
                   );
                 })
               ) : (
-                <div className="rounded-3xl border border-dashed border-white/10 bg-slate-950/30 p-6 text-center text-sm text-gray-400">
+                <div className="surface-empty p-6 text-center text-sm">
                   {searchQuery
                     ? 'No notes match your search.'
                     : 'No notes yet. Create your first one.'}
@@ -484,19 +470,19 @@ export default function NotesPage() {
             </div>
           </aside>
 
-          <section className="min-h-[72vh] overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-lg">
+          <section className="surface-panel min-h-[72vh] overflow-hidden">
             {!activeNote && activeNoteId !== 'new' ? (
               <div className="flex h-full min-h-[72vh] items-center justify-center p-8">
                 <div className="max-w-sm text-center">
                   <h2 className="text-2xl font-semibold text-white">No note selected</h2>
-                  <p className="mt-3 text-sm text-gray-400">
+                  <p className="mt-3 text-sm text-[var(--text-secondary)]">
                     Choose a note from the left or create a new one.
                   </p>
                 </div>
               </div>
             ) : (
               <>
-                <div className="border-b border-white/10 p-6">
+                <div className="border-b border-white/5 p-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                       <h2 className="text-3xl font-semibold text-white">
@@ -507,7 +493,7 @@ export default function NotesPage() {
                           : editorState.title || 'Untitled note'}
                       </h2>
                       {!isEditing && (
-                        <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-400">
+                        <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--text-secondary)]">
                           <span>{editorState.category || 'General'}</span>
                           <span>
                             {activeNote
@@ -525,14 +511,14 @@ export default function NotesPage() {
                           <button
                             type="button"
                             onClick={() => setIsEditing(true)}
-                            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-200 transition-colors hover:bg-white/10"
+                            className="app-button-secondary !px-4"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={handleDeleteNote}
-                            className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/20"
+                            className="app-button-danger !px-4"
                           >
                             Delete
                           </button>
@@ -544,7 +530,7 @@ export default function NotesPage() {
                           <button
                             type="button"
                             onClick={handleCancelEditing}
-                            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-200 transition-colors hover:bg-white/10"
+                            className="app-button-secondary !px-4"
                           >
                             Cancel
                           </button>
@@ -552,7 +538,7 @@ export default function NotesPage() {
                             <button
                               type="button"
                               onClick={handleDeleteNote}
-                              className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/20"
+                              className="app-button-danger !px-4"
                             >
                               Delete
                             </button>
@@ -566,7 +552,7 @@ export default function NotesPage() {
                               !editorState.content.trim() ||
                               !isDirty
                             }
-                            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-2 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="app-button disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {isSaving && <LoadingSpinner size="small" />}
                             {activeNoteId === 'new' ? 'Create' : 'Save'}
@@ -583,7 +569,7 @@ export default function NotesPage() {
                       <div>
                         <label
                           htmlFor="note-title"
-                          className="mb-2 block text-sm font-medium text-gray-300"
+                          className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                         >
                           Title
                         </label>
@@ -598,10 +584,10 @@ export default function NotesPage() {
                             }));
                             clearFieldError('title');
                           }}
-                          className={`w-full rounded-2xl border bg-slate-950/50 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none ${
+                          className={`app-field ${
                             errors.title
                               ? 'border-red-500'
-                              : 'border-white/10 focus:border-blue-400/50'
+                              : ''
                           }`}
                           placeholder="Untitled note"
                         />
@@ -613,11 +599,11 @@ export default function NotesPage() {
                       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
                         <div>
                           <label
-                            htmlFor="note-category"
-                            className="mb-2 block text-sm font-medium text-gray-300"
-                          >
-                            Category
-                          </label>
+                          htmlFor="note-category"
+                          className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
+                        >
+                          Category
+                        </label>
                           <input
                             id="note-category"
                             type="text"
@@ -629,10 +615,10 @@ export default function NotesPage() {
                               }));
                               clearFieldError('category');
                             }}
-                            className={`w-full rounded-2xl border bg-slate-950/50 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none ${
+                            className={`app-field ${
                               errors.category
                                 ? 'border-red-500'
-                                : 'border-white/10 focus:border-blue-400/50'
+                                : ''
                             }`}
                             placeholder="Optional category"
                           />
@@ -641,7 +627,7 @@ export default function NotesPage() {
                           )}
                         </div>
 
-                        <label className="flex items-end gap-3 pb-3 text-sm font-medium text-gray-300">
+                        <label className="flex items-end gap-3 pb-3 text-sm font-medium text-[var(--text-secondary)]">
                           <input
                             type="checkbox"
                             checked={editorState.isPinned}
@@ -651,7 +637,7 @@ export default function NotesPage() {
                                 isPinned: event.target.checked,
                               }))
                             }
-                            className="h-4 w-4 rounded border-white/20 bg-white/10 text-purple-500 focus:ring-purple-500/50"
+                            className="h-4 w-4 rounded border-white/20 bg-white/10 text-[var(--accent)]"
                           />
                           Pin note
                         </label>
@@ -660,7 +646,7 @@ export default function NotesPage() {
                       <div>
                         <label
                           htmlFor="note-content"
-                          className="mb-2 block text-sm font-medium text-gray-300"
+                          className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                         >
                           Content
                         </label>
@@ -675,17 +661,17 @@ export default function NotesPage() {
                             clearFieldError('content');
                           }}
                           rows={20}
-                          className={`w-full rounded-3xl border bg-slate-950/50 px-5 py-4 font-mono text-sm leading-7 text-gray-100 placeholder:text-gray-500 focus:outline-none ${
+                          className={`w-full rounded-[24px] border bg-[rgba(8,17,30,0.58)] px-5 py-4 font-mono text-sm leading-7 text-gray-100 placeholder:text-[var(--text-muted)] focus:outline-none ${
                             errors.content
                               ? 'border-red-500'
-                              : 'border-white/10 focus:border-blue-400/50'
+                              : 'border-white/10 focus:border-[rgba(93,166,255,0.32)]'
                           }`}
                           placeholder={`# Note title\n\nWrite in markdown here...`}
                         />
                         {errors.content ? (
                           <p className="mt-2 text-sm text-red-400">{errors.content}</p>
                         ) : (
-                          <p className="mt-2 text-sm text-gray-400">
+                          <p className="mt-2 text-sm text-[var(--text-secondary)]">
                             Markdown is supported. Save to view the rendered note.
                           </p>
                         )}
@@ -713,7 +699,6 @@ export default function NotesPage() {
             onConfirm={alert.onConfirm}
           />
         )}
-      </div>
-    </div>
+    </AppPage>
   );
 }

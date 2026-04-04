@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  Calendar,
   Bell,
   Filter,
   CalendarClock,
@@ -13,6 +12,7 @@ import {
   Calendar as CalendarIcon,
   Share2
 } from 'lucide-react';
+import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -85,93 +85,79 @@ export default function CalendarPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Header Section */}
-        <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-              <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Calendar</h1>
-              <p className="text-gray-300 mt-2">Plan and track your milestones across all your calendars</p>
-            </div>
-          </div>
-        </div>
+    <AppPage>
+      <AppPageHeader
+        eyebrow="Calendar"
+        title="Dates stay visible, integrations stay separate"
+        description="The calendar surface is ready for milestone planning now and third-party sync later."
+      />
 
-        {/* Coming Soon Banner */}
-        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-lg rounded-3xl p-8 mb-8 border border-white/10 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <CalendarClock className="w-8 h-8 text-blue-400 mr-3" />
+      <section className="surface-panel p-8 text-center">
+          <div className="mb-4 flex items-center justify-center">
+            <CalendarClock className="mr-3 h-8 w-8 text-[var(--accent)]" />
             <h2 className="text-2xl font-bold text-white">Calendar Integration Coming Soon!</h2>
           </div>
-          <p className="text-gray-300 max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-[var(--text-secondary)]">
             We&apos;re working on integrating with your favorite calendar services! Soon you&apos;ll be able to sync your milestones
             with Google Calendar, Outlook, Apple Calendar, and more. Stay organized across all your platforms!
           </p>
-        </div>
+      </section>
 
-        {/* Upcoming Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {upcomingFeatures.map((feature, index) => (
             <div
               key={index}
-              className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/10 transform hover:scale-[1.02] transition-all duration-200"
+              className="surface-card p-6"
             >
-              <div className="bg-white/5 rounded-2xl p-4 inline-block mb-4">
+              <div className="icon-chip mb-4 h-14 w-14 rounded-[20px]">
                 {feature.icon}
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-              <p className="text-gray-400">{feature.description}</p>
+              <p className="text-[var(--text-secondary)]">{feature.description}</p>
             </div>
           ))}
-        </div>
+      </div>
 
-        {/* Calendar Section */}
-        <div className="bg-white/5 backdrop-blur-lg rounded-3xl border border-white/10 p-6 mt-8">
-          {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-8">
+      <section className="surface-panel mt-2 p-6">
+          <div className="mb-8 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-white">
               {monthName} {year}
             </h2>
             <div className="flex items-center space-x-4">
               <button
                 onClick={previousMonth}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className="app-button-secondary !h-11 !w-11 !rounded-[18px] !p-0"
                 aria-label="Previous month"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-300" />
+                <ChevronLeft className="h-5 w-5 text-[var(--text-secondary)]" />
               </button>
               <button
                 onClick={nextMonth}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className="app-button-secondary !h-11 !w-11 !rounded-[18px] !p-0"
                 aria-label="Next month"
               >
-                <ChevronRight className="w-5 h-5 text-gray-300" />
+                <ChevronRight className="h-5 w-5 text-[var(--text-secondary)]" />
               </button>
             </div>
           </div>
 
-          {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-4">
-            {/* Days of week headers */}
             {daysOfWeek.map((day) => (
               <div
                 key={day}
-                className="text-center py-2 text-sm font-medium text-gray-400"
+                className="py-2 text-center text-sm font-medium text-[var(--text-muted)]"
               >
                 {day}
               </div>
             ))}
 
-            {/* Empty cells for days before the first day of the month */}
             {Array.from({ length: firstDayOfMonth }).map((_, index) => (
               <div
                 key={`empty-${index}`}
-                className="aspect-square bg-white/5 rounded-2xl border border-white/10"
+                className="aspect-square rounded-2xl border border-white/10 bg-[rgba(8,17,30,0.42)]"
               />
             ))}
 
-            {/* Calendar days */}
             {Array.from({ length: daysInMonth }).map((_, index) => {
               const day = index + 1;
               const dayIsToday = isToday(day);
@@ -181,30 +167,27 @@ export default function CalendarPage() {
                   key={day}
                   className={`aspect-square relative group ${
                     dayIsToday
-                      ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20'
-                      : 'bg-white/5 hover:bg-white/10'
+                      ? 'bg-[rgba(93,166,255,0.12)]'
+                      : 'bg-[rgba(8,17,30,0.42)] hover:bg-white/5'
                   } rounded-2xl border ${
-                    dayIsToday ? 'border-blue-500/50' : 'border-white/10'
+                    dayIsToday ? 'border-[rgba(93,166,255,0.28)]' : 'border-white/10'
                   } transition-all duration-200 p-2`}
                 >
                   <span className={`text-sm font-medium ${
                     dayIsToday
-                      ? 'text-blue-400'
-                      : 'text-gray-300 group-hover:text-white'
+                      ? 'text-[var(--accent)]'
+                      : 'text-[var(--text-secondary)] group-hover:text-white'
                   } transition-colors`}>
                     {day}
                   </span>
 
-                  {/* Placeholder for events/milestones */}
                   <div className="mt-2 space-y-1">
-                    {/* We'll add milestone indicators here later */}
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      </div>
-    </div>
+      </section>
+    </AppPage>
   );
 }

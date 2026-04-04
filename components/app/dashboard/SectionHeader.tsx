@@ -6,12 +6,17 @@ interface SectionHeaderProps {
 
 export default function SectionHeader({ title, icon, action }: SectionHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="mb-6 flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-500/10 rounded-xl">
+        <div className="icon-chip h-11 w-11 rounded-[16px]">
           {icon}
         </div>
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            Section
+          </p>
+          <h2 className="text-xl font-semibold text-white md:text-2xl">{title}</h2>
+        </div>
       </div>
       {action}
     </div>

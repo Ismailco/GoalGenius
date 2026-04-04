@@ -92,7 +92,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-white">
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-200">
+        <label htmlFor="title" className="block text-sm font-medium text-[var(--text-secondary)]">
           Title
         </label>
         <input
@@ -101,9 +101,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
           name="title"
           value={formData.title}
           onChange={handleChange}
-          className={`mt-1 block w-full px-4 py-2 bg-white/5 border ${
-            errors.title ? 'border-red-500' : 'border-white/10'
-          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+          className={`app-field mt-1 ${errors.title ? 'border-red-500' : ''}`}
           placeholder="Enter goal title"
           required
         />
@@ -113,7 +111,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-200">
+        <label htmlFor="description" className="block text-sm font-medium text-[var(--text-secondary)]">
           Description
         </label>
         <textarea
@@ -121,9 +119,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
           name="description"
           value={formData.description}
           onChange={handleChange}
-          className={`mt-1 block w-full px-4 py-2 bg-white/5 border ${
-            errors.description ? 'border-red-500' : 'border-white/10'
-          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+          className={`app-field mt-1 ${errors.description ? 'border-red-500' : ''}`}
           placeholder="Describe your goal"
           rows={3}
         />
@@ -133,7 +129,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
       </div>
 
       <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-200">
+        <label htmlFor="category" className="block text-sm font-medium text-[var(--text-secondary)]">
           Category
         </label>
         <select
@@ -141,7 +137,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
           name="category"
           value={formData.category}
           onChange={handleChange}
-          className="mt-1 block w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          className="app-select mt-1"
         >
           <option value="health">Health</option>
           <option value="career">Career</option>
@@ -151,7 +147,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
       </div>
 
       <div>
-        <label htmlFor="timeFrame" className="block text-sm font-medium text-gray-200">
+        <label htmlFor="timeFrame" className="block text-sm font-medium text-[var(--text-secondary)]">
           Time Frame
         </label>
         <select
@@ -159,7 +155,7 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
           name="timeFrame"
           value={formData.timeFrame}
           onChange={handleChange}
-          className="mt-1 block w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          className="app-select mt-1"
         >
           <option value="short-term">Short Term (1-3 months)</option>
           <option value="medium-term">Medium Term (3-6 months)</option>
@@ -171,13 +167,13 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
+          className="app-button-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:from-indigo-600 hover:to-purple-600 transform hover:scale-[1.02] transition-all duration-200"
+          className="app-button"
         >
           Create Goal
         </button>
