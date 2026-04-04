@@ -27,14 +27,14 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     <ModalContext.Provider value={{ showModal, hideModal }}>
       {children}
       {modalContent && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl w-full max-w-2xl border border-white/10 max-h-[80vh] flex flex-col">
-            <div className="p-6 border-b border-white/10 flex-shrink-0">
-              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+        <div className="app-modal-backdrop">
+          <div className="app-modal-panel flex max-h-[80vh] flex-col">
+            <div className="shrink-0 border-b border-white/5 p-6">
+              <h2 className="text-2xl font-semibold text-white">
                 {modalTitle}
               </h2>
             </div>
-            <div className="p-6 overflow-y-auto flex-grow">
+            <div className="flex-grow overflow-y-auto p-6">
               {modalContent}
             </div>
           </div>

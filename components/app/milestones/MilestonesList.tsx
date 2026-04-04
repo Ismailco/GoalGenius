@@ -159,7 +159,7 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
   });
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-4 md:p-6">
       {filteredGoals.map(goal => {
         const goalMilestones = milestones
           .filter(m => m.goalId === goal.id && filterMilestones(m))
@@ -168,48 +168,48 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
         return (
           <div
             key={goal.id}
-            className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 overflow-hidden"
+            className="surface-card overflow-hidden"
           >
             <button
               onClick={() => toggleGoal(goal.id)}
-              className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
+              className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-white/5"
             >
               <div className="flex items-center gap-4">
                 <div className={`w-2 h-2 rounded-full ${
                   goal.progress === 100 ? 'bg-green-500' :
                   goal.progress >= 50 ? 'bg-blue-500' :
-                  'bg-purple-500'
+                  'bg-slate-400'
                 }`} />
                 <div>
                   <h3 className="text-lg font-semibold text-white">{goal.title}</h3>
-                  <p className="text-sm text-gray-400">{goalMilestones.length} milestone{goalMilestones.length !== 1 ? 's' : ''}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{goalMilestones.length} milestone{goalMilestones.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
               {expandedGoals.has(goal.id) ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
+                <ChevronUp className="w-5 h-5 text-[var(--text-secondary)]" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
+                <ChevronDown className="w-5 h-5 text-[var(--text-secondary)]" />
               )}
             </button>
 
             {expandedGoals.has(goal.id) && (
               <div className="px-6 pb-4 space-y-3">
                 {goalMilestones.length === 0 ? (
-                  <p className="text-gray-400 text-center py-4">No milestones found</p>
+                  <p className="py-4 text-center text-[var(--text-secondary)]">No milestones found</p>
                 ) : (
                   goalMilestones.map(milestone => (
                     <div
                       key={milestone.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10"
+                      className="flex items-center justify-between rounded-[18px] border border-white/10 bg-[rgba(8,17,30,0.52)] p-3"
                     >
                       <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-blue-400" />
+                        <Calendar className="w-5 h-5 text-[var(--accent)]" />
                         <div>
                           <h4 className="text-white font-medium">{milestone.title}</h4>
                           {milestone.description && (
-                            <p className="text-sm text-gray-400">{milestone.description}</p>
+                            <p className="text-sm text-[var(--text-secondary)]">{milestone.description}</p>
                           )}
-                          <p className="text-xs text-gray-500">Due: {new Date(milestone.date).toLocaleDateString()}</p>
+                          <p className="text-xs text-[var(--text-muted)]">Due: {new Date(milestone.date).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
                             e.stopPropagation();
                             handleEditMilestone(milestone);
                           }}
-                          className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
+                          className="rounded-full p-2 text-[var(--text-secondary)] hover:bg-white/5 hover:text-white"
                           aria-label="Edit milestone"
                         >
                           <Edit className="w-4 h-4" />
@@ -228,7 +228,7 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
                             e.stopPropagation();
                             handleDeleteMilestone(milestone.id);
                           }}
-                          className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                          className="rounded-full p-2 text-[var(--text-secondary)] hover:bg-[rgba(255,111,130,0.12)] hover:text-[rgb(255,220,226)]"
                           aria-label="Delete milestone"
                         >
                           <Trash className="w-4 h-4" />
@@ -244,8 +244,8 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
       })}
 
       {filteredGoals.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-400 text-lg">
+        <div className="surface-empty py-8 text-center">
+          <p className="text-lg">
             {goals.length === 0 ? "No goals found. Create a goal first!" : "No milestones match your search criteria."}
           </p>
         </div>

@@ -101,8 +101,8 @@ export default function GoalsList({
 
   const handleUpdateGoal = async (id: string, updates: Partial<Goal>) => {
     try {
-      // Filter out  createdAt from updates
-      const { createdAt, ...filteredUpdates } = updates;
+      const filteredUpdates = { ...updates };
+      delete filteredUpdates.createdAt;
 
       // Call the updateGoal function
       await updateGoal(id, filteredUpdates);
@@ -145,10 +145,10 @@ export default function GoalsList({
   }
 
   return (
-    <div className="space-y-4 p-6" role="region" aria-label="Goals list">
+    <div className="space-y-3 p-4 md:p-6" role="region" aria-label="Goals list">
       {filteredGoals.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-400 text-lg" role="status" aria-label="No goals found">
+        <div className="surface-empty px-6 py-10 text-center">
+          <p className="text-lg" role="status" aria-label="No goals found">
             {goals.length === 0 ?
               "No goals yet. Add your first goal!" :
               "No goals match your search criteria."}
@@ -158,7 +158,7 @@ export default function GoalsList({
         filteredGoals.map((goal) => (
           <div
             key={goal.id}
-            className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 hover:scale-[1.02] transition-all duration-200 border border-white/10"
+            className="surface-card p-5"
             role="article"
             aria-label={`Goal: ${goal.title}`}
           >
@@ -168,19 +168,19 @@ export default function GoalsList({
                   type="text"
                   value={editingGoal.title}
                   onChange={(e) => setEditingGoal({ ...editingGoal, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="app-field"
                   aria-label="Edit goal title"
                 />
                 <textarea
                   value={editingGoal.description}
                   onChange={(e) => setEditingGoal({ ...editingGoal, description: e.target.value })}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="app-field"
                   aria-label="Edit goal description"
                 />
                 <select
                   value={editingGoal.category}
                   onChange={(e) => setEditingGoal({ ...editingGoal, category: e.target.value as GoalCategory })}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="app-select"
                   aria-label="Select goal category"
                 >
                   <option value="health">Health</option>
@@ -191,7 +191,7 @@ export default function GoalsList({
                 <select
                   value={editingGoal.timeFrame}
                   onChange={(e) => setEditingGoal({ ...editingGoal, timeFrame: e.target.value as TimeFrame })}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="app-select"
                   aria-label="Select goal timeframe"
                 >
                   <option value="short-term">Short Term</option>
@@ -201,14 +201,14 @@ export default function GoalsList({
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setEditingGoal(null)}
-                    className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+                    className="app-button-secondary"
                     aria-label="Cancel editing"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleUpdateGoal(goal.id, editingGoal)}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-colors"
+                    className="app-button"
                     aria-label="Save goal changes"
                   >
                     Save
@@ -217,15 +217,26 @@ export default function GoalsList({
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-white">{goal.title}</h3>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="app-pill app-pill-blue text-[11px]">
+                        {goal.category}
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        {goal.timeFrame}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-semibold text-white">{goal.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                      {goal.description}
+                    </p>
+                  </div>
+
                   <div className="flex items-center gap-2">
-                    <span className="text-sm px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/10">
-                      {goal.category}
-                    </span>
                     <button
                       onClick={() => setEditingGoal(goal)}
-                      className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
+                      className="rounded-full p-2 text-[var(--text-secondary)] hover:bg-white/5 hover:text-white"
                       aria-label={`Edit goal: ${goal.title}`}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -234,7 +245,7 @@ export default function GoalsList({
                     </button>
                     <button
                       onClick={() => handleDeleteGoal(goal.id)}
-                      className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                      className="rounded-full p-2 text-[var(--text-secondary)] hover:bg-[rgba(255,111,130,0.12)] hover:text-[rgb(255,220,226)]"
                       aria-label={`Delete goal: ${goal.title}`}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -243,11 +254,17 @@ export default function GoalsList({
                     </button>
                   </div>
                 </div>
-                <p className="text-gray-300 mt-2">{goal.description}</p>
-                <div className="mt-4">
-                  <div className="w-full bg-white/10 rounded-full h-2">
+
+                <div className="mt-5">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                      Progress
+                    </span>
+                    <span className="text-sm font-semibold text-white">{goal.progress}%</span>
+                  </div>
+                  <div className="progress-track">
                     <div
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                      className="progress-fill transition-all duration-300"
                       style={{ width: `${goal.progress}%` }}
                       role="progressbar"
                       aria-valuenow={goal.progress}
@@ -256,15 +273,15 @@ export default function GoalsList({
                       aria-label={`Goal progress: ${goal.progress}%`}
                     />
                   </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-sm text-gray-400" aria-label="Goal timeframe">{goal.timeFrame}</span>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="text-sm text-[var(--text-secondary)]" aria-label="Goal timeframe">{goal.timeFrame}</span>
                     <input
                       type="number"
                       min="0"
                       max="100"
                       value={goal.progress}
                       onChange={(e) => handleUpdateProgress(goal.id, Number(e.target.value))}
-                      className="w-16 text-sm text-gray-300 bg-white/10 border border-white/20 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      className="app-field !w-20 !px-3 !py-2 text-sm text-center"
                       aria-label={`Update progress for ${goal.title}`}
                     />
                   </div>

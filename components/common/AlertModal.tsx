@@ -57,29 +57,29 @@ export default function AlertModal({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="app-modal-backdrop"
       role={role}
       aria-label={ariaLabel || `${type} alert: ${title}`}
       aria-modal="true"
     >
-      <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl w-full max-w-md border border-white/10">
+      <div className="app-modal-panel app-modal-panel-sm">
         <div className="p-6">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${getBackgroundColor()}`}>
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <div className={`rounded-2xl border p-3 ${getBackgroundColor()}`}>
+              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               {getIcon()}
               </svg>
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-semibold text-white">{title}</h3>
-              <p className="mt-1 text-gray-300">{message}</p>
+              <p className="mt-1 text-[var(--text-secondary)]">{message}</p>
             </div>
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
+                  className="app-button-secondary !px-4"
               aria-label="Close alert"
                 >
               {isConfirmation ? 'Cancel' : 'Close'}
@@ -90,7 +90,7 @@ export default function AlertModal({
                   onConfirm();
                   onClose();
                 }}
-                className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-pink-500 rounded-xl hover:from-red-600 hover:to-pink-600 transform hover:scale-[1.02] transition-all duration-200"
+                className="app-button-danger"
                 aria-label="Confirm action"
               >
                 Confirm

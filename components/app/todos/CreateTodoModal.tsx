@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '@/app/types';
+import { readAppSettings } from '@/lib/app-settings';
 import { createTodo, updateTodo } from '@/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
@@ -29,21 +30,37 @@ export default function CreateTodoModal({
 }: CreateTodoModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(
+    readAppSettings().defaultTodoPriority
+  );
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     if (existingTodo) {
       setTitle(unescapeForDisplay(existingTodo.title));
       setDescription(existingTodo.description ? unescapeForDisplay(existingTodo.description) : '');
       setPriority(existingTodo.priority);
       setDueDate(existingTodo.dueDate || '');
       setCategory(existingTodo.category ? unescapeForDisplay(existingTodo.category) : '');
+      setErrors({});
+      return;
     }
-  }, [existingTodo]);
+
+    const settings = readAppSettings();
+    setTitle('');
+    setDescription('');
+    setPriority(settings.defaultTodoPriority);
+    setDueDate('');
+    setCategory('');
+    setErrors({});
+  }, [existingTodo, isOpen]);
 
   if (!isOpen) return null;
 
@@ -152,15 +169,15 @@ export default function CreateTodoModal({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="app-modal-backdrop"
       role="dialog"
       aria-labelledby="todo-modal-title"
       aria-modal="true"
     >
-      <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl w-full max-w-2xl border border-white/10 max-h-[80vh] flex flex-col relative">
+      <div className="app-modal-panel relative flex max-h-[80vh] flex-col">
         {isLoading && <LoadingOverlay role="status" aria-label="Saving todo..." />}
-        <div className="p-6 border-b border-white/10 flex-shrink-0">
-          <h2 id="todo-modal-title" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+        <div className="shrink-0 border-b border-white/5 p-6">
+          <h2 id="todo-modal-title" className="text-2xl font-semibold text-white">
             {existingTodo ? 'Edit Todo' : 'Create New Todo'}
           </h2>
         </div>
@@ -168,7 +185,7 @@ export default function CreateTodoModal({
           <form onSubmit={handleSubmit} aria-label={existingTodo ? 'Edit todo form' : 'Create todo form'}>
             <div className="space-y-6">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                   Title
                 </label>
                 <input
@@ -177,9 +194,7 @@ export default function CreateTodoModal({
                   name="title"
                   value={title}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2 bg-white/10 border ${
-                    errors.title ? 'border-red-500' : 'border-white/20'
-                  } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                  className={`app-field ${errors.title ? 'border-red-500' : ''}`}
                   required
                   aria-invalid={!!errors.title}
                   aria-describedby={errors.title ? "title-error" : undefined}
@@ -192,7 +207,7 @@ export default function CreateTodoModal({
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                   Description (optional)
                 </label>
                 <textarea
@@ -201,9 +216,7 @@ export default function CreateTodoModal({
                   value={description}
                   onChange={handleChange}
                   rows={3}
-                  className={`w-full px-4 py-2 bg-white/10 border ${
-                    errors.description ? 'border-red-500' : 'border-white/20'
-                  } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                  className={`app-field ${errors.description ? 'border-red-500' : ''}`}
                   aria-invalid={!!errors.description}
                   aria-describedby={errors.description ? "description-error" : undefined}
                 />
@@ -216,7 +229,7 @@ export default function CreateTodoModal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="priority" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="priority" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                     Priority
                   </label>
                   <select
@@ -224,7 +237,7 @@ export default function CreateTodoModal({
                     name="priority"
                     value={priority}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                    className="app-select"
                     aria-label="Select task priority"
                   >
                     <option value="low">Low</option>
@@ -234,7 +247,7 @@ export default function CreateTodoModal({
                 </div>
 
                 <div>
-                  <label htmlFor="dueDate" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="dueDate" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                     Due Date (optional)
                   </label>
                   <input
@@ -243,9 +256,7 @@ export default function CreateTodoModal({
                     name="dueDate"
                     value={dueDate}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2 bg-white/10 border ${
-                      errors.dueDate ? 'border-red-500' : 'border-white/20'
-                    } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                    className={`app-field ${errors.dueDate ? 'border-red-500' : ''}`}
                     aria-invalid={!!errors.dueDate}
                     aria-describedby={errors.dueDate ? "dueDate-error" : undefined}
                   />
@@ -258,7 +269,7 @@ export default function CreateTodoModal({
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="category" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                   Category (optional)
                 </label>
                 <input
@@ -267,9 +278,7 @@ export default function CreateTodoModal({
                   name="category"
                   value={category}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2 bg-white/10 border ${
-                    errors.category ? 'border-red-500' : 'border-white/20'
-                  } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                  className={`app-field ${errors.category ? 'border-red-500' : ''}`}
                   placeholder="Enter a category"
                   aria-invalid={!!errors.category}
                   aria-describedby={errors.category ? "category-error" : undefined}
@@ -286,14 +295,14 @@ export default function CreateTodoModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
+                className="app-button-secondary"
                 aria-label="Cancel todo creation"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:from-indigo-600 hover:to-purple-600 transform hover:scale-[1.02] transition-all duration-200"
+                className="app-button"
                 aria-label={existingTodo ? 'Save todo changes' : 'Create new todo'}
               >
                 {existingTodo ? 'Save Changes' : 'Create Todo'}

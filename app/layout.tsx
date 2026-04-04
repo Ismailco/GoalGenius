@@ -1,18 +1,17 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono, Manrope } from 'next/font/google';
 import "./globals.css";
 import Providers from "../components/Providers";
-import Navbar from "../components/app/shared/Navbar";
-import Sidebar from "../components/app/shared/Sidebar";
+import AppShell from '@/components/app/shared/AppShell';
 import { InstallPWA } from "@/components/common/InstallPWA";
-import { Metadata } from "next";
+import type { Metadata, Viewport } from 'next';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetBrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -24,9 +23,10 @@ export const metadata: Metadata = {
   description: 'Personal goal tracking and productivity dashboard',
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#08111e',
 };
 
 export default function RootLayout({
@@ -35,22 +35,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <meta name="viewport" content={`${viewport.width}, initial-scale=${viewport.initialScale}`} />
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html
+      lang="en"
+      className={`${manrope.variable} ${jetBrainsMono.variable}`}
+    >
+      <body className="antialiased">
         <Providers>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 transition-all duration-300 my-16 md:my-0">
-              {children}
-            </main>
-          </div>
-          <Navbar />
-          <div className="fixed bottom-20 right-4 z-50">
+          <AppShell>{children}</AppShell>
+          <div className="fixed bottom-24 right-4 z-50 md:bottom-6 md:right-6">
             <InstallPWA />
           </div>
         </Providers>

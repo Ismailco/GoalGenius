@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
 
 interface MilestoneInputFormProps {
@@ -94,7 +94,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
+        <label htmlFor="title" className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
           Title
         </label>
         <input
@@ -103,9 +103,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
           name="title"
           value={formData.title}
           onChange={handleChange}
-          className={`w-full px-4 py-2 bg-white/10 border ${
-            errors.title ? 'border-red-500' : 'border-white/20'
-          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+          className={`app-field ${errors.title ? 'border-red-500' : ''}`}
           placeholder="Enter milestone title"
           required
         />
@@ -115,7 +113,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">
+        <label htmlFor="description" className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
           Description
         </label>
         <textarea
@@ -123,9 +121,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
           name="description"
           value={formData.description}
           onChange={handleChange}
-          className={`w-full px-4 py-2 bg-white/10 border ${
-            errors.description ? 'border-red-500' : 'border-white/20'
-          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+          className={`app-field ${errors.description ? 'border-red-500' : ''}`}
           rows={3}
           placeholder="Enter milestone description"
           required
@@ -136,7 +132,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
       </div>
 
       <div>
-        <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-1">
+        <label htmlFor="date" className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
           Target Date
         </label>
         <input
@@ -145,9 +141,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
           name="date"
           value={formData.date}
           onChange={handleChange}
-          className={`w-full px-4 py-2 bg-white/10 border ${
-            errors.date ? 'border-red-500' : 'border-white/20'
-          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+          className={`app-field ${errors.date ? 'border-red-500' : ''}`}
           required
           min={new Date().toISOString().split('T')[0]}
         />
@@ -160,13 +154,13 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+          className="app-button-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-colors"
+          className="app-button"
         >
           {initialData ? 'Update' : 'Create'} Milestone
         </button>

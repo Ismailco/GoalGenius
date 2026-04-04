@@ -57,10 +57,10 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
   if (!initialGoal && !selectedGoal && goals.length === 0) {
     return (
       <div className="text-center py-8" role="alert" aria-live="polite">
-        <p className="text-gray-300 mb-4">Please create a goal first before adding milestones.</p>
+        <p className="mb-4 text-[var(--text-secondary)]">Please create a goal first before adding milestones.</p>
         <button
           onClick={hideModal}
-          className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+          className="app-button-secondary"
           aria-label="Close modal"
         >
           Close
@@ -111,14 +111,14 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
       {isLoading && <LoadingOverlay />}
       {!initialGoal && (
         <div>
-          <label htmlFor="goal" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="goal" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
             Select Goal
           </label>
           <select
             id="goal"
             value={selectedGoal?.id || ''}
             onChange={(e) => setSelectedGoal(goals.find(g => g.id === e.target.value))}
-            className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="app-select"
             required
             aria-label="Select a goal for the milestone"
             aria-invalid={!selectedGoal}

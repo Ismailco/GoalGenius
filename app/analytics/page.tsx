@@ -1,88 +1,73 @@
 'use client';
 
-import { LineChart, BarChart, PieChart } from 'lucide-react';
+import { BarChart, LineChart, PieChart } from 'lucide-react';
+import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
 
 export default function AnalyticsPage() {
   const placeholderMetrics = [
     {
       title: 'Goal Completion Rate',
       description: 'Track your goal achievement progress over time',
-      icon: <LineChart className="w-8 h-8 text-blue-400" />
+      icon: <LineChart className="h-8 w-8 text-[var(--accent)]" />,
     },
     {
       title: 'Milestone Distribution',
       description: 'Analyze how your milestones are spread across goals',
-      icon: <PieChart className="w-8 h-8 text-purple-400" />
+      icon: <PieChart className="h-8 w-8 text-[var(--accent)]" />,
     },
     {
       title: 'Progress Trends',
       description: 'View your productivity and progress patterns',
-      icon: <BarChart className="w-8 h-8 text-indigo-400" />
-    }
+      icon: <BarChart className="h-8 w-8 text-[var(--accent)]" />,
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Header Section */}
-        <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 transform hover:scale-[1.01] transition-transform border border-white/10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-              <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Analytics</h1>
-              <p className="text-gray-300 mt-2">Gain insights into your progress and achievements</p>
-            </div>
-          </div>
-        </div>
+    <AppPage>
+      <AppPageHeader
+        eyebrow="Analytics"
+        title="Insights will stay clear and restrained"
+        description="The analytics area is staged for richer reporting without adding noise to the core planning flow."
+      />
 
-        {/* Coming Soon Banner */}
-        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-lg rounded-3xl p-8 mb-8 border border-white/10 text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">🚀 Coming Soon!</h2>
-          <p className="text-gray-300 max-w-2xl mx-auto">
-            We&apos;re working on bringing you powerful analytics tools to help you track and improve your progress.
-            Stay tuned for detailed insights, progress tracking, and performance metrics!
-          </p>
-        </div>
+      <section className="surface-panel p-8 text-center">
+        <h2 className="mb-4 text-2xl font-bold text-white">Coming Soon!</h2>
+        <p className="mx-auto max-w-2xl text-[var(--text-secondary)]">
+          We&apos;re working on bringing you powerful analytics tools to help you track and improve your progress.
+          Stay tuned for detailed insights, progress tracking, and performance metrics!
+        </p>
+      </section>
 
-        {/* Placeholder Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {placeholderMetrics.map((metric, index) => (
-            <div
-              key={index}
-              className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/10 transform hover:scale-[1.02] transition-all duration-200"
-            >
-              <div className="bg-white/5 rounded-2xl p-4 inline-block mb-4">
-                {metric.icon}
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">{metric.title}</h3>
-              <p className="text-gray-400">{metric.description}</p>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {placeholderMetrics.map((metric, index) => (
+          <div key={index} className="surface-card p-6">
+            <div className="icon-chip mb-4 h-14 w-14 rounded-[20px]">{metric.icon}</div>
+            <h3 className="mb-2 text-xl font-semibold text-white">{metric.title}</h3>
+            <p className="text-[var(--text-secondary)]">{metric.description}</p>
 
-              {/* Placeholder Animation */}
-              <div className="mt-4 h-32 rounded-xl bg-gradient-to-r from-white/5 to-white/10 animate-pulse">
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-gray-500 text-sm">Visualization Coming Soon</p>
-                </div>
+            <div className="mt-4 h-32 rounded-[18px] border border-white/10 bg-[rgba(8,17,30,0.52)] animate-pulse">
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-[var(--text-muted)]">Visualization Coming Soon</p>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Feature Request Section */}
-        <div className="mt-12 bg-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/10">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-white mb-4">Have suggestions?</h3>
-            <p className="text-gray-400 mb-6">
-              We&apos;re building this analytics dashboard for you! Let us know what metrics and insights would be most valuable for your goal tracking journey.
-            </p>
-            <button
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200"
-              onClick={() => alert('Feature request functionality coming soon!')}
-            >
-              Submit Feature Request
-            </button>
           </div>
-        </div>
+        ))}
       </div>
-    </div>
+
+      <section className="surface-panel p-6">
+        <div className="text-center">
+          <h3 className="mb-4 text-xl font-semibold text-white">Have suggestions?</h3>
+          <p className="mb-6 text-[var(--text-secondary)]">
+            We&apos;re building this analytics dashboard for you! Let us know what metrics and insights would be most valuable for your goal tracking journey.
+          </p>
+          <button
+            className="app-button"
+            onClick={() => alert('Feature request functionality coming soon!')}
+          >
+            Submit Feature Request
+          </button>
+        </div>
+      </section>
+    </AppPage>
   );
 }

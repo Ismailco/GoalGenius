@@ -15,13 +15,12 @@ export default function NotFound() {
   };
 
   return (
-    <div className="min-h-[100vh] flex items-center justify-center p-4 bg-slate-900">
-      <div className="absolute  left-0 w-full h-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-indigo-500/20 blur-3xl"></div>
-      <div className="max-w-md w-full bg-slate-900/50 backdrop-blur-lg rounded-xl border border-slate-800 p-6 text-center">
+    <div className="flex min-h-[100vh] items-center justify-center p-4">
+      <div className="surface-panel max-w-md p-6 text-center">
         <div className="mb-6">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center">
+          <div className="icon-chip mx-auto mb-4 h-16 w-16 rounded-[20px]">
             <svg
-              className="w-8 h-8 text-blue-500"
+              className="h-8 w-8 text-[var(--accent)]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -34,8 +33,8 @@ export default function NotFound() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-slate-200 mb-2">Resource Not Found</h2>
-          <p className="text-slate-400 text-sm mb-6">
+          <h2 className="mb-2 text-xl font-semibold text-white">Resource Not Found</h2>
+          <p className="mb-6 text-sm text-[var(--text-secondary)]">
             The requested resource could not be found. You can return to the previous page or navigate to a safe location.
           </p>
         </div>
@@ -43,27 +42,27 @@ export default function NotFound() {
         <div className="space-y-3">
           <button
             onClick={() => router.back()}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            className="app-button w-full"
           >
             Go Back
           </button>
 
           <Link
             href={getParentPath()}
-            className="block w-full px-4 py-2 border border-slate-700 hover:bg-slate-800/50 text-slate-300 rounded-md transition-colors"
+            className="app-button-secondary block w-full"
           >
             Return to Safe Location
           </Link>
 
           <Link
             href="/dashboard"
-            className="block w-full px-4 py-2 hover:bg-slate-800/50 text-slate-400 rounded-md transition-colors"
+            className="app-button-secondary block w-full"
           >
             Go to Dashboard
           </Link>
         </div>
 
-        <div className="mt-6 text-xs text-slate-600">
+        <div className="mt-6 text-xs text-[var(--text-muted)]">
           <p>Path: {pathname}</p>
         </div>
       </div>

@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import {
+  readAppSettings,
+  subscribeToAppSettings,
+} from '@/lib/app-settings';
 import Notification from './Notification';
 
 interface NotificationItem {
@@ -13,11 +17,25 @@ interface NotificationItem {
 
 export default function NotificationContainer() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  useEffect(() => {
+    const syncSettings = () => {
+      setNotificationsEnabled(readAppSettings().enableInAppNotifications);
+    };
+
+    syncSettings();
+    return subscribeToAppSettings(syncSettings);
+  }, []);
 
   const addNotification = useCallback((notification: Omit<NotificationItem, 'id'>) => {
+    if (!notificationsEnabled) {
+      return;
+    }
+
     const id = Math.random().toString(36).substr(2, 9);
     setNotifications(prev => [...prev, { ...notification, id }]);
-  }, []);
+  }, [notificationsEnabled]);
 
   useEffect(() => {
     window.addNotification = addNotification;
