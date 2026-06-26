@@ -1,179 +1,229 @@
-// const CACHE_NAME = 'full-app-cache-v2';
-// const ASSETS_TO_CACHE = [
-// 	'/',
-// 	'/dashboard',
-// 	'/signin',
-// 	'/signup',
-// 	'/todos',
-// 	'/checkins',
-// 	'/notes',
-// 	'/goals',
-// 	'/milestones',
-//   '/calendar',
-//   '/analytics',
-//   '/profile',
-//   '/settings',
-//   '/manifest.json',
-//   '/favicon-16x16.png',
-//   '/splash.svg'
-// ];
+const CACHE_VERSION = 'v3';
+const APP_SHELL_CACHE = `goalgenius-app-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `goalgenius-runtime-${CACHE_VERSION}`;
+const STATIC_CACHE = `goalgenius-static-${CACHE_VERSION}`;
 
-// // Cache app pages function that can be called after login
-// const cacheAppPages = async () => {
-// 	const cache = await caches.open(CACHE_NAME);
-// 	const failedUrls = [];
+const APP_ROUTES = [
+  '/',
+  '/dashboard',
+  '/todos',
+  '/checkins',
+  '/notes',
+  '/goals',
+  '/milestones',
+  '/calendar',
+  '/analytics',
+  '/settings',
+  '/docs',
+  '/auth/signin',
+  '/auth/signup',
+];
 
-// 	try {
-// 		// Cache each URL individually to handle failures gracefully
-// 		for (const url of ASSETS_TO_CACHE) {
-// 			try {
-// 				const response = await fetch(url);
-// 				if (response.ok) {
-// 					await cache.put(url, response);
-// 					console.log(`✅ Cached: ${url}`);
-// 				} else {
-// 					failedUrls.push(url);
-// 					console.log(`❌ Failed to cache: ${url} - Status: ${response.status}`);
-// 				}
-// 			} catch (err) {
-// 				failedUrls.push(url);
-// 				console.log(`❌ Failed to cache: ${url} - Error: ${err.message}`);
-// 			}
-// 		}
+const STATIC_ASSETS = [
+  '/manifest.json',
+  '/favicon.ico',
+  '/splash.svg',
+  '/images/logo.png',
+  '/images/logo_full.png',
+  '/images/logo_trans_white.png',
+  '/images/logo_trans_dark.png',
+  '/images/logo_full_trans_white.png',
+  '/images/logo_full_trans_dark.png',
+];
 
-// 		// Notify the client about caching completion
-// 		self.clients.matchAll().then(clients => {
-// 			clients.forEach(client => {
-// 				client.postMessage({
-// 					type: 'CACHE_COMPLETE',
-// 					success: failedUrls.length === 0,
-// 					failedUrls
-// 				});
-// 			});
-// 		});
-// 	} catch (err) {
-// 		console.error('Failed to cache app pages:', err);
-// 		self.clients.matchAll().then(clients => {
-// 			clients.forEach(client => {
-// 				client.postMessage({
-// 					type: 'CACHE_ERROR',
-// 					error: err.message
-// 				});
-// 			});
-// 		});
-// 	}
-// };
+const PRECACHE_URLS = [...APP_ROUTES, ...STATIC_ASSETS];
 
-// self.addEventListener('install', (event) => {
-// 	self.skipWaiting(); // Activate worker immediately
-// });
+function isSameOrigin(url) {
+  return url.origin === self.location.origin;
+}
 
-// self.addEventListener('activate', (event) => {
-// 	// Clean up old caches
-// 	event.waitUntil(
-// 		Promise.all([
-// 			clients.claim(),
-// 			caches.keys().then(cacheNames => {
-// 				return Promise.all(
-// 					cacheNames
-// 						.filter(cacheName => cacheName !== CACHE_NAME)
-// 						.map(cacheName => caches.delete(cacheName))
-// 				);
-// 			})
-// 		])
-// 	);
-// });
+function shouldSkipRequest(request) {
+  const url = new URL(request.url);
 
-// // Helper to exclude API and auth-related requests
-// const shouldSkip = (request) => {
-// 	return (
-// 		request.method !== 'GET' ||
-// 		request.url.includes('/api/') ||
-// 		request.headers.get('Authorization')
-// 	);
-// };
+  return (
+    request.method !== 'GET' ||
+    !isSameOrigin(url) ||
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/webpack-hmr') ||
+    request.headers.has('authorization')
+  );
+}
 
-// self.addEventListener('fetch', (event) => {
-// 	const { request } = event;
+async function notifyClients(message) {
+  const clientsList = await self.clients.matchAll({ includeUncontrolled: true });
+  clientsList.forEach((client) => client.postMessage(message));
+}
 
-// 	if (shouldSkip(request)) return;
+async function cacheUrl(cacheName, url) {
+  const cache = await caches.open(cacheName);
+  const request = new Request(url, { credentials: 'same-origin' });
+  const response = await fetch(request);
 
-// 	event.respondWith(
-// 		caches.match(request)
-// 			.then(cachedResponse => {
-// 				// Return cached response if found
-// 				if (cachedResponse) {
-// 					// Try to update cache in background
-// 					fetch(request)
-// 						.then(networkResponse => {
-// 							if (networkResponse.ok) {
-// 								caches.open(CACHE_NAME)
-// 									.then(cache => cache.put(request, networkResponse))
-// 									.catch(err => console.warn('Background cache update failed:', err));
-// 							}
-// 						})
-// 						.catch(() => {/* ignore background fetch errors */});
+  if (!response.ok && response.type !== 'opaqueredirect') {
+    throw new Error(`Failed to cache ${url}: ${response.status}`);
+  }
 
-// 					return cachedResponse;
-// 				}
+  if (response.headers.get('content-type')?.includes('text/html')) {
+    await cacheLinkedStaticAssets(response.clone());
+  }
 
-// 				// If not in cache, try network
-// 				return fetch(request)
-// 					.then(networkResponse => {
-// 						// Don't cache non-success responses
-// 						if (!networkResponse.ok) {
-// 							return networkResponse;
-// 						}
+  await cache.put(request, response);
+}
 
-// 						// Cache successful responses
-// 						if (
-// 							request.url.startsWith(self.location.origin) &&
-// 							!request.url.includes('/api/')
-// 						) {
-// 							const responseToCache = networkResponse.clone();
-// 							caches.open(CACHE_NAME)
-// 								.then(cache => cache.put(request, responseToCache))
-// 								.catch(err => console.warn('Cache put failed:', err));
-// 						}
+async function cacheLinkedStaticAssets(response) {
+  const html = await response.text();
+  const staticAssetUrls = new Set();
+  const assetPattern = /(?:src|href)="([^"]*\/_next\/static\/[^"]+)"/g;
+  let match = assetPattern.exec(html);
 
-// 						return networkResponse;
-// 					})
-// 					.catch(error => {
-// 						console.error('Fetch failed:', error);
-// 						// Return a custom offline response
-// 						return new Response(
-// 							JSON.stringify({
-// 								error: 'You are offline',
-// 								message: 'Please check your internet connection'
-// 							}),
-// 							{
-// 								headers: { 'Content-Type': 'application/json' }
-// 							}
-// 						);
-// 					});
-// 			})
-// 	);
-// });
+  while (match) {
+    staticAssetUrls.add(new URL(match[1], self.location.origin).toString());
+    match = assetPattern.exec(html);
+  }
 
-// // Listen for messages from the client
-// self.addEventListener('message', (event) => {
-// 	if (event.data && event.data.type === 'CACHE_PAGES') {
-// 		cacheAppPages();
-// 	}
-// });
+  if (staticAssetUrls.size === 0) return;
 
-// Simple Service Worker for PWA installation
+  const cache = await caches.open(STATIC_CACHE);
+
+  await Promise.all(
+    [...staticAssetUrls].map(async (assetUrl) => {
+      const request = new Request(assetUrl, { credentials: 'same-origin' });
+      const cachedResponse = await cache.match(request);
+
+      if (cachedResponse) return;
+
+      const assetResponse = await fetch(request);
+      if (assetResponse.ok) {
+        await cache.put(request, assetResponse);
+      }
+    }),
+  );
+}
+
+async function cacheAppPages() {
+  const failedUrls = [];
+
+  for (const url of PRECACHE_URLS) {
+    try {
+      await cacheUrl(APP_ROUTES.includes(url) ? APP_SHELL_CACHE : STATIC_CACHE, url);
+    } catch (error) {
+      failedUrls.push(url);
+      console.warn('[ServiceWorker] Cache failed:', url, error);
+    }
+  }
+
+  await notifyClients({
+    type: 'CACHE_COMPLETE',
+    success: failedUrls.length === 0,
+    failedUrls,
+  });
+}
+
+async function cleanupOldCaches() {
+  const currentCaches = new Set([APP_SHELL_CACHE, RUNTIME_CACHE, STATIC_CACHE]);
+  const cacheNames = await caches.keys();
+
+  await Promise.all(
+    cacheNames
+      .filter((cacheName) => cacheName.startsWith('goalgenius-') && !currentCaches.has(cacheName))
+      .map((cacheName) => caches.delete(cacheName)),
+  );
+}
+
+async function cacheFirst(request) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(STATIC_CACHE);
+    await cache.put(request, response.clone());
+  }
+
+  return response;
+}
+
+async function networkFirst(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    if (request.mode === 'navigate') {
+      return caches.match('/') || new Response('GoalGenius is offline.', {
+        headers: { 'Content-Type': 'text/plain' },
+        status: 503,
+      });
+    }
+
+    throw error;
+  }
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cachedResponse = await cache.match(request);
+
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        void cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => cachedResponse);
+
+  return cachedResponse || fetchPromise;
+}
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  console.log('Service Worker installed');
+  event.waitUntil(cacheAppPages());
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
-  console.log('Service Worker activated');
+  event.waitUntil(
+    Promise.all([
+      cleanupOldCaches(),
+      self.clients.claim(),
+    ]),
+  );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Minimal fetch handler to make the app installable
-  event.respondWith(fetch(event.request));
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (shouldSkipRequest(request)) {
+    return;
+  }
+
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  event.respondWith(staleWhileRevalidate(request));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'CACHE_PAGES') {
+    event.waitUntil(cacheAppPages());
+  }
 });

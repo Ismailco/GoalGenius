@@ -64,6 +64,35 @@ const STORAGE_KEYS = {
   TODOS: 'todos',
   CHECKINS: 'checkins',
   USER_ID: 'userId',
+  SYNC_QUEUE: 'syncQueue',
+};
+
+type ResourceName = 'goals' | 'milestones' | 'notes' | 'todos' | 'checkins';
+type MutationMethod = 'POST' | 'PUT' | 'DELETE';
+type CachedRecord = Record<string, unknown> & { id: string };
+
+interface PendingMutation {
+  id: string;
+  userId: string;
+  resource: ResourceName;
+  method: MutationMethod;
+  entityId: string;
+  body?: Record<string, unknown>;
+  createdAt: string;
+}
+
+interface SyncResult {
+  synced: number;
+  failed: number;
+  pending: number;
+}
+
+const RESOURCE_STORAGE_KEYS: Record<ResourceName, string> = {
+  goals: STORAGE_KEYS.GOALS,
+  milestones: STORAGE_KEYS.MILESTONES,
+  notes: STORAGE_KEYS.NOTES,
+  todos: STORAGE_KEYS.TODOS,
+  checkins: STORAGE_KEYS.CHECKINS,
 };
 
 function getScopedKey(baseKey: string, userId: string): string {
@@ -93,12 +122,6 @@ function writeCacheValue(baseKey: string, userId: string | null, value: string):
   localStorage.removeItem(baseKey);
 }
 
-function removeCacheValue(baseKey: string, userId: string | null): void {
-  if (!userId) return;
-  localStorage.removeItem(getScopedKey(baseKey, userId));
-  localStorage.removeItem(baseKey);
-}
-
 export function clearUserCache(userId: string): void {
   const baseKeys = [
     STORAGE_KEYS.GOALS,
@@ -106,12 +129,167 @@ export function clearUserCache(userId: string): void {
     STORAGE_KEYS.NOTES,
     STORAGE_KEYS.TODOS,
     STORAGE_KEYS.CHECKINS,
+    STORAGE_KEYS.SYNC_QUEUE,
   ];
 
   for (const baseKey of baseKeys) {
     localStorage.removeItem(getScopedKey(baseKey, userId));
     localStorage.removeItem(baseKey);
   }
+}
+
+function createClientId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `${prefix}_${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+function readCachedList<T extends { id: string }>(
+  baseKey: string,
+  userId: string | null,
+): T[] {
+  const cachedValue = readCacheValue(baseKey, userId);
+  return JSON.parse(cachedValue || '[]') as T[];
+}
+
+function writeCachedList<T extends { id: string }>(
+  baseKey: string,
+  userId: string | null,
+  records: T[],
+): void {
+  writeCacheValue(baseKey, userId, JSON.stringify(records));
+}
+
+function addCachedRecord<T extends { id: string }>(
+  baseKey: string,
+  userId: string | null,
+  record: T,
+): void {
+  const records = readCachedList<T>(baseKey, userId);
+  writeCachedList(baseKey, userId, [...records, record]);
+}
+
+function updateCachedRecord<T extends { id: string }>(
+  baseKey: string,
+  userId: string | null,
+  id: string,
+  record: T,
+): void {
+  const records = readCachedList<T>(baseKey, userId);
+  writeCachedList(
+    baseKey,
+    userId,
+    records.map((currentRecord) => currentRecord.id === id ? record : currentRecord),
+  );
+}
+
+function deleteCachedRecord<T extends { id: string }>(
+  baseKey: string,
+  userId: string | null,
+  id: string,
+): void {
+  const records = readCachedList<T>(baseKey, userId);
+  writeCachedList(
+    baseKey,
+    userId,
+    records.filter((record) => record.id !== id),
+  );
+}
+
+function readSyncQueue(userId: string | null): PendingMutation[] {
+  if (!userId) return [];
+
+  try {
+    const queueValue = readCacheValue(STORAGE_KEYS.SYNC_QUEUE, userId);
+    const parsedQueue = JSON.parse(queueValue || '[]');
+    return Array.isArray(parsedQueue) ? parsedQueue : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSyncQueue(userId: string | null, queue: PendingMutation[]): void {
+  if (!userId) return;
+  writeCacheValue(STORAGE_KEYS.SYNC_QUEUE, userId, JSON.stringify(queue));
+}
+
+function enqueueMutation(
+  userId: string | null,
+  mutation: Omit<PendingMutation, 'id' | 'userId' | 'createdAt'>,
+): void {
+  if (!userId) return;
+
+  const queue = readSyncQueue(userId);
+  writeSyncQueue(userId, [
+    ...queue,
+    {
+      ...mutation,
+      id: createClientId('mutation'),
+      userId,
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+}
+
+function resolveTempId(id: string, idMap: Record<string, string>): string {
+  return idMap[id] ?? id;
+}
+
+function resolveMutationBody(
+  body: Record<string, unknown> | undefined,
+  idMap: Record<string, string>,
+): Record<string, unknown> | undefined {
+  if (!body) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(body).map(([key, value]) => [
+      key,
+      typeof value === 'string' ? resolveTempId(value, idMap) : value,
+    ]),
+  );
+}
+
+function replaceTempReferences(userId: string | null, oldId: string, newId: string): void {
+  if (!userId) return;
+
+  for (const baseKey of Object.values(RESOURCE_STORAGE_KEYS)) {
+    const records = readCachedList<CachedRecord>(baseKey, userId);
+    const nextRecords = records.map((record) => {
+      const nextRecord = { ...record };
+
+      if (nextRecord.id === oldId) {
+        nextRecord.id = newId;
+      }
+
+      if (nextRecord.goalId === oldId) {
+        nextRecord.goalId = newId;
+      }
+
+      return nextRecord;
+    });
+
+    writeCachedList(baseKey, userId, nextRecords);
+  }
+}
+
+async function refreshRemoteCache(userId: string | null): Promise<void> {
+  if (!userId) return;
+
+  const [goals, milestones, notes, todos, checkIns] = await Promise.all([
+    apiRequest<Goal[]>('goals', 'GET'),
+    apiRequest<Milestone[]>('milestones', 'GET'),
+    apiRequest<Note[]>('notes', 'GET'),
+    apiRequest<Todo[]>('todos', 'GET'),
+    apiRequest<CheckIn[]>('checkins', 'GET'),
+  ]);
+
+  writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify(goals));
+  writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify(milestones));
+  writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify(notes));
+  writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify(todos));
+  writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify(checkIns));
 }
 
 // Add type for API error response
@@ -160,11 +338,94 @@ async function apiRequest<T>(
   return responseData as T;
 }
 
+let syncInProgress = false;
+
+export async function syncPendingChanges(): Promise<SyncResult> {
+  const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+  const queue = readSyncQueue(userId);
+
+  if (!userId || queue.length === 0) {
+    return { synced: 0, failed: 0, pending: 0 };
+  }
+
+  if (!isOnline()) {
+    return { synced: 0, failed: 0, pending: queue.length };
+  }
+
+  if (syncInProgress) {
+    return { synced: 0, failed: 0, pending: queue.length };
+  }
+
+  syncInProgress = true;
+
+  const idMap: Record<string, string> = {};
+  let synced = 0;
+  let remainingQueue: PendingMutation[] = [];
+
+  try {
+    for (let index = 0; index < queue.length; index += 1) {
+      const mutation = queue[index];
+      const endpoint = mutation.resource;
+      const storageKey = RESOURCE_STORAGE_KEYS[mutation.resource];
+      const entityId = resolveTempId(mutation.entityId, idMap);
+      const body = resolveMutationBody(mutation.body, idMap);
+
+      try {
+        if (mutation.method === 'POST') {
+          const createdRecord = await apiRequest<CachedRecord>(endpoint, 'POST', body);
+          idMap[mutation.entityId] = createdRecord.id;
+          updateCachedRecord(storageKey, userId, mutation.entityId, createdRecord);
+          replaceTempReferences(userId, mutation.entityId, createdRecord.id);
+        } else if (mutation.method === 'PUT') {
+          const updatedRecord = await apiRequest<CachedRecord>(endpoint, 'PUT', {
+            ...body,
+            id: entityId,
+          });
+          updateCachedRecord(storageKey, userId, mutation.entityId, updatedRecord);
+          if (entityId !== mutation.entityId) {
+            updateCachedRecord(storageKey, userId, entityId, updatedRecord);
+          }
+        } else {
+          await apiRequest<{ success: true }>(
+            `${endpoint}?id=${encodeURIComponent(entityId)}`,
+            'DELETE',
+          );
+          deleteCachedRecord(storageKey, userId, mutation.entityId);
+          if (entityId !== mutation.entityId) {
+            deleteCachedRecord(storageKey, userId, entityId);
+          }
+        }
+
+        synced += 1;
+      } catch (error) {
+        logError(error as Error, { operation: 'syncPendingChanges', mutation });
+        remainingQueue = queue.slice(index);
+        break;
+      }
+    }
+
+    writeSyncQueue(userId, remainingQueue);
+
+    if (synced > 0 && remainingQueue.length === 0) {
+      await refreshRemoteCache(userId);
+    }
+
+    return {
+      synced,
+      failed: remainingQueue.length > 0 ? 1 : 0,
+      pending: remainingQueue.length,
+    };
+  } finally {
+    syncInProgress = false;
+  }
+}
+
 // Updated Goal functions with API sync
 export async function getGoals(): Promise<Goal[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (isOnline()) {
+      await syncPendingChanges();
       const goals = await apiRequest<Goal[]>('goals', 'GET');
       writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify(goals));
       return goals.map(goal => unescapeData(goal as unknown as Record<string, unknown>) as unknown as Goal);
@@ -208,30 +469,33 @@ export async function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedA
       throw new ValidationError('Goal title is required');
     }
 
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
-    if (isOnline()) {
-      const newGoal = await apiRequest<Goal>('goals', 'POST', sanitizedGoal);
-      const cachedGoals = readCacheValue(STORAGE_KEYS.GOALS, userId);
-      const goals = JSON.parse(cachedGoals || '[]');
-      writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify([...goals, newGoal]));
-      return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const newGoal = await apiRequest<Goal>('goals', 'POST', sanitizedGoal);
+        addCachedRecord(STORAGE_KEYS.GOALS, userId, newGoal);
+        return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedGoals = readCacheValue(STORAGE_KEYS.GOALS, userId);
-    const goals = JSON.parse(cachedGoals || '[]');
-    const newGoal = {
-      ...sanitizedGoal,
-      id: `temp_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify([...goals, newGoal]));
-    return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
+      const newGoal = {
+        ...sanitizedGoal,
+        id: createClientId('temp_goal'),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      addCachedRecord(STORAGE_KEYS.GOALS, userId, newGoal);
+      enqueueMutation(userId, {
+        resource: 'goals',
+        method: 'POST',
+        entityId: newGoal.id,
+        body: sanitizedGoal,
+      });
+      return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
     logError(error as Error, { operation: 'createGoal', data: goal });
     if (error instanceof ValidationError) {
@@ -245,16 +509,14 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
   try {
     const sanitizedUpdates = sanitizeData(updates);
 
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
-    if (isOnline()) {
-      const updatedGoal = await apiRequest<Goal>('goals', 'PUT', { id, ...sanitizedUpdates });
-      const cachedGoals = readCacheValue(STORAGE_KEYS.GOALS, userId);
-      const goals = JSON.parse(cachedGoals || '[]');
-      const updatedGoals = goals.map((goal: Goal) => goal.id === id ? updatedGoal : goal);
-      writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify(updatedGoals));
-      return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const updatedGoal = await apiRequest<Goal>('goals', 'PUT', { id, ...sanitizedUpdates });
+        updateCachedRecord(STORAGE_KEYS.GOALS, userId, id, updatedGoal);
+        return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
@@ -266,10 +528,15 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
     if (!existingGoal) {
       throw new StorageError('Goal not found');
     }
-    const updatedGoal = { ...existingGoal, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
-    const updatedGoals = goals.map((goal: Goal) => goal.id === id ? updatedGoal : goal);
-    writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify(updatedGoals));
-    return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
+      const updatedGoal = { ...existingGoal, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+      updateCachedRecord(STORAGE_KEYS.GOALS, userId, id, updatedGoal);
+      enqueueMutation(userId, {
+        resource: 'goals',
+        method: 'PUT',
+        entityId: id,
+        body: sanitizedUpdates,
+      });
+      return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
     logError(error as Error, { operation: 'updateGoal', goalId: id, updates });
     throw new StorageError('Failed to update goal');
@@ -278,20 +545,25 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
 
 export async function deleteGoal(id: string): Promise<boolean> {
   try {
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (isOnline()) {
-      await apiRequest<{ success: true }>(`goals?id=${id}`, 'DELETE');
-    }
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      if (isOnline()) {
+        await syncPendingChanges();
+        await apiRequest<{ success: true }>(`goals?id=${id}`, 'DELETE');
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedGoals = readCacheValue(STORAGE_KEYS.GOALS, userId);
-    const goals = JSON.parse(cachedGoals || '[]');
-    const filtered = goals.filter((goal: Goal) => goal.id !== id);
-    writeCacheValue(STORAGE_KEYS.GOALS, userId, JSON.stringify(filtered));
-    return true;
+      deleteCachedRecord(STORAGE_KEYS.GOALS, userId, id);
+      if (!isOnline()) {
+        enqueueMutation(userId, {
+          resource: 'goals',
+          method: 'DELETE',
+          entityId: id,
+        });
+      }
+      return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteGoal', goalId: id });
     throw new StorageError('Failed to delete goal');
@@ -303,6 +575,7 @@ export async function getMilestones(): Promise<Milestone[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (isOnline()) {
+      await syncPendingChanges();
       const milestones = await apiRequest<Milestone[]>('milestones', 'GET');
       writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify(milestones));
       return milestones.map(milestone => unescapeData(milestone as unknown as Record<string, unknown>) as unknown as Milestone);
@@ -347,28 +620,31 @@ export async function createMilestone(milestone: Omit<Milestone, 'id' | 'created
       throw new ValidationError('Missing required fields');
     }
 
-    if (isOnline()) {
-      const newMilestone = await apiRequest<Milestone>('milestones', 'POST', sanitizedMilestone);
-      const cachedMilestones = readCacheValue(STORAGE_KEYS.MILESTONES, userId);
-      const milestones = JSON.parse(cachedMilestones || '[]');
-      writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify([...milestones, newMilestone]));
-      return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const newMilestone = await apiRequest<Milestone>('milestones', 'POST', sanitizedMilestone);
+        addCachedRecord(STORAGE_KEYS.MILESTONES, userId, newMilestone);
+        return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedMilestones = readCacheValue(STORAGE_KEYS.MILESTONES, userId);
-    const milestones = JSON.parse(cachedMilestones || '[]');
-    const newMilestone = {
-      ...sanitizedMilestone,
-      id: `temp_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify([...milestones, newMilestone]));
-    return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+      const newMilestone = {
+        ...sanitizedMilestone,
+        id: createClientId('temp_milestone'),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      addCachedRecord(STORAGE_KEYS.MILESTONES, userId, newMilestone);
+      enqueueMutation(userId, {
+        resource: 'milestones',
+        method: 'POST',
+        entityId: newMilestone.id,
+        body: sanitizedMilestone,
+      });
+      return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
   } catch (error) {
     logError(error as Error, { operation: 'createMilestone', data: milestone });
     if (error instanceof ValidationError) {
@@ -384,14 +660,12 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
 
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
-    if (isOnline()) {
-      const updatedMilestone = await apiRequest<Milestone>('milestones', 'PUT', { id, ...sanitizedUpdates });
-      const cachedMilestones = readCacheValue(STORAGE_KEYS.MILESTONES, userId);
-      const milestones = JSON.parse(cachedMilestones || '[]');
-      const updatedMilestones = milestones.map((milestone: Milestone) => milestone.id === id ? updatedMilestone : milestone);
-      writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify(updatedMilestones));
-      return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const updatedMilestone = await apiRequest<Milestone>('milestones', 'PUT', { id, ...sanitizedUpdates });
+        updateCachedRecord(STORAGE_KEYS.MILESTONES, userId, id, updatedMilestone);
+        return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
@@ -403,10 +677,15 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
     if (!existingMilestone) {
       throw new StorageError('Milestone not found');
     }
-    const updatedMilestone = { ...existingMilestone, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
-    const updatedMilestones = milestones.map((milestone: Milestone) => milestone.id === id ? updatedMilestone : milestone);
-    writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify(updatedMilestones));
-    return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+      const updatedMilestone = { ...existingMilestone, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+      updateCachedRecord(STORAGE_KEYS.MILESTONES, userId, id, updatedMilestone);
+      enqueueMutation(userId, {
+        resource: 'milestones',
+        method: 'PUT',
+        entityId: id,
+        body: sanitizedUpdates,
+      });
+      return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
   } catch (error) {
     logError(error as Error, { operation: 'updateMilestone', milestoneId: id, updates });
     throw new StorageError('Failed to update milestone');
@@ -415,20 +694,25 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
 
 export async function deleteMilestone(id: string): Promise<boolean> {
   try {
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (isOnline()) {
-      await apiRequest<{ success: true }>(`milestones?id=${id}`, 'DELETE');
-    }
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      if (isOnline()) {
+        await syncPendingChanges();
+        await apiRequest<{ success: true }>(`milestones?id=${id}`, 'DELETE');
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedMilestones = readCacheValue(STORAGE_KEYS.MILESTONES, userId);
-    const milestones = JSON.parse(cachedMilestones || '[]');
-    const filtered = milestones.filter((milestone: Milestone) => milestone.id !== id);
-    writeCacheValue(STORAGE_KEYS.MILESTONES, userId, JSON.stringify(filtered));
-    return true;
+      deleteCachedRecord(STORAGE_KEYS.MILESTONES, userId, id);
+      if (!isOnline()) {
+        enqueueMutation(userId, {
+          resource: 'milestones',
+          method: 'DELETE',
+          entityId: id,
+        });
+      }
+      return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteMilestone', milestoneId: id });
     throw new StorageError('Failed to delete milestone');
@@ -440,6 +724,7 @@ export async function getNotes(): Promise<Note[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (isOnline()) {
+      await syncPendingChanges();
       const notes = await apiRequest<Note[]>('notes', 'GET');
       writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify(notes));
       return notes.map(note => unescapeData(note as unknown as Record<string, unknown>) as unknown as Note);
@@ -484,32 +769,38 @@ export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedA
       throw new ValidationError('Title and content are required');
     }
 
-    if (isOnline()) {
-      const newNote = await apiRequest<Note>('notes', 'POST', {
-        ...sanitizedNote,
-        isPinned: sanitizedNote.isPinned ?? false
-      });
-      const cachedNotes = readCacheValue(STORAGE_KEYS.NOTES, userId);
-      const notes = JSON.parse(cachedNotes || '[]');
-      writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify([...notes, newNote]));
-      return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const newNote = await apiRequest<Note>('notes', 'POST', {
+          ...sanitizedNote,
+          isPinned: sanitizedNote.isPinned ?? false
+        });
+        addCachedRecord(STORAGE_KEYS.NOTES, userId, newNote);
+        return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedNotes = readCacheValue(STORAGE_KEYS.NOTES, userId);
-    const notes = JSON.parse(cachedNotes || '[]');
-    const newNote = {
-      ...sanitizedNote,
-      id: `temp_${Date.now()}`,
-      isPinned: sanitizedNote.isPinned ?? false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify([...notes, newNote]));
-    return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
+      const newNote = {
+        ...sanitizedNote,
+        id: createClientId('temp_note'),
+        isPinned: sanitizedNote.isPinned ?? false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      addCachedRecord(STORAGE_KEYS.NOTES, userId, newNote);
+      enqueueMutation(userId, {
+        resource: 'notes',
+        method: 'POST',
+        entityId: newNote.id,
+        body: {
+          ...sanitizedNote,
+          isPinned: sanitizedNote.isPinned ?? false,
+        },
+      });
+      return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
   } catch (error) {
     logError(error as Error, { operation: 'createNote', data: note });
     if (error instanceof ValidationError) {
@@ -525,14 +816,12 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
 
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
-    if (isOnline()) {
-      const updatedNote = await apiRequest<Note>('notes', 'PUT', { id, ...sanitizedUpdates });
-      const cachedNotes = readCacheValue(STORAGE_KEYS.NOTES, userId);
-      const notes = JSON.parse(cachedNotes || '[]');
-      const updatedNotes = notes.map((note: Note) => note.id === id ? updatedNote : note);
-      writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify(updatedNotes));
-      return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const updatedNote = await apiRequest<Note>('notes', 'PUT', { id, ...sanitizedUpdates });
+        updateCachedRecord(STORAGE_KEYS.NOTES, userId, id, updatedNote);
+        return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
@@ -544,10 +833,15 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
     if (!existingNote) {
       throw new StorageError('Note not found');
     }
-    const updatedNote = { ...existingNote, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
-    const updatedNotes = notes.map((note: Note) => note.id === id ? updatedNote : note);
-    writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify(updatedNotes));
-    return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
+      const updatedNote = { ...existingNote, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+      updateCachedRecord(STORAGE_KEYS.NOTES, userId, id, updatedNote);
+      enqueueMutation(userId, {
+        resource: 'notes',
+        method: 'PUT',
+        entityId: id,
+        body: sanitizedUpdates,
+      });
+      return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
   } catch (error) {
     logError(error as Error, { operation: 'updateNote', noteId: id, updates });
     throw new StorageError('Failed to update note');
@@ -556,20 +850,25 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
 
 export async function deleteNote(id: string): Promise<boolean> {
   try {
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (isOnline()) {
-      await apiRequest<{ success: true }>(`notes?id=${id}`, 'DELETE');
-    }
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      if (isOnline()) {
+        await syncPendingChanges();
+        await apiRequest<{ success: true }>(`notes?id=${id}`, 'DELETE');
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedNotes = readCacheValue(STORAGE_KEYS.NOTES, userId);
-    const notes = JSON.parse(cachedNotes || '[]');
-    const filtered = notes.filter((note: Note) => note.id !== id);
-    writeCacheValue(STORAGE_KEYS.NOTES, userId, JSON.stringify(filtered));
-    return true;
+      deleteCachedRecord(STORAGE_KEYS.NOTES, userId, id);
+      if (!isOnline()) {
+        enqueueMutation(userId, {
+          resource: 'notes',
+          method: 'DELETE',
+          entityId: id,
+        });
+      }
+      return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteNote', noteId: id });
     throw new StorageError('Failed to delete note');
@@ -581,6 +880,7 @@ export async function getTodos(): Promise<Todo[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (isOnline()) {
+      await syncPendingChanges();
       const todos = await apiRequest<Todo[]>('todos', 'GET');
       writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify(todos));
       return todos.map(todo => unescapeData(todo as unknown as Record<string, unknown>) as unknown as Todo);
@@ -629,32 +929,38 @@ export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedA
       throw new ValidationError('Invalid priority level');
     }
 
-    if (isOnline()) {
-      const newTodo = await apiRequest<Todo>('todos', 'POST', {
-        ...sanitizedTodo,
-        completed: false
-      });
-      const cachedTodos = readCacheValue(STORAGE_KEYS.TODOS, userId);
-      const todos = JSON.parse(cachedTodos || '[]');
-      writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify([...todos, newTodo]));
-      return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const newTodo = await apiRequest<Todo>('todos', 'POST', {
+          ...sanitizedTodo,
+          completed: false
+        });
+        addCachedRecord(STORAGE_KEYS.TODOS, userId, newTodo);
+        return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedTodos = readCacheValue(STORAGE_KEYS.TODOS, userId);
-    const todos = JSON.parse(cachedTodos || '[]');
-    const newTodo = {
-      ...sanitizedTodo,
-      id: `temp_${Date.now()}`,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify([...todos, newTodo]));
-    return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
+      const newTodo = {
+        ...sanitizedTodo,
+        id: createClientId('temp_todo'),
+        completed: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      addCachedRecord(STORAGE_KEYS.TODOS, userId, newTodo);
+      enqueueMutation(userId, {
+        resource: 'todos',
+        method: 'POST',
+        entityId: newTodo.id,
+        body: {
+          ...sanitizedTodo,
+          completed: false,
+        },
+      });
+      return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
   } catch (error) {
     logError(error as Error, { operation: 'createTodo', data: todo });
     if (error instanceof ValidationError) {
@@ -674,14 +980,12 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
       throw new ValidationError('Invalid priority level');
     }
 
-    if (isOnline()) {
-      const updatedTodo = await apiRequest<Todo>('todos', 'PUT', { id, ...sanitizedUpdates });
-      const cachedTodos = readCacheValue(STORAGE_KEYS.TODOS, userId);
-      const todos = JSON.parse(cachedTodos || '[]');
-      const updatedTodos = todos.map((todo: Todo) => todo.id === id ? updatedTodo : todo);
-      writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify(updatedTodos));
-      return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const updatedTodo = await apiRequest<Todo>('todos', 'PUT', { id, ...sanitizedUpdates });
+        updateCachedRecord(STORAGE_KEYS.TODOS, userId, id, updatedTodo);
+        return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
@@ -693,10 +997,15 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
     if (!existingTodo) {
       throw new StorageError('Todo not found');
     }
-    const updatedTodo = { ...existingTodo, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
-    const updatedTodos = todos.map((todo: Todo) => todo.id === id ? updatedTodo : todo);
-    writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify(updatedTodos));
-    return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
+      const updatedTodo = { ...existingTodo, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+      updateCachedRecord(STORAGE_KEYS.TODOS, userId, id, updatedTodo);
+      enqueueMutation(userId, {
+        resource: 'todos',
+        method: 'PUT',
+        entityId: id,
+        body: sanitizedUpdates,
+      });
+      return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
   } catch (error) {
     logError(error as Error, { operation: 'updateTodo', todoId: id, updates });
     throw new StorageError('Failed to update todo');
@@ -705,20 +1014,25 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
 
 export async function deleteTodo(id: string): Promise<boolean> {
   try {
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (isOnline()) {
-      await apiRequest<{ success: true }>(`todos?id=${id}`, 'DELETE');
-    }
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      if (isOnline()) {
+        await syncPendingChanges();
+        await apiRequest<{ success: true }>(`todos?id=${id}`, 'DELETE');
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedTodos = readCacheValue(STORAGE_KEYS.TODOS, userId);
-    const todos = JSON.parse(cachedTodos || '[]');
-    const filtered = todos.filter((todo: Todo) => todo.id !== id);
-    writeCacheValue(STORAGE_KEYS.TODOS, userId, JSON.stringify(filtered));
-    return true;
+      deleteCachedRecord(STORAGE_KEYS.TODOS, userId, id);
+      if (!isOnline()) {
+        enqueueMutation(userId, {
+          resource: 'todos',
+          method: 'DELETE',
+          entityId: id,
+        });
+      }
+      return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteTodo', todoId: id });
     throw new StorageError('Failed to delete todo');
@@ -743,6 +1057,7 @@ export async function getCheckIns(): Promise<CheckIn[]> {
   try {
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     if (isOnline()) {
+      await syncPendingChanges();
       const checkIns = await apiRequest<CheckIn[]>('checkins', 'GET');
       writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify(checkIns));
       return checkIns.map(checkIn => unescapeData(checkIn as unknown as Record<string, unknown>) as unknown as CheckIn);
@@ -828,28 +1143,31 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
       throw new ValidationError(`Invalid energy value. Must be one of: ${validEnergies.join(', ')}`);
     }
 
-    if (isOnline()) {
-      const newCheckIn = await apiRequest<CheckIn>('checkins', 'POST', sanitizedCheckIn);
-      const cachedCheckIns = readCacheValue(STORAGE_KEYS.CHECKINS, userId);
-      const checkIns = JSON.parse(cachedCheckIns || '[]');
-      writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify([...checkIns, newCheckIn]));
-      return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const newCheckIn = await apiRequest<CheckIn>('checkins', 'POST', sanitizedCheckIn);
+        addCachedRecord(STORAGE_KEYS.CHECKINS, userId, newCheckIn);
+        return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedCheckIns = readCacheValue(STORAGE_KEYS.CHECKINS, userId);
-    const checkIns = JSON.parse(cachedCheckIns || '[]');
-    const newCheckIn = {
-      ...sanitizedCheckIn,
-      id: `temp_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify([...checkIns, newCheckIn]));
-    return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+      const newCheckIn = {
+        ...sanitizedCheckIn,
+        id: createClientId('temp_checkin'),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      addCachedRecord(STORAGE_KEYS.CHECKINS, userId, newCheckIn);
+      enqueueMutation(userId, {
+        resource: 'checkins',
+        method: 'POST',
+        entityId: newCheckIn.id,
+        body: sanitizedCheckIn,
+      });
+      return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
     logError(error as Error, { operation: 'createCheckIn', data: checkIn });
     if (error instanceof ValidationError) {
@@ -871,14 +1189,12 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
 
     const sanitizedUpdates = sanitizeData(processedUpdates);
 
-    if (isOnline()) {
-      const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
-      const cachedCheckIns = readCacheValue(STORAGE_KEYS.CHECKINS, userId);
-      const checkIns = JSON.parse(cachedCheckIns || '[]');
-      const updatedCheckIns = checkIns.map((checkIn: CheckIn) => checkIn.id === id ? updatedCheckIn : checkIn);
-      writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify(updatedCheckIns));
-      return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
-    }
+      if (isOnline()) {
+        await syncPendingChanges();
+        const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
+        updateCachedRecord(STORAGE_KEYS.CHECKINS, userId, id, updatedCheckIn);
+        return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
@@ -890,10 +1206,15 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
     if (!existingCheckIn) {
       throw new StorageError('Check-in not found');
     }
-    const updatedCheckIn = { ...existingCheckIn, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
-    const updatedCheckIns = checkIns.map((checkIn: CheckIn) => checkIn.id === id ? updatedCheckIn : checkIn);
-    writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify(updatedCheckIns));
-    return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+      const updatedCheckIn = { ...existingCheckIn, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
+      updateCachedRecord(STORAGE_KEYS.CHECKINS, userId, id, updatedCheckIn);
+      enqueueMutation(userId, {
+        resource: 'checkins',
+        method: 'PUT',
+        entityId: id,
+        body: sanitizedUpdates,
+      });
+      return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
     logError(error as Error, { operation: 'updateCheckIn', checkInId: id, updates });
     throw new StorageError('Failed to update check-in');
@@ -902,20 +1223,25 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
 
 export async function deleteCheckIn(id: string): Promise<boolean> {
   try {
-    const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    if (isOnline()) {
-      await apiRequest<{ success: true }>(`checkins?id=${id}`, 'DELETE');
-    }
+      const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      if (isOnline()) {
+        await syncPendingChanges();
+        await apiRequest<{ success: true }>(`checkins?id=${id}`, 'DELETE');
+      }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-    const cachedCheckIns = readCacheValue(STORAGE_KEYS.CHECKINS, userId);
-    const checkIns = JSON.parse(cachedCheckIns || '[]');
-    const filtered = checkIns.filter((checkIn: CheckIn) => checkIn.id !== id);
-    writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify(filtered));
-    return true;
+      deleteCachedRecord(STORAGE_KEYS.CHECKINS, userId, id);
+      if (!isOnline()) {
+        enqueueMutation(userId, {
+          resource: 'checkins',
+          method: 'DELETE',
+          entityId: id,
+        });
+      }
+      return true;
   } catch (error) {
     logError(error as Error, { operation: 'deleteCheckIn', checkInId: id });
     throw new StorageError('Failed to delete check-in');

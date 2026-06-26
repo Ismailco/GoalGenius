@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
+import { syncPendingChanges } from '@/lib/storage';
 
 // Function to trigger caching of app pages
 export const cacheAppPages = async () => {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  if ('serviceWorker' in navigator) {
     try {
-      navigator.serviceWorker.controller.postMessage({ type: 'CACHE_PAGES' });
+      const registration = await navigator.serviceWorker.ready;
+      const serviceWorker = navigator.serviceWorker.controller ?? registration.active;
+
+      if (!serviceWorker) {
+        throw new Error('Service Worker not ready');
+      }
+
       return new Promise((resolve, reject) => {
         const messageHandler = (event: MessageEvent) => {
           if (event.data.type === 'CACHE_COMPLETE') {
@@ -26,14 +33,14 @@ export const cacheAppPages = async () => {
           }
         };
         navigator.serviceWorker.addEventListener('message', messageHandler);
+        serviceWorker.postMessage({ type: 'CACHE_PAGES' });
       });
     } catch (error) {
       console.error('Failed to initiate caching:', error);
       throw error;
     }
   } else {
-    console.warn('Service Worker is not ready yet');
-    return Promise.reject(new Error('Service Worker not ready'));
+    return Promise.reject(new Error('Service Worker unsupported'));
   }
 };
 
@@ -43,12 +50,29 @@ export default function ServiceWorkerProvider({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    const prepareOfflineApp = async () => {
+      if (navigator.onLine) {
+        try {
+          await syncPendingChanges();
+        } catch (error) {
+          console.warn('Offline changes could not be synced yet:', error);
+        }
+      }
+
+      try {
+        await cacheAppPages();
+      } catch (error) {
+        console.warn('Offline app cache could not be refreshed yet:', error);
+      }
+    };
+
     if ('serviceWorker' in navigator) {
       // Register service worker
       navigator.serviceWorker
         .register('/sw.js')
         .then((reg) => {
           console.log('✅ Service Worker registered:', reg.scope);
+          void navigator.serviceWorker.ready.then(() => prepareOfflineApp());
 
           // Listen for messages from the service worker
           navigator.serviceWorker.addEventListener('message', (event) => {
@@ -66,6 +90,16 @@ export default function ServiceWorkerProvider({
         })
         .catch((err) => console.error('❌ SW registration failed:', err));
     }
+
+    const handleOnline = () => {
+      void prepareOfflineApp();
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
   return children;

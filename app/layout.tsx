@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     default: 'GoalGenius - Track Your Goals',
   },
   description: 'Personal goal tracking and productivity dashboard',
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
