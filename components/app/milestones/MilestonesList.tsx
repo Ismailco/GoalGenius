@@ -9,6 +9,7 @@ import { ChevronDown, ChevronUp, Calendar, Trash, Edit } from 'lucide-react';
 import AlertModal from '@/components/common/AlertModal';
 import { useModal } from '@/app/providers/ModalProvider';
 import EditMilestoneModal from './EditMilestoneModal';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 interface MilestonesListProps {
   searchTerm: string;
@@ -35,30 +36,39 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
     type: 'info'
   });
 
+  const loadData = async () => {
+    await handleAsyncOperation(
+      async () => {
+        const [loadedMilestones, loadedGoals] = await Promise.all([
+          getMilestones(),
+          getGoals()
+        ]);
+        setMilestones(loadedMilestones);
+        setGoals(loadedGoals);
+      },
+      setLoading,
+      (error) => {
+        setAlert({
+          show: true,
+          title: 'Error',
+          message: getUserFriendlyErrorMessage(error),
+          type: 'error'
+        });
+      }
+    );
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      await handleAsyncOperation(
-        async () => {
-          const [loadedMilestones, loadedGoals] = await Promise.all([
-            getMilestones(),
-            getGoals()
-          ]);
-          setMilestones(loadedMilestones);
-          setGoals(loadedGoals);
-        },
-        setLoading,
-        (error) => {
-          setAlert({
-            show: true,
-            title: 'Error',
-            message: getUserFriendlyErrorMessage(error),
-            type: 'error'
-          });
-        }
-      );
+    loadData();
+    const handleWorkspaceSync = () => {
+      void loadData();
     };
 
-    loadData();
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
   }, []);
 
   const toggleGoal = (goalId: string) => {

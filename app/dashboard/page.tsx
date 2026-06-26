@@ -13,6 +13,7 @@ import SectionHeader from '@/components/app/dashboard/SectionHeader';
 import DashboardSection from '@/components/app/dashboard/DashboardSection';
 import AddMilestone from '@/components/app/milestones/AddMilestone';
 import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
@@ -26,40 +27,50 @@ export default function DashboardPage() {
     lastCheckIn: null as string | null,
   });
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setMounted(true);
-        const [goals, notes, todos, checkIns] = await Promise.all([
-          getGoals(),
-          getNotes(),
-          getTodos(),
-          getCheckIns()
-        ]);
+  async function fetchData() {
+    try {
+      setMounted(true);
+      const [goals, notes, todos, checkIns] = await Promise.all([
+        getGoals(),
+        getNotes(),
+        getTodos(),
+        getCheckIns()
+      ]);
 
-        const activeTodosCount = todos.filter(todo => !todo.completed).length;
-        const completedTodosCount = todos.filter(todo => todo.completed).length;
-        const lastCheckIn = checkIns.length > 0
-          ? new Date(checkIns[checkIns.length - 1].createdAt).toLocaleDateString()
-          : null;
+      const activeTodosCount = todos.filter(todo => !todo.completed).length;
+      const completedTodosCount = todos.filter(todo => todo.completed).length;
+      const lastCheckIn = checkIns.length > 0
+        ? new Date(checkIns[checkIns.length - 1].createdAt).toLocaleDateString()
+        : null;
 
-        setStats({
-          totalGoals: goals.length,
-          averageProgress: goals.length > 0
-            ? Math.round(goals.reduce((acc, goal) => acc + goal.progress, 0) / goals.length)
-            : 0,
-          completedMilestones: goals.filter(goal => goal.progress === 100).length,
-          totalNotes: notes.length,
-          activeTodos: activeTodosCount,
-          completedTodos: completedTodosCount,
-          lastCheckIn,
-        });
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      }
+      setStats({
+        totalGoals: goals.length,
+        averageProgress: goals.length > 0
+          ? Math.round(goals.reduce((acc, goal) => acc + goal.progress, 0) / goals.length)
+          : 0,
+        completedMilestones: goals.filter(goal => goal.progress === 100).length,
+        totalNotes: notes.length,
+        activeTodos: activeTodosCount,
+        completedTodos: completedTodosCount,
+        lastCheckIn,
+      });
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
     }
+  }
 
+  useEffect(() => {
     fetchData();
+
+    const handleWorkspaceSync = () => {
+      void fetchData();
+    };
+
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
   }, []);
 
   if (!mounted) {

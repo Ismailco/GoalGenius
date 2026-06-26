@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { syncPendingChanges } from '@/lib/storage';
+import { syncWorkspaceData } from '@/lib/storage';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 // Function to trigger caching of app pages
 export const cacheAppPages = async () => {
@@ -53,7 +54,8 @@ export default function ServiceWorkerProvider({
     const prepareOfflineApp = async () => {
       if (navigator.onLine) {
         try {
-          await syncPendingChanges();
+          await syncWorkspaceData();
+          window.dispatchEvent(new Event(WORKSPACE_SYNC_EVENT));
         } catch (error) {
           console.warn('Offline changes could not be synced yet:', error);
         }

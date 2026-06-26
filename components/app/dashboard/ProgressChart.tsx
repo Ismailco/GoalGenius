@@ -5,6 +5,7 @@ import { GoalCategory } from '@/app/types';
 import { getGoals } from '@/lib/storage';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 export default function ProgressChart() {
   const [loading, setLoading] = useState(true);
@@ -55,6 +56,15 @@ export default function ProgressChart() {
 
   useEffect(() => {
     fetchCategoryProgress();
+    const handleWorkspaceSync = () => {
+      void fetchCategoryProgress();
+    };
+
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
   }, [fetchCategoryProgress]);
 
   const getCategoryColor = (category: string) => {

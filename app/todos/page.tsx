@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { CalendarClock, Plus, Search, SquarePen, Trash2 } from 'lucide-react';
 import { Todo } from '@/app/types';
@@ -12,6 +12,7 @@ import {
   subscribeToAppSettings,
 } from '@/lib/app-settings';
 import { deleteTodo, getTodos, toggleTodoComplete } from '@/lib/storage';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 export default function TodosPage() {
   const [mounted, setMounted] = useState(false);
@@ -36,32 +37,40 @@ export default function TodosPage() {
     type: 'info',
   });
 
-  useEffect(() => {
-    const loadTodos = async () => {
-      try {
-        setShowCompleted(readAppSettings().showCompletedTodosByDefault);
-        setMounted(true);
-        const loadedTodos = await getTodos();
-        setTodos(loadedTodos);
-      } catch (error) {
-        console.error('Error loading todos:', error);
-        setAlert({
-          show: true,
-          title: 'Error',
-          message: 'Failed to load todos',
-          type: 'error',
-        });
-      }
-    };
+  const loadTodos = useCallback(async () => {
+    try {
+      setShowCompleted(readAppSettings().showCompletedTodosByDefault);
+      setMounted(true);
+      const loadedTodos = await getTodos();
+      setTodos(loadedTodos);
+    } catch (error) {
+      console.error('Error loading todos:', error);
+      setAlert({
+        show: true,
+        title: 'Error',
+        message: 'Failed to load todos',
+        type: 'error',
+      });
+    }
+  }, []);
 
+  useEffect(() => {
     loadTodos();
 
     const unsubscribe = subscribeToAppSettings(() => {
       setShowCompleted(readAppSettings().showCompletedTodosByDefault);
     });
+    const handleWorkspaceSync = () => {
+      void loadTodos();
+    };
 
-    return unsubscribe;
-  }, []);
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
+  }, [loadTodos]);
 
   async function handleSaveTodo() {
     try {

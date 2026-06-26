@@ -5,6 +5,7 @@ import { Milestone, Goal, GoalCategory } from '@/app/types';
 import { getMilestones, getGoals } from '@/lib/storage';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingPage } from '@/components/common/LoadingSpinner';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 // import CreateMilestoneModal from '@/app/components/CreateMilestoneModal';
 // import { useModal } from '@/app/providers/ModalProvider';
 
@@ -21,30 +22,39 @@ export default function MilestoneTimeline() {
   });
   // const { showModal } = useModal();
 
+  const loadData = async () => {
+    await handleAsyncOperation(
+      async () => {
+        setMounted(true);
+        const [loadedMilestones, loadedGoals] = await Promise.all([
+          getMilestones(),
+          getGoals()
+        ]);
+        setMilestones(loadedMilestones);
+        setGoals(loadedGoals);
+      },
+      setLoading,
+      (error) => {
+        window.addNotification?.({
+          title: 'Error',
+          message: getUserFriendlyErrorMessage(error),
+          type: 'error'
+        });
+      }
+    );
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      await handleAsyncOperation(
-        async () => {
-          setMounted(true);
-          const [loadedMilestones, loadedGoals] = await Promise.all([
-            getMilestones(),
-            getGoals()
-          ]);
-          setMilestones(loadedMilestones);
-          setGoals(loadedGoals);
-        },
-        setLoading,
-        (error) => {
-          window.addNotification?.({
-            title: 'Error',
-            message: getUserFriendlyErrorMessage(error),
-            type: 'error'
-          });
-        }
-      );
+    loadData();
+    const handleWorkspaceSync = () => {
+      void loadData();
     };
 
-    loadData();
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
   }, []);
 
   useEffect(() => {

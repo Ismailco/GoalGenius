@@ -6,6 +6,7 @@ import { getGoals, updateGoal, deleteGoal } from '@/lib/storage';
 import AlertModal from '@/components/common/AlertModal';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingPage } from '@/components/common/LoadingSpinner';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 export default function GoalsList({
   searchTerm = '',
@@ -32,26 +33,35 @@ export default function GoalsList({
     type: 'info'
   });
 
+  const loadGoals = async () => {
+    await handleAsyncOperation(
+      async () => {
+        const loadedGoals = await getGoals();
+        setGoals(loadedGoals);
+      },
+      setLoading,
+      (error) => {
+        setAlert({
+          show: true,
+          title: 'Error',
+          message: getUserFriendlyErrorMessage(error),
+          type: 'error'
+        });
+      }
+    );
+  };
+
   useEffect(() => {
-    const loadGoals = async () => {
-      await handleAsyncOperation(
-        async () => {
-          const loadedGoals = await getGoals();
-          setGoals(loadedGoals);
-        },
-        setLoading,
-        (error) => {
-          setAlert({
-            show: true,
-            title: 'Error',
-            message: getUserFriendlyErrorMessage(error),
-            type: 'error'
-          });
-        }
-      );
+    loadGoals();
+    const handleWorkspaceSync = () => {
+      void loadGoals();
     };
 
-    loadGoals();
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
   }, []);
 
   const handleUpdateProgress = async (goalId: string, progress: number) => {

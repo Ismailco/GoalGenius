@@ -45,6 +45,7 @@ import {
   getNotes,
   getTodos,
 } from '@/lib/storage';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 type NotificationPermissionState = NotificationPermission | 'unsupported';
 
@@ -191,11 +192,13 @@ export default function SettingsPage() {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener(WORKSPACE_SYNC_EVENT, loadWorkspaceCounts);
 
     return () => {
       unsubscribe();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, loadWorkspaceCounts);
     };
   }, []);
 

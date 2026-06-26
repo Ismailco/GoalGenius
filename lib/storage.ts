@@ -198,6 +198,17 @@ function deleteCachedRecord<T extends { id: string }>(
   );
 }
 
+function deleteCachedGoalCascade(userId: string | null, goalId: string): void {
+  deleteCachedRecord(STORAGE_KEYS.GOALS, userId, goalId);
+
+  const milestones = readCachedList<Milestone>(STORAGE_KEYS.MILESTONES, userId);
+  writeCachedList(
+    STORAGE_KEYS.MILESTONES,
+    userId,
+    milestones.filter((milestone) => milestone.goalId !== goalId),
+  );
+}
+
 function readSyncQueue(userId: string | null): PendingMutation[] {
   if (!userId) return [];
 
@@ -292,10 +303,40 @@ async function refreshRemoteCache(userId: string | null): Promise<void> {
   writeCacheValue(STORAGE_KEYS.CHECKINS, userId, JSON.stringify(checkIns));
 }
 
+export async function syncWorkspaceData(): Promise<SyncResult> {
+  const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+  const queue = readSyncQueue(userId);
+
+  if (!userId || !isOnline()) {
+    return { synced: 0, failed: 0, pending: queue.length };
+  }
+
+  const result = await syncPendingChanges();
+
+  if (result.pending === 0) {
+    await refreshRemoteCache(userId);
+  }
+
+  return result;
+}
+
 // Add type for API error response
 type ApiErrorResponse = {
   error: string;
 };
+
+class ApiRequestError extends StorageError {
+  constructor(message: string, public statusCode: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+function shouldQueueOfflineMutation(error: unknown): boolean {
+  if (!isOnline()) return true;
+  if (error instanceof TypeError) return true;
+  return error instanceof ApiRequestError && error.statusCode >= 500;
+}
 
 // Updated apiRequest with better error handling
 async function apiRequest<T>(
@@ -332,7 +373,7 @@ async function apiRequest<T>(
       data: responseData
     });
     const errorData = responseData as ApiErrorResponse;
-    throw new StorageError(errorData.error || 'API request failed');
+    throw new ApiRequestError(errorData.error || 'API request failed', response.status);
   }
 
   return responseData as T;
@@ -390,14 +431,35 @@ export async function syncPendingChanges(): Promise<SyncResult> {
             `${endpoint}?id=${encodeURIComponent(entityId)}`,
             'DELETE',
           );
-          deleteCachedRecord(storageKey, userId, mutation.entityId);
-          if (entityId !== mutation.entityId) {
-            deleteCachedRecord(storageKey, userId, entityId);
+          if (mutation.resource === 'goals') {
+            deleteCachedGoalCascade(userId, mutation.entityId);
+            if (entityId !== mutation.entityId) {
+              deleteCachedGoalCascade(userId, entityId);
+            }
+          } else {
+            deleteCachedRecord(storageKey, userId, mutation.entityId);
+            if (entityId !== mutation.entityId) {
+              deleteCachedRecord(storageKey, userId, entityId);
+            }
           }
         }
 
         synced += 1;
       } catch (error) {
+        if (
+          error instanceof ApiRequestError &&
+          error.statusCode === 404 &&
+          mutation.method !== 'POST'
+        ) {
+          if (mutation.resource === 'goals') {
+            deleteCachedGoalCascade(userId, mutation.entityId);
+          } else {
+            deleteCachedRecord(storageKey, userId, mutation.entityId);
+          }
+          synced += 1;
+          continue;
+        }
+
         logError(error as Error, { operation: 'syncPendingChanges', mutation });
         remainingQueue = queue.slice(index);
         break;
@@ -472,10 +534,17 @@ export async function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedA
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const newGoal = await apiRequest<Goal>('goals', 'POST', sanitizedGoal);
         addCachedRecord(STORAGE_KEYS.GOALS, userId, newGoal);
         return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'createGoalOnlineFallback' });
+        }
       }
 
     if (!userId) {
@@ -512,10 +581,17 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const updatedGoal = await apiRequest<Goal>('goals', 'PUT', { id, ...sanitizedUpdates });
         updateCachedRecord(STORAGE_KEYS.GOALS, userId, id, updatedGoal);
         return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'updateGoalOnlineFallback', goalId: id });
+        }
       }
 
     if (!userId) {
@@ -546,17 +622,27 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
 export async function deleteGoal(id: string): Promise<boolean> {
   try {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      let shouldQueueDelete = !isOnline();
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         await apiRequest<{ success: true }>(`goals?id=${id}`, 'DELETE');
+        shouldQueueDelete = false;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          shouldQueueDelete = true;
+          logError(error as Error, { operation: 'deleteGoalOnlineFallback', goalId: id });
+        }
       }
 
     if (!userId) {
       throw new StorageError('No user ID found');
     }
 
-      deleteCachedRecord(STORAGE_KEYS.GOALS, userId, id);
-      if (!isOnline()) {
+      deleteCachedGoalCascade(userId, id);
+      if (shouldQueueDelete) {
         enqueueMutation(userId, {
           resource: 'goals',
           method: 'DELETE',
@@ -621,10 +707,17 @@ export async function createMilestone(milestone: Omit<Milestone, 'id' | 'created
     }
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const newMilestone = await apiRequest<Milestone>('milestones', 'POST', sanitizedMilestone);
         addCachedRecord(STORAGE_KEYS.MILESTONES, userId, newMilestone);
         return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'createMilestoneOnlineFallback' });
+        }
       }
 
     if (!userId) {
@@ -661,10 +754,17 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const updatedMilestone = await apiRequest<Milestone>('milestones', 'PUT', { id, ...sanitizedUpdates });
         updateCachedRecord(STORAGE_KEYS.MILESTONES, userId, id, updatedMilestone);
         return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'updateMilestoneOnlineFallback', milestoneId: id });
+        }
       }
 
     if (!userId) {
@@ -695,9 +795,19 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
 export async function deleteMilestone(id: string): Promise<boolean> {
   try {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      let shouldQueueDelete = !isOnline();
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         await apiRequest<{ success: true }>(`milestones?id=${id}`, 'DELETE');
+        shouldQueueDelete = false;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          shouldQueueDelete = true;
+          logError(error as Error, { operation: 'deleteMilestoneOnlineFallback', milestoneId: id });
+        }
       }
 
     if (!userId) {
@@ -705,7 +815,7 @@ export async function deleteMilestone(id: string): Promise<boolean> {
     }
 
       deleteCachedRecord(STORAGE_KEYS.MILESTONES, userId, id);
-      if (!isOnline()) {
+      if (shouldQueueDelete) {
         enqueueMutation(userId, {
           resource: 'milestones',
           method: 'DELETE',
@@ -770,6 +880,7 @@ export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedA
     }
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const newNote = await apiRequest<Note>('notes', 'POST', {
           ...sanitizedNote,
@@ -777,6 +888,12 @@ export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedA
         });
         addCachedRecord(STORAGE_KEYS.NOTES, userId, newNote);
         return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'createNoteOnlineFallback' });
+        }
       }
 
     if (!userId) {
@@ -817,10 +934,17 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const updatedNote = await apiRequest<Note>('notes', 'PUT', { id, ...sanitizedUpdates });
         updateCachedRecord(STORAGE_KEYS.NOTES, userId, id, updatedNote);
         return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'updateNoteOnlineFallback', noteId: id });
+        }
       }
 
     if (!userId) {
@@ -851,9 +975,19 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
 export async function deleteNote(id: string): Promise<boolean> {
   try {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      let shouldQueueDelete = !isOnline();
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         await apiRequest<{ success: true }>(`notes?id=${id}`, 'DELETE');
+        shouldQueueDelete = false;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          shouldQueueDelete = true;
+          logError(error as Error, { operation: 'deleteNoteOnlineFallback', noteId: id });
+        }
       }
 
     if (!userId) {
@@ -861,7 +995,7 @@ export async function deleteNote(id: string): Promise<boolean> {
     }
 
       deleteCachedRecord(STORAGE_KEYS.NOTES, userId, id);
-      if (!isOnline()) {
+      if (shouldQueueDelete) {
         enqueueMutation(userId, {
           resource: 'notes',
           method: 'DELETE',
@@ -930,6 +1064,7 @@ export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedA
     }
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const newTodo = await apiRequest<Todo>('todos', 'POST', {
           ...sanitizedTodo,
@@ -937,6 +1072,12 @@ export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedA
         });
         addCachedRecord(STORAGE_KEYS.TODOS, userId, newTodo);
         return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'createTodoOnlineFallback' });
+        }
       }
 
     if (!userId) {
@@ -981,10 +1122,17 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
     }
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const updatedTodo = await apiRequest<Todo>('todos', 'PUT', { id, ...sanitizedUpdates });
         updateCachedRecord(STORAGE_KEYS.TODOS, userId, id, updatedTodo);
         return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'updateTodoOnlineFallback', todoId: id });
+        }
       }
 
     if (!userId) {
@@ -1015,9 +1163,19 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
 export async function deleteTodo(id: string): Promise<boolean> {
   try {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      let shouldQueueDelete = !isOnline();
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         await apiRequest<{ success: true }>(`todos?id=${id}`, 'DELETE');
+        shouldQueueDelete = false;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          shouldQueueDelete = true;
+          logError(error as Error, { operation: 'deleteTodoOnlineFallback', todoId: id });
+        }
       }
 
     if (!userId) {
@@ -1025,7 +1183,7 @@ export async function deleteTodo(id: string): Promise<boolean> {
     }
 
       deleteCachedRecord(STORAGE_KEYS.TODOS, userId, id);
-      if (!isOnline()) {
+      if (shouldQueueDelete) {
         enqueueMutation(userId, {
           resource: 'todos',
           method: 'DELETE',
@@ -1144,10 +1302,17 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
     }
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const newCheckIn = await apiRequest<CheckIn>('checkins', 'POST', sanitizedCheckIn);
         addCachedRecord(STORAGE_KEYS.CHECKINS, userId, newCheckIn);
         return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'createCheckInOnlineFallback' });
+        }
       }
 
     if (!userId) {
@@ -1190,10 +1355,17 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
     const sanitizedUpdates = sanitizeData(processedUpdates);
 
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         const updatedCheckIn = await apiRequest<CheckIn>('checkins', 'PUT', { id, ...sanitizedUpdates });
         updateCachedRecord(STORAGE_KEYS.CHECKINS, userId, id, updatedCheckIn);
         return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          logError(error as Error, { operation: 'updateCheckInOnlineFallback', checkInId: id });
+        }
       }
 
     if (!userId) {
@@ -1224,9 +1396,19 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
 export async function deleteCheckIn(id: string): Promise<boolean> {
   try {
       const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+      let shouldQueueDelete = !isOnline();
       if (isOnline()) {
+        try {
         await syncPendingChanges();
         await apiRequest<{ success: true }>(`checkins?id=${id}`, 'DELETE');
+        shouldQueueDelete = false;
+        } catch (error) {
+          if (!shouldQueueOfflineMutation(error)) {
+            throw error;
+          }
+          shouldQueueDelete = true;
+          logError(error as Error, { operation: 'deleteCheckInOnlineFallback', checkInId: id });
+        }
       }
 
     if (!userId) {
@@ -1234,7 +1416,7 @@ export async function deleteCheckIn(id: string): Promise<boolean> {
     }
 
       deleteCachedRecord(STORAGE_KEYS.CHECKINS, userId, id);
-      if (!isOnline()) {
+      if (shouldQueueDelete) {
         enqueueMutation(userId, {
           resource: 'checkins',
           method: 'DELETE',

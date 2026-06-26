@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { CheckIn } from '@/app/types';
 import { getCheckIns, deleteCheckIn } from '@/lib/storage';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 import CreateCheckInModal from '@/components/app/checkins/CreateCheckInModal';
 import { format, eachDayOfInterval, isSameDay, isToday, subWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import AlertModal from '@/components/common/AlertModal';
@@ -53,25 +54,34 @@ export default function CheckInsPage() {
 	// const challenges = useMemo(() => parseJsonArray(selectedCheckIn?.challenges), [selectedCheckIn?.challenges]);
 	// const goals = useMemo(() => parseJsonArray(selectedCheckIn?.goals), [selectedCheckIn?.goals]);
 
+	const loadCheckIns = useCallback(async () => {
+		try {
+			setMounted(true);
+			const loadedCheckIns = await getCheckIns();
+			setCheckIns(loadedCheckIns);
+		} catch (error) {
+			console.error('Error loading check-ins:', error);
+			setAlert({
+				show: true,
+				title: 'Error',
+				message: 'Failed to load check-ins',
+				type: 'error',
+			});
+		}
+	}, []);
+
 	useEffect(() => {
-		const loadCheckIns = async () => {
-			try {
-				setMounted(true);
-				const loadedCheckIns = await getCheckIns();
-				setCheckIns(loadedCheckIns);
-			} catch (error) {
-				console.error('Error loading check-ins:', error);
-				setAlert({
-					show: true,
-					title: 'Error',
-					message: 'Failed to load check-ins',
-					type: 'error',
-				});
-			}
+		loadCheckIns();
+		const handleWorkspaceSync = () => {
+			void loadCheckIns();
 		};
 
-		loadCheckIns();
-	}, []);
+		window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+		return () => {
+			window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+		};
+	}, [loadCheckIns]);
 
 	useEffect(() => {
 		if (mounted && calendarRef.current) {

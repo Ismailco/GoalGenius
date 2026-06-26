@@ -11,6 +11,7 @@ import { stripMarkdown } from '@/lib/markdown';
 import { createNote, deleteNote, getNotes, updateNote } from '@/lib/storage';
 import { validateAndSanitizeInput } from '@/lib/validation';
 import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
+import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 type ActiveNoteId = string | 'new' | null;
 
@@ -244,6 +245,46 @@ export default function NotesPage() {
 
     clearEditor();
   }
+
+  useEffect(() => {
+    const handleWorkspaceSync = () => {
+      void getNotes().then((refreshedNotes) => {
+        const sortedNotes = sortNotesByActivity(refreshedNotes);
+        setNotes(sortedNotes);
+
+        if (isDirty && isEditing) {
+          return;
+        }
+
+        if (activeNoteId && activeNoteId !== 'new') {
+          const matchingNote = sortedNotes.find((note) => note.id === activeNoteId);
+
+          if (matchingNote) {
+            const nextState = mapNoteToEditorState(matchingNote);
+            setEditorState(nextState);
+            setSavedState(nextState);
+            return;
+          }
+        }
+
+        if (sortedNotes.length > 0) {
+          const nextState = mapNoteToEditorState(sortedNotes[0]);
+          setActiveNoteId(sortedNotes[0].id);
+          setEditorState(nextState);
+          setSavedState(nextState);
+          return;
+        }
+
+        clearEditor();
+      });
+    };
+
+    window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
+    };
+  }, [activeNoteId, isDirty, isEditing]);
 
   function clearFieldError(field: keyof FormErrors) {
     setErrors((currentErrors) => {
