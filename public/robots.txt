@@ -1,20 +1,2 @@
-# Allow all crawlers
 User-agent: *
-Allow: /
-
-# Prevent crawling of private routes
-Disallow: /dashboard/
-Disallow: /notes/
-Disallow: /todos/
-Disallow: /checkins/
-Disallow: /goals/
-Disallow: /milestones/
-Disallow: /calendar/
-Disallow: /analytics/
-Disallow: /api/
-Disallow: /auth/
-Disallow: /settings/
-Disallow: /profile/
-Disallow: /notifications/
-Disallow: /integrations/
-Disallow: /billing/
+Disallow: /

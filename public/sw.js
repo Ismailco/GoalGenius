@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const APP_SHELL_CACHE = `goalgenius-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `goalgenius-runtime-${CACHE_VERSION}`;
 const STATIC_CACHE = `goalgenius-static-${CACHE_VERSION}`;
@@ -114,9 +114,20 @@ async function cacheAppPages() {
 
   await notifyClients({
     type: 'CACHE_COMPLETE',
+    version: CACHE_VERSION,
     success: failedUrls.length === 0,
     failedUrls,
   });
+}
+
+async function cacheStaticAssets() {
+  for (const url of STATIC_ASSETS) {
+    try {
+      await cacheUrl(STATIC_CACHE, url);
+    } catch (error) {
+      console.warn('[ServiceWorker] Static asset cache failed:', url, error);
+    }
+  }
 }
 
 async function cleanupOldCaches() {
@@ -189,7 +200,7 @@ async function staleWhileRevalidate(request) {
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(cacheAppPages());
+  event.waitUntil(cacheStaticAssets());
 });
 
 self.addEventListener('activate', (event) => {

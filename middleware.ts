@@ -1,9 +1,7 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { env } from "better-auth";
 import { getCookieCache } from "better-auth/cookies";
-
-const publicRoutes = ["/auth/signin", "/auth/signup"];
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 function readEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -30,21 +28,27 @@ async function hasValidSession(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-
   if (await hasValidSession(request)) {
     return NextResponse.next();
   }
 
   const signInUrl = new URL("/auth/signin", request.url);
-  signInUrl.searchParams.set("callbackUrl", pathname);
+  signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
   return NextResponse.redirect(signInUrl);
 }
 
 export const config = {
-  matcher: ["/((?!_next|static|favicon.ico|robots.txt|api/auth).*)"],
+  matcher: [
+    "/",
+    "/analytics/:path*",
+    "/calendar/:path*",
+    "/checkins/:path*",
+    "/dashboard/:path*",
+    "/docs/:path*",
+    "/goals/:path*",
+    "/milestones/:path*",
+    "/notes/:path*",
+    "/settings/:path*",
+    "/todos/:path*",
+  ],
 };

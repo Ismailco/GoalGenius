@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { isPublicPath } from '@/components/app/shared/navigation';
 import { syncWorkspaceData } from '@/lib/storage';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
-// Function to trigger caching of app pages
+const PWA_CACHE_VERSION = 'v4';
+const PWA_CACHE_VERSION_KEY = 'pwaCacheVersion';
+
 export const cacheAppPages = async () => {
   if ('serviceWorker' in navigator) {
     try {
@@ -21,6 +25,10 @@ export const cacheAppPages = async () => {
             navigator.serviceWorker.removeEventListener('message', messageHandler);
             if (event.data.success) {
               localStorage.setItem('pwaCacheReady', 'true');
+              localStorage.setItem(
+                PWA_CACHE_VERSION_KEY,
+                event.data.version ?? PWA_CACHE_VERSION,
+              );
               console.log('✅ App pages cached successfully');
               resolve(true);
             } else {
@@ -50,6 +58,9 @@ export default function ServiceWorkerProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const shouldPrepareOfflinePages = !isPublicPath(pathname);
+
   useEffect(() => {
     const prepareOfflineApp = async () => {
       if (navigator.onLine) {
@@ -61,36 +72,46 @@ export default function ServiceWorkerProvider({
         }
       }
 
-      try {
-        await cacheAppPages();
-      } catch (error) {
-        console.warn('Offline app cache could not be refreshed yet:', error);
+      const cachedVersion = localStorage.getItem(PWA_CACHE_VERSION_KEY);
+      if (shouldPrepareOfflinePages && cachedVersion !== PWA_CACHE_VERSION) {
+        try {
+          await cacheAppPages();
+        } catch (error) {
+          console.warn('Offline app cache could not be refreshed yet:', error);
+        }
+      }
+    };
+
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data.type === 'CACHE_COMPLETE') {
+        if (event.data.success) {
+          localStorage.setItem('pwaCacheReady', 'true');
+          localStorage.setItem(
+            PWA_CACHE_VERSION_KEY,
+            event.data.version ?? PWA_CACHE_VERSION,
+          );
+          console.log('✅ App pages cached successfully');
+        } else {
+          console.warn('⚠️ Some pages failed to cache:', event.data.failedUrls);
+        }
+      } else if (event.data.type === 'CACHE_ERROR') {
+        console.error('❌ Cache error:', event.data.error);
       }
     };
 
     if ('serviceWorker' in navigator) {
-      // Register service worker
       navigator.serviceWorker
         .register('/sw.js')
         .then((reg) => {
           console.log('✅ Service Worker registered:', reg.scope);
           void navigator.serviceWorker.ready.then(() => prepareOfflineApp());
-
-          // Listen for messages from the service worker
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data.type === 'CACHE_COMPLETE') {
-              if (event.data.success) {
-                localStorage.setItem('pwaCacheReady', 'true');
-                console.log('✅ App pages cached successfully');
-              } else {
-                console.warn('⚠️ Some pages failed to cache:', event.data.failedUrls);
-              }
-            } else if (event.data.type === 'CACHE_ERROR') {
-              console.error('❌ Cache error:', event.data.error);
-            }
-          });
         })
         .catch((err) => console.error('❌ SW registration failed:', err));
+
+      navigator.serviceWorker.addEventListener(
+        'message',
+        handleServiceWorkerMessage,
+      );
     }
 
     const handleOnline = () => {
@@ -101,8 +122,14 @@ export default function ServiceWorkerProvider({
 
     return () => {
       window.removeEventListener('online', handleOnline);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener(
+          'message',
+          handleServiceWorkerMessage,
+        );
+      }
     };
-  }, []);
+  }, [shouldPrepareOfflinePages]);
 
   return children;
 }
