@@ -4,13 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn, signUp, useSession } from "@/lib/auth/auth-client";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { validateAndSanitizeInput, ValidationResult } from "@/lib/validation";
 // import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from "@/lib/auth/auth-errors";
 import { Target, Brain, TrendingUp, Users } from "lucide-react";
 import { cacheAppPages } from "@/app/providers/ServiceWorkerProvider";
 import logoTransWhite from "@/public/images/logo_full_trans_white.png";
+
+function getSafeCallbackUrl(callbackUrl: string | null): string {
+  if (!callbackUrl || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  if (callbackUrl.startsWith("/auth/")) {
+    return "/dashboard";
+  }
+
+  return callbackUrl;
+}
 
 interface AuthFormProps {
   mode: "signin" | "signup";
@@ -35,13 +47,23 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { data: session, isPending } = useSession();
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
+
+  const goToApp = () => {
+    void cacheAppPages().catch((cacheError) => {
+      console.warn("Offline app cache could not be refreshed yet:", cacheError);
+    });
+    // Full navigation so the freshly-set session cookie is always sent.
+    window.location.assign(callbackUrl);
+  };
 
   useEffect(() => {
     if (!isPending && session) {
-      router.replace("/dashboard");
+      goToApp();
     }
-  }, [isPending, router, session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate once session is ready
+  }, [isPending, session, callbackUrl]);
 
   const validateField = (name: string, value: string): ValidationResult => {
     switch (name) {
@@ -171,7 +193,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         const result = await signIn.email({
           email: emailValidation.sanitizedValue,
           password: passwordValidation.sanitizedValue,
-          callbackURL: "/dashboard",
+          callbackURL: callbackUrl,
         });
 
         // Handle error in the result
@@ -192,18 +214,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           throw new Error("Sign in failed");
         }
 
-        void cacheAppPages().catch((cacheError) => {
-          console.warn("Offline app cache could not be refreshed yet:", cacheError);
-        });
-        router.replace("/dashboard");
-        router.refresh();
+        goToApp();
         return;
       } else {
         const result = await signUp.email({
           email: emailValidation.sanitizedValue,
           password: passwordValidation.sanitizedValue,
           name: nameValidation.sanitizedValue,
-          callbackURL: "/dashboard",
+          callbackURL: callbackUrl,
         });
 
         // Handle error in the result
@@ -224,11 +242,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           throw new Error("Sign up failed");
         }
 
-        void cacheAppPages().catch((cacheError) => {
-          console.warn("Offline app cache could not be refreshed yet:", cacheError);
-        });
-        router.replace("/dashboard");
-        router.refresh();
+        goToApp();
         return;
       }
     } catch (err) {
@@ -585,7 +599,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 onClick={() =>
                   signIn.social({
                     provider: "google",
-                    callbackURL: "/dashboard",
+                    callbackURL: callbackUrl,
                   })
                 }
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -620,7 +634,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 onClick={() =>
                   signIn.social({
                     provider: "github",
-                    callbackURL: "/dashboard",
+                    callbackURL: callbackUrl,
                   })
                 }
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
