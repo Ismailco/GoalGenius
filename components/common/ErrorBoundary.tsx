@@ -12,6 +12,19 @@ interface State {
   error?: Error;
 }
 
+function isNextControlFlowError(error: unknown) {
+  if (typeof error !== "object" || error === null || !("digest" in error)) {
+    return false;
+  }
+
+  const digest = String((error as { digest?: unknown }).digest);
+  return (
+    digest.startsWith("NEXT_REDIRECT") ||
+    digest.startsWith("NEXT_NOT_FOUND") ||
+    digest.startsWith("NEXT_HTTP_ERROR_FALLBACK")
+  );
+}
+
 export class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -19,10 +32,18 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    if (isNextControlFlowError(error)) {
+      throw error;
+    }
+
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (isNextControlFlowError(error)) {
+      throw error;
+    }
+
     // Log the error to your error reporting service
     console.error('Error caught by boundary:', error, errorInfo);
     // TODO: Add proper error logging service here (e.g., Sentry)

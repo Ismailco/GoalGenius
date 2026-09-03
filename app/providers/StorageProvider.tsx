@@ -11,11 +11,15 @@ const StorageContext = createContext<{ userId: string | null }>({ userId: null }
 export const useStorage = () => useContext(StorageContext);
 
 export function StorageProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const previousUserIdRef = useRef<string | null>(null);
 
   // Update localStorage whenever session changes
   useEffect(() => {
+    if (isPending) {
+      return;
+    }
+
     const currentUserId = session?.user?.id || null;
     const storedUserId = localStorage.getItem('userId');
     const previousUserId = previousUserIdRef.current;
@@ -39,7 +43,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
 
     localStorage.setItem('userId', currentUserId);
     previousUserIdRef.current = currentUserId;
-  }, [session]);
+  }, [isPending, session]);
 
   return (
     <StorageContext.Provider value={{ userId: session?.user?.id || null }}>

@@ -7,18 +7,20 @@ import { useSession } from '@/lib/auth/auth-client';
 
 export default function Home() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
-    // If the user is already logged in, redirect them to the dashboard
-    if (session) {
-      router.push('/dashboard');
+    if (isPending) {
       return;
     }
 
-    // If not logged in, redirect to sign in
-    router.push('/auth/signin');
-  }, [router, session]);
+    if (session) {
+      router.replace('/dashboard');
+      return;
+    }
+
+    router.replace('/auth/signin');
+  }, [isPending, router, session]);
 
   // Show loading state while redirecting
   return (

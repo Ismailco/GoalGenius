@@ -13,18 +13,45 @@ const authSecret =
   env.BETTER_AUTH_SECRET ??
   readEnv("AUTH_SECRET");
 
+function requestIsHttps(request: NextRequest) {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  if (forwardedProto) {
+    return forwardedProto.split(",")[0]?.trim() === "https";
+  }
+
+  return request.nextUrl.protocol === "https:";
+}
+
+async function readSessionFromCookieCache(
+  request: NextRequest,
+  isSecure: boolean,
+) {
+  return getCookieCache(request, {
+    isSecure,
+    secret: authSecret,
+    strategy: "jwe",
+  });
+}
+
 async function hasValidSession(request: NextRequest) {
   if (!authSecret) {
     return false;
   }
 
-  const session = await getCookieCache(request, {
-    isSecure: request.nextUrl.protocol === "https:",
-    secret: authSecret,
-    strategy: "jwe",
-  });
+  try {
+    const httpsRequest = requestIsHttps(request);
 
-  return Boolean(session?.session && session?.user);
+    for (const isSecure of [httpsRequest, !httpsRequest]) {
+      const session = await readSessionFromCookieCache(request, isSecure);
+      if (session?.session && session?.user) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export async function middleware(request: NextRequest) {

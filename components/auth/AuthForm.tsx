@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn, signUp, useSession } from "@/lib/auth/auth-client";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { validateAndSanitizeInput, ValidationResult } from "@/lib/validation";
 // import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from "@/lib/auth/auth-errors";
@@ -34,11 +34,14 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
 
-  if (session) {
-    redirect("/dashboard");
-  }
+  useEffect(() => {
+    if (!isPending && session) {
+      router.replace("/dashboard");
+    }
+  }, [isPending, router, session]);
 
   const validateField = (name: string, value: string): ValidationResult => {
     switch (name) {
@@ -168,6 +171,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         const result = await signIn.email({
           email: emailValidation.sanitizedValue,
           password: passwordValidation.sanitizedValue,
+          callbackURL: "/dashboard",
         });
 
         // Handle error in the result
@@ -188,13 +192,18 @@ export function AuthForm({ mode }: AuthFormProps) {
           throw new Error("Sign in failed");
         }
 
-        // Trigger caching after successful login
-        await cacheAppPages();
+        void cacheAppPages().catch((cacheError) => {
+          console.warn("Offline app cache could not be refreshed yet:", cacheError);
+        });
+        router.replace("/dashboard");
+        router.refresh();
+        return;
       } else {
         const result = await signUp.email({
           email: emailValidation.sanitizedValue,
           password: passwordValidation.sanitizedValue,
           name: nameValidation.sanitizedValue,
+          callbackURL: "/dashboard",
         });
 
         // Handle error in the result
@@ -215,8 +224,12 @@ export function AuthForm({ mode }: AuthFormProps) {
           throw new Error("Sign up failed");
         }
 
-        // Trigger caching after successful signup
-        await cacheAppPages();
+        void cacheAppPages().catch((cacheError) => {
+          console.warn("Offline app cache could not be refreshed yet:", cacheError);
+        });
+        router.replace("/dashboard");
+        router.refresh();
+        return;
       }
     } catch (err) {
       // Get the error details
@@ -569,7 +582,12 @@ export function AuthForm({ mode }: AuthFormProps) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => signIn.social({ provider: "google" })}
+                onClick={() =>
+                  signIn.social({
+                    provider: "google",
+                    callbackURL: "/dashboard",
+                  })
+                }
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <svg
@@ -599,7 +617,12 @@ export function AuthForm({ mode }: AuthFormProps) {
               </button>
               <button
                 type="button"
-                onClick={() => signIn.social({ provider: "github" })}
+                onClick={() =>
+                  signIn.social({
+                    provider: "github",
+                    callbackURL: "/dashboard",
+                  })
+                }
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <svg
