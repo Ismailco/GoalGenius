@@ -1,22 +1,32 @@
-import { getSessionCookie } from "better-auth/cookies";
+import { getCookieCache } from "better-auth/cookies";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-/**
- * Optimistic auth gate only.
- * Better Auth recommends checking for the session cookie here and validating
- * the real session in route handlers / server components (API routes already do).
- * @see https://www.better-auth.com/docs/integrations/next#auth-protection
- */
-export function middleware(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request);
+async function hasValidCachedSession(request: NextRequest) {
+  try {
+    const cachedSession = await getCookieCache(request, {
+      isSecure: request.nextUrl.protocol === "https:",
+      strategy: "jwe",
+    });
 
-  if (sessionCookie) {
+    return Boolean(cachedSession?.session && cachedSession.user);
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  const hasSession = await hasValidCachedSession(request);
+
+  if (hasSession) {
     return NextResponse.next();
   }
 
   const signInUrl = new URL("/auth/signin", request.url);
-  signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+  signInUrl.searchParams.set(
+    "callbackUrl",
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
+  );
   return NextResponse.redirect(signInUrl);
 }
 

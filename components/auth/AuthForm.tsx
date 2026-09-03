@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn, signUp, useSession } from "@/lib/auth/auth-client";
@@ -8,21 +8,10 @@ import { useSearchParams } from "next/navigation";
 import { validateAndSanitizeInput, ValidationResult } from "@/lib/validation";
 // import { Feedback } from '@/components/common/Feedback';
 import { getAuthError } from "@/lib/auth/auth-errors";
+import { getSafeCallbackUrl } from "@/lib/auth/callback-url";
 import { Target, Brain, TrendingUp, Users } from "lucide-react";
 import { cacheAppPages } from "@/app/providers/ServiceWorkerProvider";
 import logoTransWhite from "@/public/images/logo_full_trans_white.png";
-
-function getSafeCallbackUrl(callbackUrl: string | null): string {
-  if (!callbackUrl || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  if (callbackUrl.startsWith("/auth/")) {
-    return "/dashboard";
-  }
-
-  return callbackUrl;
-}
 
 interface AuthFormProps {
   mode: "signin" | "signup";
@@ -50,20 +39,19 @@ export function AuthForm({ mode }: AuthFormProps) {
   const searchParams = useSearchParams();
   const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
-  const goToApp = () => {
+  const goToApp = useCallback(() => {
     void cacheAppPages().catch((cacheError) => {
       console.warn("Offline app cache could not be refreshed yet:", cacheError);
     });
     // Full navigation so the freshly-set session cookie is always sent.
-    window.location.assign(callbackUrl);
-  };
+    window.location.replace(callbackUrl);
+  }, [callbackUrl]);
 
   useEffect(() => {
     if (!isPending && session) {
       goToApp();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate once session is ready
-  }, [isPending, session, callbackUrl]);
+  }, [goToApp, isPending, session]);
 
   const validateField = (name: string, value: string): ValidationResult => {
     switch (name) {
