@@ -1,12 +1,14 @@
 'use client';
 
+import { useEffect, useId, useRef, useState } from 'react';
+
 interface AlertModalProps {
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   onClose: () => void;
   isConfirmation?: boolean;
-  onConfirm?: () => void;
+  onConfirm?: () => void | Promise<void>;
   'aria-label'?: string;
   role?: 'alertdialog' | 'dialog';
 }
@@ -21,6 +23,28 @@ export default function AlertModal({
   'aria-label': ariaLabel,
   role = 'alertdialog'
 }: AlertModalProps) {
+  const titleId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  function handleConfirm() {
+    if (isConfirming) return;
+    setIsConfirming(true);
+    onConfirm?.();
+    onClose();
+  }
+
   const getIcon = () => {
     switch (type) {
       case 'success':
@@ -60,6 +84,7 @@ export default function AlertModal({
       className="app-modal-backdrop"
       role={role}
       aria-label={ariaLabel || `${type} alert: ${title}`}
+      aria-labelledby={titleId}
       aria-modal="true"
     >
       <div className="app-modal-panel app-modal-panel-sm">
@@ -71,14 +96,17 @@ export default function AlertModal({
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-white">{title}</h3>
+              <h3 id={titleId} className="text-xl font-semibold text-white">{title}</h3>
               <p className="mt-1 text-[var(--text-secondary)]">{message}</p>
             </div>
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
                 <button
+                  ref={closeButtonRef}
+                  type="button"
                   onClick={onClose}
+                  disabled={isConfirming}
                   className="app-button-secondary !px-4"
               aria-label="Close alert"
                 >
@@ -86,10 +114,9 @@ export default function AlertModal({
                 </button>
             {isConfirmation && onConfirm && (
               <button
-                onClick={() => {
-                  onConfirm();
-                  onClose();
-                }}
+                type="button"
+                onClick={handleConfirm}
+                disabled={isConfirming}
                 className="app-button-danger"
                 aria-label="Confirm action"
               >

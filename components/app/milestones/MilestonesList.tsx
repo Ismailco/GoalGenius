@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Milestone, Goal } from '@/app/types';
-import { getMilestones, getGoals, deleteMilestone } from '@/lib/storage';
+import { Milestone, Goal, Todo } from '@/app/types';
+import { getMilestones, getGoals, getTodos, deleteMilestone } from '@/lib/storage';
+import { calculateGoalProgress } from '@/lib/domain/progress';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingPage } from '@/components/common/LoadingSpinner';
 import { ChevronDown, ChevronUp, Calendar, Trash, Edit } from 'lucide-react';
@@ -10,6 +11,7 @@ import AlertModal from '@/components/common/AlertModal';
 import { useModal } from '@/app/providers/ModalProvider';
 import EditMilestoneModal from './EditMilestoneModal';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
+import { formatDateOnly, todayDateOnly } from '@/lib/domain/date-only';
 
 interface MilestonesListProps {
   searchTerm: string;
@@ -21,6 +23,7 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
   const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{
     show: boolean;
@@ -39,12 +42,14 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
   const loadData = async () => {
     await handleAsyncOperation(
       async () => {
-        const [loadedMilestones, loadedGoals] = await Promise.all([
+        const [loadedMilestones, loadedGoals, loadedTodos] = await Promise.all([
           getMilestones(),
-          getGoals()
+          getGoals(),
+          getTodos(),
         ]);
         setMilestones(loadedMilestones);
         setGoals(loadedGoals);
+        setTodos(loadedTodos);
       },
       setLoading,
       (error) => {
@@ -107,7 +112,7 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
     setAlert({
       show: true,
       title: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this milestone?',
+      message: 'The milestone will be deleted; its tasks will remain linked to the goal. Continue?',
       type: 'warning',
       isConfirmation: true,
       onConfirm: async () => {
@@ -143,17 +148,15 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
 
     if (!matchesSearch) return false;
 
-    const milestoneDate = new Date(milestone.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = todayDateOnly();
 
     switch (timeframe) {
       case 'upcoming':
-        return milestoneDate > today;
+        return milestone.date > today;
       case 'past':
-        return milestoneDate < today;
+        return milestone.date < today;
       case 'today':
-        return milestoneDate.toDateString() === today.toDateString();
+        return milestone.date === today;
       default:
         return true;
     }
@@ -168,12 +171,17 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
     return goalMilestones.length > 0 || searchTerm === '';
   });
 
-  return (
+      return (
     <div className="space-y-4 p-4 md:p-6">
       {filteredGoals.map(goal => {
+        const goalTodos = todos.filter((todo) => todo.goalId === goal.id);
+        const progress = calculateGoalProgress(milestones.filter((milestone) => milestone.goalId === goal.id).map((milestone) => {
+          const milestoneTodos = goalTodos.filter((todo) => todo.milestoneId === milestone.id);
+          return { completed: milestone.completed, tasksCompleted: milestoneTodos.filter((todo) => todo.completed).length, tasksTotal: milestoneTodos.length };
+        }), goal.status);
         const goalMilestones = milestones
           .filter(m => m.goalId === goal.id && filterMilestones(m))
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          .sort((a, b) => a.date.localeCompare(b.date));
 
         return (
           <div
@@ -186,8 +194,8 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
             >
               <div className="flex items-center gap-4">
                 <div className={`w-2 h-2 rounded-full ${
-                  goal.progress === 100 ? 'bg-green-500' :
-                  goal.progress >= 50 ? 'bg-blue-500' :
+                  progress === 100 ? 'bg-green-500' :
+                  progress >= 50 ? 'bg-blue-500' :
                   'bg-slate-400'
                 }`} />
                 <div>
@@ -219,7 +227,7 @@ export default function MilestonesList({ searchTerm, timeframe }: MilestonesList
                           {milestone.description && (
                             <p className="text-sm text-[var(--text-secondary)]">{milestone.description}</p>
                           )}
-                          <p className="text-xs text-[var(--text-muted)]">Due: {new Date(milestone.date).toLocaleDateString()}</p>
+                          <p className="text-xs text-[var(--text-muted)]">Due: {formatDateOnly(milestone.date)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

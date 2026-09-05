@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, Settings, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { signOut, useSession } from '@/lib/auth/auth-client';
+import { clearUserCache } from '@/lib/storage';
 
 interface UserProfileProps {
   isMenuButton?: boolean;
@@ -48,6 +49,9 @@ export default function UserProfile({
 
   async function handleSignOut() {
     try {
+      if (user?.id) {
+        clearUserCache(user.id);
+      }
       const response = await signOut();
       if (response) {
         router.push('/');
@@ -57,65 +61,85 @@ export default function UserProfile({
     }
   }
 
+  const menu = isMenuOpen ? (
+    <div
+      className={`surface-panel absolute bottom-full z-[90] mb-3 p-2 ${
+        isMenuButton ? 'left-0 w-56' : 'left-0 right-0'
+      }`}
+      role="menu"
+    >
+      <div className="rounded-[18px] border border-white/5 bg-white/5 px-4 py-3">
+        <p className="truncate text-sm font-semibold text-white">
+          {user?.name || 'Guest User'}
+        </p>
+        <p className="truncate text-xs text-[var(--text-secondary)]">
+          {user?.email || 'guest@email.com'}
+        </p>
+      </div>
+
+      <div className="mt-2 space-y-1">
+        <Link
+          href="/settings"
+          className="shell-nav-button min-h-[unset] !px-4 !py-3"
+          role="menuitem"
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <Settings className="h-4 w-4 shrink-0" />
+          <span className="text-sm font-medium">Settings</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="shell-nav-button min-h-[unset] w-full !px-4 !py-3 text-left hover:text-[rgb(255,220,226)]"
+          role="menuitem"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span className="text-sm font-medium">Sign out</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   if (isMenuButton) {
     return (
-      <div className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/10 bg-white/5">
-        {user?.image ? (
-          <Image
-            src={user.image}
-            alt="User avatar"
-            width={40}
-            height={40}
-            className="rounded-[14px]"
-          />
-        ) : (
-          <span className="text-sm font-bold text-white">{initials}</span>
-        )}
+      <div className="relative" ref={menuRef}>
+        {menu}
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen((current) => !current)}
+          className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/10 bg-white/5 hover:bg-white/10"
+          aria-label={isMenuOpen ? 'Close user menu' : 'Open user menu'}
+          aria-expanded={isMenuOpen}
+          aria-haspopup="menu"
+        >
+          {user?.image ? (
+            <Image
+              src={user.image}
+              alt="User avatar"
+              width={40}
+              height={40}
+              className="rounded-[14px]"
+            />
+          ) : (
+            <span className="text-sm font-bold text-white">{initials}</span>
+          )}
+        </button>
       </div>
     );
   }
 
   return (
     <div className="relative w-full" ref={menuRef}>
-      {isMenuOpen ? (
-        <div className="surface-panel absolute bottom-full left-0 right-0 z-[90] mb-3 p-2">
-          <div className="rounded-[18px] border border-white/5 bg-white/5 px-4 py-3">
-            <p className="truncate text-sm font-semibold text-white">
-              {user?.name || 'Guest User'}
-            </p>
-            <p className="truncate text-xs text-[var(--text-secondary)]">
-              {user?.email || 'guest@email.com'}
-            </p>
-          </div>
-
-          <div className="mt-2 space-y-1">
-            <Link
-              href="/settings"
-              className="shell-nav-button min-h-[unset] !px-4 !py-3"
-              role="menuitem"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Settings className="h-4 w-4 shrink-0" />
-              <span className="text-sm font-medium">Settings</span>
-            </Link>
-
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="shell-nav-button min-h-[unset] w-full !px-4 !py-3 text-left hover:text-[rgb(255,220,226)]"
-              role="menuitem"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              <span className="text-sm font-medium">Sign out</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {menu}
 
       <button
         type="button"
         className="flex w-full items-center gap-3 rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-left hover:border-white/15 hover:bg-white/10"
         onClick={() => setIsMenuOpen((current) => !current)}
+        aria-label={isMenuOpen ? 'Close user menu' : 'Open user menu'}
+        aria-expanded={isMenuOpen}
+        aria-haspopup="menu"
       >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-[rgba(93,166,255,0.12)] text-white">
           {user?.image ? (

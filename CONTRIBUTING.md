@@ -1,5 +1,7 @@
 # Contributing to GoalGenius
 
+GoalGenius is a focused beta. Keep contributions centered on the goal → milestone → task → check-in loop and avoid speculative feature surface.
+
 First off, thank you for considering contributing to GoalGenius! It's people like you that make GoalGenius such a great tool.
 
 ## Code of Conduct
@@ -60,8 +62,8 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 3. Set up environment variables
    ```bash
-   cp .dev.vars.example .dev.vars
-   cp .env.local.example .env.local
+   cp .env.example .dev.vars
+   cp .env.example .env.local
    # Edit .dev.vars and .env.local with your configuration
    ```
 
@@ -99,10 +101,18 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Testing
 
-- Write tests for new features
-- Update tests when modifying existing features
-- Ensure all tests pass before submitting a pull request
-- Include both unit tests and integration tests where appropriate
+The repository uses dependency-light unit tests and an isolated OpenNext/D1 integration test. Build the Worker before running the integration suite:
+
+```bash
+pnpm exec eslint . --max-warnings=0
+pnpm exec tsc --noEmit
+pnpm build
+pnpm_config_verify_deps_before_run=false pnpm exec opennextjs-cloudflare build
+pnpm test
+pnpm test:e2e
+```
+
+When adding tests, prioritize authorization, ownership checks, progress calculations, export scoping, and the critical browser journey. The browser suite uses the system Chromium/Chrome binary when available; set `BROWSER_EXECUTABLE_PATH` to override it.
 
 ### Documentation
 
@@ -142,7 +152,7 @@ goalgenius/
 
 If you have any questions, please feel free to:
 
-1. Check the documentation at [https://goalgenius.online/docs](https://goalgenius.online/docs) (coming soon)
+1. Check the in-app documentation at [https://goalgenius.online/docs](https://goalgenius.online/docs)
 2. Create an issue for discussion
 3. Reach out through GitHub issues
 

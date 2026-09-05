@@ -1,208 +1,75 @@
-# GoalGenius 🎯
+# GoalGenius
 
-<div align="center">
+GoalGenius is an open-source beta for turning long-term goals into weekly actions and measurable progress.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.2.5-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-AGPLv3-green)](./LICENSE)
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-Ready-orange)](https://developers.cloudflare.com/)
+The core loop is: **Goal → Milestone → Task → Completion → Check-in → Review → Adjust**.
 
-GoalGenius is a modern, open-source goal tracking and productivity platform built with Next.js and Cloudflare.
+## Status
 
-[BETA V1.0](https://app.goalgenius.online) · [Documentation](https://goalgenius.online/docs) · [Report Bug](https://github.com/ismailco/goalgenius/issues) · [Request Feature](https://github.com/ismailco/goalgenius/issues)
+GoalGenius is currently a focused beta. Goals, milestones, tasks, check-ins, notes, offline caching, recurring task history, task reminders, export, and Better Auth are implemented. Calendar synchronization, analytics, and team features are intentionally not presented as finished features.
 
-</div>
+## Features
 
-## ✨ Features
+- Goal planning with category, timeframe, target date, status, and progress.
+- Goal execution pages with milestones, actionable tasks, and recent check-ins.
+- Fast task completion with optional due dates and priorities.
+- Daily, weekly, and monthly recurring tasks with preserved completion history.
+- Task reminder configuration with in-app due/overdue surfacing; external delivery is not implemented yet.
+- Concise historical check-ins for progress, blockers, and next focus.
+- Notes, offline cache, and a user-scoped JSON export.
+- Server-side Better Auth sessions and user-scoped D1 queries.
 
-- 🎯 **Goal Tracking**: Set, track, and achieve your personal and professional goals
-- ✅ **Todo Management**: Organize tasks with priorities and deadlines
-- 📝 **Note Taking**: Capture ideas and important information
-- 📊 **Analytics Dashboard**: Visualize your progress and productivity trends
-- 📅 **Calendar Integration**: Schedule and manage your time effectively
-- 🏆 **Milestones**: Break down goals into achievable milestones
-- 📈 **Check-ins**: Regular progress tracking and reflection
-- 🔒 **Secure Authentication**: Protected user data and privacy
-- 🌐 **Cloud Infrastructure**: Powered by Cloudflare for global scalability
+## Stack and architecture
 
-## 🚀 Getting Started
+- Next.js 16.2.12 App Router and React 19.
+- TypeScript and Tailwind CSS 4.
+- Better Auth for email/password and social authentication.
+- Drizzle ORM over Cloudflare D1 (SQLite).
+- OpenNext for Cloudflare Workers deployment.
 
-### Prerequisites
+The App Router provides the pages and route handlers. Client storage in `lib/storage.ts` keeps the existing offline-first behavior and synchronizes mutations through the authenticated `/api/*` routes. Database definitions and forward-only migrations live in `lib/db/schema.ts` and `drizzle/`.
 
-- Node.js 18.0 or later
-- pnpm 8.0 or later
-- Cloudflare account (for deployment)
+## Local development
 
-### Installation
+Prerequisites: Node.js 24 (see `.nvmrc`) and pnpm 11.
 
-1. Clone the repository
-   ```bash
-   git clone https://github.com/ismailco/goalgenius.git
-   cd goalgenius
-   ```
-
-2. Install dependencies
-   ```bash
-   pnpm install
-   ```
-
-3. Set up environment variables
-   ```bash
-   cp .dev.vars.example .dev.vars
-   cp .env.local.example .env.local
-   # Edit .dev.vars and .env.local with your configuration
-   ```
-
-4. Set up the database
-   ```bash
-   pnpm db:generate
-   pnpm db:migrate:local
-   ```
-
-5. Start the development server
-   ```bash
-   pnpm dev
-   ```
-
-Visit [http://localhost:3000](http://localhost:3000) to see the application.
-
-## 🏗️ Tech Stack
-
-- **Frontend**: Next.js 15.2.5, React 19, TailwindCSS
-- **Database**: Cloudflare D1 with Drizzle ORM
-- **Authentication**: Custom auth with better-auth
-- **Deployment**: Cloudflare Workers with OpenNext.js
-- **Type Safety**: TypeScript
-- **Security**: DOMPurify, XSS protection
-- **UI Components**: Custom components with Framer Motion
-
-## 📦 Project Structure
-
-```
-goalgenius/
-├── app/                # Next.js app router pages
-│   ├── analytics/     # Analytics features
-│   ├── calendar/      # Calendar integration
-│   ├── dashboard/     # Main dashboard
-│   ├── goals/         # Goal management
-│   └── ...
-├── components/         # Reusable React components
-├── lib/               # Utility functions and helpers
-├── drizzle/           # Database schema and migrations
-└── public/            # Static assets
+```bash
+pnpm install
+cp .env.example .dev.vars
+cp .env.example .env.local
+pnpm db:migrate:local
+pnpm dev
 ```
 
-## 🔧 Configuration
+Use `http://localhost:3000` for `pnpm dev`. Use `http://localhost:8787` for the OpenNext/Workers preview path. Put local-only values in `.env.local` and `.dev.vars`; neither should contain committed secrets.
 
-### Environment Variables
+Required authentication values are documented in the example files. `BETTER_AUTH_SECRET` must be a long random value outside test fixtures. Google/GitHub credentials are optional unless those providers are enabled for local testing.
 
-Create a `.dev.vars` file in the root directory with the following variables:
+## Commands
 
-```env
-# Development Environment
-NEXTJS_ENV=development
-NODE_ENV=development
-
-# Cloudflare D1 Configuration
-CLOUDFLARE_D1_ACCOUNT_ID=your_account_id
-CLOUDFLARE_D1_DATABASE_ID=your_database_id
-CLOUDFLARE_D1_API_TOKEN=your_api_token
-
-# Authentication
-# Use the Wrangler/OpenNext preview origin for `pnpm run cf:preview`.
-BETTER_AUTH_URL=http://localhost:8787
-BETTER_AUTH_SECRET=your_auth_secret
-```
-Create a `.env.local` file in the root directory with the following variables:
-
-```env
-# Cloudflare D1 Configuration
-CLOUDFLARE_D1_ACCOUNT_ID=your_account_id
-CLOUDFLARE_D1_DATABASE_ID=your_database_id
-CLOUDFLARE_D1_API_TOKEN=your_api_token
-
-# Authentication
-AUTH_GITHUB_CLIENT_ID=your_github_client_id
-AUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
-AUTH_GOOGLE_CLIENT_ID=your_google_client_id
-AUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Better Auth server config
-# Use the app origin. The auth config already mounts Better Auth at /api/auth.
-BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_SECRET=your_auth_secret
+```bash
+pnpm dev                 # Next development server
+pnpm lint                # ESLint
+pnpm exec tsc --noEmit   # TypeScript
+pnpm build               # Production Next build
+pnpm db:migrate:local    # Apply D1 migrations locally
+pnpm db:migrate:prod     # Apply D1 migrations remotely
+pnpm test                # Unit and API/database integration tests
+pnpm test:e2e            # Critical browser journey and viewport smoke test
+pnpm cf:preview          # OpenNext Cloudflare preview
+pnpm cf:deploy           # Build and deploy the Worker
 ```
 
-Use `.env.local` for `pnpm dev` on `http://localhost:3000`, and `.dev.vars` for `pnpm run cf:preview` on `http://localhost:8787`.
+## Database and deployment
 
-### Database Setup
+Create or select a D1 database, set its ID in `wrangler.jsonc`, then apply the migrations. Never edit a migration that may already have been applied; add a new migration instead. This project deploys to Cloudflare Workers through OpenNext, not Cloudflare Pages.
 
-The project uses Cloudflare D1 as the database. To set up:
+Remote deployment requires authenticated Wrangler access and the configured Worker secrets. A successful local build does not prove a live deployment. External reminder delivery requires a future scheduler and notification provider; this beta stores reminder configuration only.
 
-1. Create a D1 database in your Cloudflare account
-2. Update wrangler.jsonc with your database details
-3. Run migrations using provided scripts
+## Contributing
 
-## 🚀 Deployment
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Keep changes focused on the goal execution loop, add behavior tests for security-critical changes, and run lint, typecheck, tests, and the production build before submitting.
 
-### Deploy to Cloudflare Workers
+## License
 
-This project targets **Cloudflare Workers** via OpenNext.
-
-Do **not** deploy it as a **Cloudflare Pages** project. Pages uses a different Next.js adapter path and can fail with errors like `/_middleware` needing the Edge Runtime. This repository is configured for the OpenNext Workers flow through [wrangler.jsonc](/home/ismail/Developer/Personal/GoalGenius/wrangler.jsonc) and the `opennextjs-cloudflare` scripts in [package.json](/home/ismail/Developer/Personal/GoalGenius/package.json).
-
-1. Install Wrangler CLI
-   ```bash
-   pnpm add -g wrangler
-   ```
-
-2. Configure Cloudflare
-   ```bash
-   wrangler login
-   ```
-
-3. Deploy to Cloudflare Workers
-   ```bash
-   pnpm run cf:deploy
-   ```
-
-`pnpm deploy` will not work here because `deploy` is a built-in `pnpm` workspace command. Use `pnpm run cf:deploy` instead.
-
-## 👥 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the GNU Affero General Public License v3.0 (AGPLv3) - see the [LICENSE](LICENSE) file for details. This means:
-
-- You can use this software for any purpose
-- You can modify this software
-- You must share any modifications you make under the same license
-- You must disclose your source code when you distribute the software
-- If you run a modified version of this software as a network service, you must make the complete source code available to any network user
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React Framework
-- [Cloudflare](https://www.cloudflare.com/) - For infrastructure and D1 database
-- [Drizzle](https://orm.drizzle.team/) - For the amazing ORM
-- All our contributors and supporters
-
-## 📞 Support
-
-- Documentation: [https://goalgenius.online/docs](https://goalgenius.online/docs)
-<!-- - Discord: [Join our community](https://discord.gg/goalgenius) -->
-- Issues: [GitHub Issues](https://github.com/ismailco/goalgenius/issues)
-
----
-
-<div align="center">
-Made with ❤️ by <a href="https://github.com/ismailco">Ismail Courr</a>
-</div>
+GoalGenius is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).

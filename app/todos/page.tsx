@@ -13,9 +13,11 @@ import {
 } from '@/lib/app-settings';
 import { deleteTodo, getTodos, toggleTodoComplete } from '@/lib/storage';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
+import { todayDateOnly } from '@/lib/domain/date-only';
 
-export default function TodosPage() {
+export default function TasksPage() {
   const [mounted, setMounted] = useState(false);
+  const [today, setToday] = useState('');
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | undefined>();
@@ -40,6 +42,7 @@ export default function TodosPage() {
   const loadTodos = useCallback(async () => {
     try {
       setShowCompleted(readAppSettings().showCompletedTodosByDefault);
+      setToday(todayDateOnly());
       setMounted(true);
       const loadedTodos = await getTodos();
       setTodos(loadedTodos);
@@ -48,7 +51,7 @@ export default function TodosPage() {
       setAlert({
         show: true,
         title: 'Error',
-        message: 'Failed to load todos',
+        message: 'Failed to load tasks',
         type: 'error',
       });
     }
@@ -81,7 +84,7 @@ export default function TodosPage() {
       setAlert({
         show: true,
         title: 'Error',
-        message: 'Failed to refresh todos',
+        message: 'Failed to refresh tasks',
         type: 'error',
       });
     }
@@ -96,7 +99,7 @@ export default function TodosPage() {
     setAlert({
       show: true,
       title: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this todo?',
+      message: 'Are you sure you want to delete this task?',
       type: 'warning',
       isConfirmation: true,
       onConfirm: async () => {
@@ -109,7 +112,7 @@ export default function TodosPage() {
           setAlert({
             show: true,
             title: 'Error',
-            message: 'Failed to delete todo',
+            message: 'Failed to delete task',
             type: 'error',
           });
         }
@@ -127,7 +130,7 @@ export default function TodosPage() {
       setAlert({
         show: true,
         title: 'Error',
-        message: 'Failed to update todo status',
+        message: 'Failed to update task status',
         type: 'error',
       });
     }
@@ -154,7 +157,7 @@ export default function TodosPage() {
       if (priorityDiff !== 0) return priorityDiff;
 
       if (a.dueDate && b.dueDate) {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        return a.dueDate.localeCompare(b.dueDate);
       }
 
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -165,7 +168,7 @@ export default function TodosPage() {
       return false;
     }
 
-    return new Date(todo.dueDate) < new Date();
+    return today !== '' && todo.dueDate < today;
   }).length;
   const completedCount = todos.filter((todo) => todo.completed).length;
   const activeCount = todos.length - completedCount;
@@ -198,7 +201,7 @@ export default function TodosPage() {
   return (
     <AppPage>
       <AppPageHeader
-        eyebrow="Todos"
+        eyebrow="Tasks"
         title="A cleaner daily queue"
         description="Track what matters, keep completed work available when you need it, and reduce noise across the rest of the workspace."
         meta={
@@ -218,7 +221,7 @@ export default function TodosPage() {
             className="app-button"
           >
             <Plus className="h-4 w-4" />
-            Create Todo
+            Create Task
           </button>
         }
       />
@@ -228,7 +231,7 @@ export default function TodosPage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search todos..."
+              placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="app-field pr-11"
@@ -274,8 +277,8 @@ export default function TodosPage() {
             <div className="surface-empty mx-auto max-w-xl px-6 py-10">
               <p className="text-lg">
                 {searchQuery || selectedCategory || priorityFilter
-                  ? 'No todos match your current filters.'
-                  : 'No todos yet. Create your first task to start building momentum.'}
+                  ? 'No tasks match your current filters.'
+                  : 'No tasks yet. Create your first task to start building momentum.'}
               </p>
             </div>
           </div>
@@ -285,7 +288,7 @@ export default function TodosPage() {
               const isOverdue =
                 !!todo.dueDate &&
                 !todo.completed &&
-                new Date(todo.dueDate) < new Date();
+                today !== '' && todo.dueDate < today;
 
               return (
                 <article
@@ -335,7 +338,7 @@ export default function TodosPage() {
                           {todo.dueDate ? (
                             <span className={isOverdue ? 'app-pill app-pill-danger' : 'app-pill app-pill-blue'}>
                               <CalendarClock className="h-3.5 w-3.5" />
-                              Due {format(new Date(todo.dueDate), 'MMM d')}
+                              Due {format(new Date(`${todo.dueDate}T00:00:00`), 'MMM d')}
                             </span>
                           ) : null}
                         </div>

@@ -17,11 +17,18 @@ export default function Navbar() {
   const pathname = usePathname();
   const activeItem = getActiveNavigationItem(pathname);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [todayLabel, setTodayLabel] = useState('Today');
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    setTodayLabel(
+      new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date()),
+    );
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -36,11 +43,6 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const todayLabel = new Date().toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-  });
 
   return (
     <>

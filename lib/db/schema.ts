@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const user = sqliteTable('user', {
 	id: text('id').primaryKey(),
@@ -84,6 +84,7 @@ export const milestones = sqliteTable('milestones', {
 	title: text('title').notNull(),
 	description: text('description'),
 	date: text('date').notNull(),
+	completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 }, (table) => ({
@@ -107,22 +108,40 @@ export const notes = sqliteTable('notes', {
 export const todos = sqliteTable('todos', {
 	id: text('id').primaryKey(),
 	userId: text('user_id').notNull(),
+	goalId: text('goal_id'),
+	milestoneId: text('milestone_id'),
 	title: text('title').notNull(),
 	description: text('description'),
 	priority: text('priority', { enum: ['low', 'medium', 'high'] }).notNull(),
 	dueDate: text('due_date'),
 	category: text('category'),
 	completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+	recurrence: text('recurrence', { enum: ['none', 'daily', 'weekly', 'monthly'] }).notNull().default('none'),
+	reminder: text('reminder', { enum: ['none', 'at_due', '15m', '1h', '1d'] }).notNull().default('none'),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 }, (table) => ({
 	userIdIdx: index('todos_user_id_idx').on(table.userId),
 	userIdCompletedIdx: index('todos_user_id_completed_idx').on(table.userId, table.completed),
+	goalIdIdx: index('todos_goal_id_idx').on(table.goalId),
+	milestoneIdIdx: index('todos_milestone_id_idx').on(table.milestoneId),
+}));
+
+export const todoOccurrences = sqliteTable('todo_occurrences', {
+	id: text('id').primaryKey(),
+	todoId: text('todo_id').notNull().references(() => todos.id, { onDelete: 'cascade' }),
+	occurrenceDate: text('occurrence_date').notNull(),
+	completedAt: integer('completed_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+}, (table) => ({
+	todoIdIdx: index('todo_occurrences_todo_id_idx').on(table.todoId),
+	todoIdDateIdx: uniqueIndex('todo_occurrences_todo_id_date_idx').on(table.todoId, table.occurrenceDate),
 }));
 
 export const checkIns = sqliteTable('check_ins', {
 	id: text('id').primaryKey(),
 	userId: text('user_id').notNull(),
+	goalId: text('goal_id'),
 	date: text('date').notNull(),
 	mood: text('mood', { enum: ['great', 'good', 'okay', 'bad', 'terrible'] }).notNull(),
 	energy: text('energy', { enum: ['high', 'medium', 'low'] }).notNull(),
@@ -134,5 +153,5 @@ export const checkIns = sqliteTable('check_ins', {
 	updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 }, (table) => ({
 	userIdIdx: index('check_ins_user_id_idx').on(table.userId),
+	goalIdIdx: index('check_ins_goal_id_idx').on(table.goalId),
 }));
-

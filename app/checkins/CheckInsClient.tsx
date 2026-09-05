@@ -8,6 +8,7 @@ import CreateCheckInModal from '@/components/app/checkins/CreateCheckInModal';
 import { format, eachDayOfInterval, isSameDay, isToday, subWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import AlertModal from '@/components/common/AlertModal';
 import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
+import { parseDateOnly } from '@/lib/domain/date-only';
 
 function parseJsonArray(value: string[] | string | undefined | null): string[] {
 	if (!value) return [];
@@ -19,8 +20,7 @@ function parseJsonArray(value: string[] | string | undefined | null): string[] {
 	try {
 		const parsed = JSON.parse(value);
 		return Array.isArray(parsed) ? parsed : [];
-	} catch (e) {
-		console.error('Error parsing JSON array:', e);
+	} catch {
 		return [];
 	}
 }
@@ -44,18 +44,15 @@ export default function CheckInsPage() {
 		message: '',
 		type: 'info',
 	});
-	const [yearStartDate] = useState(() => {
-		const today = new Date();
-		return startOfWeek(subWeeks(today, 51));
-	});
+	const [yearStartDate, setYearStartDate] = useState(() => new Date(0));
+	const [todayDate, setTodayDate] = useState<Date | null>(null);
 	const calendarRef = useRef<HTMLDivElement>(null);
-
-	// const accomplishments = useMemo(() => parseJsonArray(selectedCheckIn?.accomplishments), [selectedCheckIn?.accomplishments]);
-	// const challenges = useMemo(() => parseJsonArray(selectedCheckIn?.challenges), [selectedCheckIn?.challenges]);
-	// const goals = useMemo(() => parseJsonArray(selectedCheckIn?.goals), [selectedCheckIn?.goals]);
 
 	const loadCheckIns = useCallback(async () => {
 		try {
+			const today = new Date();
+			setYearStartDate(startOfWeek(subWeeks(today, 51)));
+			setTodayDate(today);
 			setMounted(true);
 			const loadedCheckIns = await getCheckIns();
 			setCheckIns(loadedCheckIns);
@@ -178,7 +175,7 @@ export default function CheckInsPage() {
 	};
 
 	const getCheckInForDate = (date: Date) => {
-		return checkIns.find((checkIn) => isSameDay(new Date(checkIn.date), date));
+		return checkIns.find((checkIn) => isSameDay(parseDateOnly(checkIn.date), date));
 	};
 
 	return (
@@ -212,7 +209,7 @@ export default function CheckInsPage() {
 						</div>
 						<div className="mt-4 flex justify-end md:self-end">
 							<p className="text-xs text-[var(--text-muted)]">
-								{format(yearStartDate, 'MMM d, yyyy')} — {format(new Date(), 'MMM d, yyyy')}
+				{format(yearStartDate, 'MMM d, yyyy')} — {todayDate ? format(todayDate, 'MMM d, yyyy') : 'Today'}
 							</p>
 						</div>
 					</div>
@@ -304,7 +301,7 @@ export default function CheckInsPage() {
 
 			<div className="space-y-3">
 					{checkIns
-						.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+						.sort((a, b) => b.date.localeCompare(a.date))
 						.map((checkIn) => {
 							const checkInAccomplishments = parseJsonArray(checkIn.accomplishments);
 							const checkInChallenges = parseJsonArray(checkIn.challenges);
@@ -320,7 +317,7 @@ export default function CheckInsPage() {
 											<span className="text-2xl" title={`Energy: ${checkIn.energy}`}>
 												{getEnergyIcon(checkIn.energy)}
 											</span>
-											<span className="text-lg font-medium text-white">{format(new Date(checkIn.date), 'MMMM d, yyyy')}</span>
+											<span className="text-lg font-medium text-white">{format(parseDateOnly(checkIn.date), 'MMMM d, yyyy')}</span>
 										</div>
 										<div className="flex items-center gap-4">
 											<button

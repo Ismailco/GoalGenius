@@ -1,7 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  CalendarDays,
-  ChartColumnBig,
   CircleCheckBig,
   LayoutDashboard,
   ListTodo,
@@ -19,12 +17,10 @@ export interface AppNavigationItem {
 export const APP_NAV_ITEMS: AppNavigationItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, name: 'Dashboard' },
   { href: '/checkins', icon: CircleCheckBig, name: 'Check-ins' },
-  { href: '/todos', icon: ListTodo, name: 'Todos' },
+  { href: '/todos', icon: ListTodo, name: 'Tasks' },
   { href: '/notes', icon: NotebookPen, name: 'Notes' },
   { href: '/goals', icon: Target, name: 'Goals' },
   { href: '/milestones', icon: Milestone, name: 'Milestones' },
-  { href: '/calendar', icon: CalendarDays, name: 'Calendar' },
-  { href: '/analytics', icon: ChartColumnBig, name: 'Analytics' },
 ];
 
 export const MOBILE_PRIMARY_NAV_ITEMS = APP_NAV_ITEMS.slice(0, 4);

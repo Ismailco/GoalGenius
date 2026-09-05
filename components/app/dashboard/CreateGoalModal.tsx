@@ -32,7 +32,7 @@ export default function CreateGoalModal() {
   }) => {
     await handleAsyncOperation(
       async () => {
-        createGoal({
+        await createGoal({
           ...data,
           status: 'not-started',
           progress: 0,
@@ -60,7 +60,7 @@ export default function CreateGoalModal() {
           content: (
             <div className="relative">
               {isLoading && <LoadingOverlay />}
-              <GoalInputForm onSubmit={handleSubmit} onCancel={hideModal} />
+              <GoalInputForm onSubmit={handleSubmit} onCancel={hideModal} isSubmitting={isLoading} />
             </div>
           )
         })}

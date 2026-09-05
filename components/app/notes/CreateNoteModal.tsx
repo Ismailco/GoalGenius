@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Note } from '@/app/types';
 import { createNote, updateNote } from '@/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
@@ -32,6 +32,17 @@ export default function CreateNoteModal({
   const [isPinned, setIsPinned] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    modalRef.current?.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isLoading) onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, isLoading, onClose]);
 
   useEffect(() => {
     if (existingNote) {
@@ -136,6 +147,7 @@ export default function CreateNoteModal({
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       role="dialog"
       aria-labelledby="note-modal-title"
@@ -242,6 +254,7 @@ export default function CreateNoteModal({
               <button
                 type="button"
                 onClick={onClose}
+                disabled={isLoading}
                 className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
                 aria-label="Cancel note creation"
               >
@@ -249,6 +262,7 @@ export default function CreateNoteModal({
               </button>
               <button
                 type="submit"
+                disabled={isLoading}
                 className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:from-indigo-600 hover:to-purple-600 transform hover:scale-[1.02] transition-all duration-200"
                 aria-label={existingNote ? 'Save note changes' : 'Create new note'}
               >

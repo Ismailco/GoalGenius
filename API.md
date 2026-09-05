@@ -279,9 +279,9 @@ The current API version is v1. All endpoints are currently unversioned, but futu
 ## Support
 
 If you encounter any issues or need help with the API:
-1. Check the [documentation](https://goalgenius.online/docs) (coming soon)
+1. Check the in-app [documentation](https://goalgenius.online/docs)
 2. Create an issue on [GitHub](https://github.com/ismailco/goalgenius/issues)
 
 ---
 
-Last updated: 2025
+Last updated: 2026

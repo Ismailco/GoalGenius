@@ -12,6 +12,14 @@ interface GoalInputFormProps {
     timeFrame: TimeFrame;
   }) => Promise<void>;
   onCancel?: () => void;
+  initialData?: {
+    title: string;
+    description: string;
+    category: GoalCategory;
+    timeFrame: TimeFrame;
+  };
+  submitLabel?: string;
+  isSubmitting?: boolean;
 }
 
 interface FormErrors {
@@ -19,8 +27,8 @@ interface FormErrors {
   description?: string;
 }
 
-export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps) {
-  const [formData, setFormData] = useState({
+export default function GoalInputForm({ onSubmit, onCancel, initialData, submitLabel = 'Create Goal', isSubmitting = false }: GoalInputFormProps) {
+  const [formData, setFormData] = useState(initialData ?? {
     title: '',
     description: '',
     category: 'health' as GoalCategory,
@@ -167,15 +175,17 @@ export default function GoalInputForm({ onSubmit, onCancel }: GoalInputFormProps
         <button
           type="button"
           onClick={onCancel}
+          disabled={isSubmitting}
           className="app-button-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
+          disabled={isSubmitting}
           className="app-button"
         >
-          Create Goal
+          {submitLabel}
         </button>
       </div>
     </form>

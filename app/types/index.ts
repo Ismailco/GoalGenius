@@ -1,6 +1,8 @@
 export type TimeFrame = 'short-term' | 'medium-term' | 'long-term';
 export type GoalCategory = 'health' | 'career' | 'learning' | 'relationships';
 export type GoalStatus = 'not-started' | 'in-progress' | 'completed';
+export type TodoRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
+export type TodoReminder = 'none' | 'at_due' | '15m' | '1h' | '1d';
 
 export interface Milestone {
   id: string;
@@ -8,6 +10,7 @@ export interface Milestone {
   title: string;
   description: string;
   date: string;
+  completed?: boolean;
 }
 
 export interface Goal {
@@ -45,18 +48,31 @@ export interface Note {
 
 export interface Todo {
   id: string;
+  goalId?: string | null;
+  milestoneId?: string | null;
   title: string;
   description?: string;
   completed: boolean;
   priority: 'low' | 'medium' | 'high';
   dueDate?: string;
   category?: string;
+  recurrence: TodoRecurrence;
+  reminder: TodoReminder;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface TodoOccurrence {
+  id: string;
+  todoId: string;
+  occurrenceDate: string;
+  completedAt: string;
+  createdAt: string;
+}
+
 export interface CheckIn {
   id: string;
+  goalId?: string | null;
   date: string;
   mood: 'great' | 'good' | 'okay' | 'bad' | 'terrible';
   energy: 'high' | 'medium' | 'low';
@@ -67,4 +83,3 @@ export interface CheckIn {
   createdAt: string;
   updatedAt: string;
 }
-

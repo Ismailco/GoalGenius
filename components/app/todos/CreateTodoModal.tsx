@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Todo } from '@/app/types';
+import { useState, useEffect, useRef } from 'react';
+import { Todo, TodoRecurrence, TodoReminder } from '@/app/types';
 import { readAppSettings } from '@/lib/app-settings';
 import { createTodo, updateTodo } from '@/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
@@ -13,6 +13,8 @@ interface CreateTodoModalProps {
   onClose: () => void;
   existingTodo?: Todo;
   onSave?: (todo: Todo) => void;
+  goalId?: string | null;
+  milestoneId?: string | null;
 }
 
 interface FormErrors {
@@ -27,6 +29,8 @@ export default function CreateTodoModal({
   onClose,
   existingTodo,
   onSave,
+  goalId = null,
+  milestoneId = null,
 }: CreateTodoModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -35,8 +39,24 @@ export default function CreateTodoModal({
   );
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('');
+  const [recurrence, setRecurrence] = useState<TodoRecurrence>('none');
+  const [reminder, setReminder] = useState<TodoReminder>('none');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      modalRef.current?.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && !isLoading) onClose();
+      };
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+
+    return undefined;
+  }, [isOpen, isLoading, onClose]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -49,6 +69,8 @@ export default function CreateTodoModal({
       setPriority(existingTodo.priority);
       setDueDate(existingTodo.dueDate || '');
       setCategory(existingTodo.category ? unescapeForDisplay(existingTodo.category) : '');
+      setRecurrence(existingTodo.recurrence ?? 'none');
+      setReminder(existingTodo.reminder ?? 'none');
       setErrors({});
       return;
     }
@@ -59,6 +81,8 @@ export default function CreateTodoModal({
     setPriority(settings.defaultTodoPriority);
     setDueDate('');
     setCategory('');
+    setRecurrence('none');
+    setReminder('none');
     setErrors({});
   }, [existingTodo, isOpen]);
 
@@ -102,6 +126,12 @@ export default function CreateTodoModal({
       case 'priority':
         setPriority(value as 'low' | 'medium' | 'high');
         break;
+      case 'recurrence':
+        setRecurrence(value as TodoRecurrence);
+        break;
+      case 'reminder':
+        setReminder(value as TodoReminder);
+        break;
     }
 
     // Update errors
@@ -141,11 +171,15 @@ export default function CreateTodoModal({
     }
 
     const todoData = {
+      goalId: goalId ?? existingTodo?.goalId ?? null,
+      milestoneId: milestoneId ?? existingTodo?.milestoneId ?? null,
       title: titleValidation.sanitizedValue,
       description: descriptionValidation.sanitizedValue || undefined,
       priority: priority as 'low' | 'medium' | 'high',
       dueDate: dueDateValidation.sanitizedValue || undefined,
       category: categoryValidation.sanitizedValue || undefined,
+      recurrence,
+      reminder: dueDate ? reminder : 'none',
     };
 
     await handleAsyncOperation(
@@ -169,20 +203,21 @@ export default function CreateTodoModal({
 
   return (
     <div
+      ref={modalRef}
       className="app-modal-backdrop"
       role="dialog"
       aria-labelledby="todo-modal-title"
       aria-modal="true"
     >
       <div className="app-modal-panel relative flex max-h-[80vh] flex-col">
-        {isLoading && <LoadingOverlay role="status" aria-label="Saving todo..." />}
+        {isLoading && <LoadingOverlay role="status" aria-label="Saving task..." />}
         <div className="shrink-0 border-b border-white/5 p-6">
           <h2 id="todo-modal-title" className="text-2xl font-semibold text-white">
-            {existingTodo ? 'Edit Todo' : 'Create New Todo'}
+            {existingTodo ? 'Edit Task' : 'Create New Task'}
           </h2>
         </div>
         <div className="p-6 overflow-y-auto">
-          <form onSubmit={handleSubmit} aria-label={existingTodo ? 'Edit todo form' : 'Create todo form'}>
+          <form onSubmit={handleSubmit} aria-label={existingTodo ? 'Edit task form' : 'Create task form'}>
             <div className="space-y-6">
               <div>
                 <label htmlFor="title" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
@@ -247,6 +282,32 @@ export default function CreateTodoModal({
                 </div>
 
                 <div>
+                  <label htmlFor="recurrence" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+                    Repeat
+                  </label>
+                  <select id="recurrence" name="recurrence" value={recurrence} onChange={handleChange} className="app-select">
+                    <option value="none">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="reminder" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+                    Reminder
+                  </label>
+                  <select id="reminder" name="reminder" value={reminder} onChange={handleChange} className="app-select" disabled={!dueDate}>
+                    <option value="none">No reminder</option>
+                    <option value="at_due">At due date</option>
+                    <option value="15m">15 minutes before</option>
+                    <option value="1h">1 hour before</option>
+                    <option value="1d">1 day before</option>
+                  </select>
+                  {!dueDate ? <p className="mt-1 text-xs text-[var(--text-muted)]">Add a due date to set a reminder.</p> : null}
+                </div>
+
+                <div>
                   <label htmlFor="dueDate" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                     Due Date (optional)
                   </label>
@@ -295,17 +356,19 @@ export default function CreateTodoModal({
               <button
                 type="button"
                 onClick={onClose}
+                disabled={isLoading}
                 className="app-button-secondary"
-                aria-label="Cancel todo creation"
+                aria-label="Cancel task creation"
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                disabled={isLoading}
                 className="app-button"
-                aria-label={existingTodo ? 'Save todo changes' : 'Create new todo'}
+                aria-label={existingTodo ? 'Save task changes' : 'Create new task'}
               >
-                {existingTodo ? 'Save Changes' : 'Create Todo'}
+                {existingTodo ? 'Save Changes' : 'Create Task'}
               </button>
             </div>
           </form>

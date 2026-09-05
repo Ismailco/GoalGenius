@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
-import { milestones } from "@/lib/db/schema";
+import { milestones, goals, todos } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { auth } from "@/lib/auth/auth";
 import { z } from "zod";
 import { readJsonBodyWithLimit } from "@/lib/server/request-body";
+import { getAuthenticatedUserId } from "@/lib/server/authenticated-user";
 
 export const runtime = "nodejs";
 
@@ -15,35 +15,39 @@ type MilestoneInput = {
   title: string;
   description?: string;
   date: string;
+  completed?: boolean;
 };
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date in YYYY-MM-DD format");
 
 const createMilestoneSchema = z
   .object({
-    goalId: z.string().min(1),
-    title: z.string().min(1),
-    description: z.string().optional(),
-    date: z.string().min(1),
+    goalId: z.string().trim().min(1),
+    title: z.string().trim().min(1).max(160),
+    description: z.string().max(2000).optional(),
+    date: isoDate,
     userId: z.string().optional(),
+    completed: z.boolean().optional(),
   })
-  .passthrough();
+  ;
 
 const updateMilestoneSchema = createMilestoneSchema
   .partial()
   .extend({ id: z.string().min(1) })
-  .passthrough();
+  ;
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = new URL(request.url).searchParams;
     const goalId = searchParams.get("goalId");
+    const id = searchParams.get("id");
 
     if (goalId !== null) {
       const goalIdParsed = z.string().min(1).safeParse(goalId);
@@ -57,6 +61,7 @@ export async function GET(request: NextRequest) {
 
     // Always scope to current user; optionally filter by goalId
     const conditions = [eq(milestones.userId, userId)];
+    if (id) conditions.push(eq(milestones.id, id));
     if (goalId) {
       conditions.push(eq(milestones.goalId, goalId));
     }
@@ -67,8 +72,11 @@ export async function GET(request: NextRequest) {
       .from(milestones)
       .where(and(...conditions));
 
-    return NextResponse.json(userMilestones);
-  } catch (error) {
+    if (id && !userMilestones.length) {
+      return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
+    }
+    return NextResponse.json(id ? userMilestones[0] : userMilestones);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch milestones" },
       { status: 500 },
@@ -78,8 +86,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -99,6 +106,15 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data as unknown as MilestoneInput;
 
+    const [goal] = await db
+      .select({ id: goals.id })
+      .from(goals)
+      .where(and(eq(goals.id, data.goalId), eq(goals.userId, userId)))
+      .limit(1);
+    if (!goal) {
+      return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+    }
+
     const newMilestone = await db
       .insert(milestones)
       .values({
@@ -108,11 +124,12 @@ export async function POST(request: NextRequest) {
         title: data.title,
         description: data.description,
         date: data.date,
+        completed: data.completed ?? false,
       })
       .returning();
 
     return NextResponse.json(newMilestone[0], { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to create milestone" },
       { status: 500 },
@@ -122,8 +139,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -145,7 +161,19 @@ export async function PUT(request: NextRequest) {
       id: string;
     };
 
-    const { id, userId: _ignoredUserId, ...updateData } = data;
+    const { id, ...updateData } = data;
+    delete updateData.userId;
+
+    if (data.goalId) {
+      const [goal] = await db
+        .select({ id: goals.id })
+        .from(goals)
+        .where(and(eq(goals.id, data.goalId), eq(goals.userId, userId)))
+        .limit(1);
+      if (!goal) {
+        return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+      }
+    }
 
     const updatedMilestone = await db
       .update(milestones)
@@ -164,7 +192,7 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json(updatedMilestone[0]);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update milestone" },
       { status: 500 },
@@ -174,8 +202,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -193,12 +220,14 @@ export async function DELETE(request: NextRequest) {
 
     const validatedId = idParsed.data;
 
-    const deletedMilestone = await db
-      .delete(milestones)
-      .where(and(eq(milestones.id, validatedId), eq(milestones.userId, userId)))
-      .returning();
+    const deletedMilestone = await db.batch([
+      db.update(todos).set({ milestoneId: null, updatedAt: new Date() }).where(and(eq(todos.milestoneId, validatedId), eq(todos.userId, userId))),
+      db.delete(milestones).where(and(eq(milestones.id, validatedId), eq(milestones.userId, userId))).returning(),
+    ]);
 
-    if (!deletedMilestone.length) {
+    const deletedMilestoneRecords = deletedMilestone[deletedMilestone.length - 1];
+
+    if (!Array.isArray(deletedMilestoneRecords) || !deletedMilestoneRecords.length) {
       return NextResponse.json(
         { error: "Milestone not found" },
         { status: 404 },
@@ -206,7 +235,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to delete milestone" },
       { status: 500 },

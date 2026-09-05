@@ -44,6 +44,7 @@ import {
   getMilestones,
   getNotes,
   getTodos,
+  getWorkspaceExport,
 } from '@/lib/storage';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
@@ -239,25 +240,11 @@ export default function SettingsPage() {
     setIsExporting(true);
 
     try {
-      const [goals, milestones, notes, todos, checkIns] = await Promise.all([
-        getGoals(),
-        getMilestones(),
-        getNotes(),
-        getTodos(),
-        getCheckIns(),
-      ]);
+      const workspaceExport = await getWorkspaceExport();
 
       downloadJsonFile(
         `goalgenius-workspace-${new Date().toISOString().slice(0, 10)}.json`,
-        {
-          exportedAt: new Date().toISOString(),
-          userId: session?.user?.id ?? null,
-          goals,
-          milestones,
-          notes,
-          todos,
-          checkIns,
-        },
+        workspaceExport,
       );
 
       setAlert({
@@ -383,7 +370,7 @@ export default function SettingsPage() {
       setAlert({
         show: true,
         title: 'Workspace reset',
-        message: 'All goals, milestones, notes, todos, and check-ins were deleted.',
+        message: 'All goals, milestones, notes, tasks, and check-ins were deleted.',
         type: 'success',
       });
     } catch (error) {
@@ -401,6 +388,9 @@ export default function SettingsPage() {
 
   async function handleSignOut() {
     try {
+      if (session?.user?.id) {
+        clearUserCache(session.user.id);
+      }
       const response = await signOut();
       if (response) {
         router.push('/');
@@ -524,8 +514,8 @@ export default function SettingsPage() {
 
             <ToggleRow
               checked={settings.showCompletedTodosByDefault}
-              label="Show completed todos by default"
-              description="Applies to the todos page without needing to toggle the filter each time."
+                  label="Show completed tasks by default"
+                  description="Applies to the tasks page without needing to toggle the filter each time."
               onChange={(checked) =>
                 updateSettings({ showCompletedTodosByDefault: checked })
               }
@@ -544,10 +534,10 @@ export default function SettingsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-white">
-                    Default priority for new todos
+                    Default priority for new tasks
                   </p>
                   <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-                    Preselect the priority that should appear when you create a new todo.
+                    Preselect the priority that should appear when you create a new task.
                   </p>
                 </div>
 
@@ -653,7 +643,7 @@ export default function SettingsPage() {
             <MetricCard label="Goals" value={counts.goals} />
             <MetricCard label="Milestones" value={counts.milestones} />
             <MetricCard label="Notes" value={counts.notes} />
-            <MetricCard label="Todos" value={counts.todos} />
+                    <MetricCard label="Tasks" value={counts.todos} />
             <MetricCard label="Check-ins" value={counts.checkIns} />
           </div>
 
@@ -704,7 +694,7 @@ export default function SettingsPage() {
                   show: true,
                   title: 'Delete all workspace data?',
                   message:
-                    'This will permanently remove all goals, milestones, notes, todos, and check-ins for your account.',
+                    'This will permanently remove all goals, milestones, notes, tasks, and check-ins for your account.',
                   type: 'warning',
                   isConfirmation: true,
                   onConfirm: () => {

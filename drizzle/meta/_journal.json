@@ -50,6 +50,20 @@
       "when": 1767126060129,
       "tag": "0006_next_elektra",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788566400000,
+      "tag": "0007_goal_execution_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788596449587,
+      "tag": "0008_cynical_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

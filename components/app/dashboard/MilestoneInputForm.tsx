@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { validateAndSanitizeInput, ValidationResult } from '@/lib/validation';
+import { todayDateOnly } from '@/lib/domain/date-only';
 
 interface MilestoneInputFormProps {
   onSubmit: (data: { title: string; description: string; date: string }) => void;
@@ -11,6 +12,7 @@ interface MilestoneInputFormProps {
     description: string;
     date: string;
   };
+  isSubmitting?: boolean;
 }
 
 interface FormErrors {
@@ -19,11 +21,11 @@ interface FormErrors {
   date?: string;
 }
 
-export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: MilestoneInputFormProps) {
+export default function MilestoneInputForm({ onSubmit, onCancel, initialData, isSubmitting = false }: MilestoneInputFormProps) {
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
-    date: initialData?.date || new Date().toISOString().split('T')[0],
+    date: initialData?.date || todayDateOnly(),
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -32,7 +34,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
       case 'title':
         return validateAndSanitizeInput(value, 'title', true);
       case 'description':
-        return validateAndSanitizeInput(value, 'description', true);
+        return validateAndSanitizeInput(value, 'description', false);
       case 'date':
         return validateAndSanitizeInput(value, 'date', true);
       default:
@@ -124,7 +126,6 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
           className={`app-field ${errors.description ? 'border-red-500' : ''}`}
           rows={3}
           placeholder="Enter milestone description"
-          required
         />
         {errors.description && (
           <p className="mt-1 text-sm text-red-500">{errors.description}</p>
@@ -143,7 +144,7 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
           onChange={handleChange}
           className={`app-field ${errors.date ? 'border-red-500' : ''}`}
           required
-          min={new Date().toISOString().split('T')[0]}
+          min={todayDateOnly()}
         />
         {errors.date && (
           <p className="mt-1 text-sm text-red-500">{errors.date}</p>
@@ -154,12 +155,14 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData }: 
         <button
           type="button"
           onClick={onCancel}
+          disabled={isSubmitting}
           className="app-button-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
+          disabled={isSubmitting}
           className="app-button"
         >
           {initialData ? 'Update' : 'Create'} Milestone

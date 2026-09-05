@@ -1,12 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Goal, GoalCategory, TimeFrame } from '@/app/types';
-import { getGoals, updateGoal, deleteGoal } from '@/lib/storage';
+import { Goal, GoalCategory, Milestone, TimeFrame, Todo } from '@/app/types';
+import { getGoals, getMilestones, getTodos, updateGoal, deleteGoal } from '@/lib/storage';
+import { calculateGoalProgress } from '@/lib/domain/progress';
 import AlertModal from '@/components/common/AlertModal';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingPage } from '@/components/common/LoadingSpinner';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
+import Link from 'next/link';
+
+function getGoalProgress(goal: Goal, milestones: Milestone[], todos: Todo[]) {
+  const goalMilestones = milestones.filter((milestone) => milestone.goalId === goal.id);
+  const goalTodos = todos.filter((todo) => todo.goalId === goal.id);
+  return calculateGoalProgress(goalMilestones.map((milestone) => {
+    const tasks = goalTodos.filter((todo) => todo.milestoneId === milestone.id);
+    return { completed: milestone.completed, tasksCompleted: tasks.filter((task) => task.completed).length, tasksTotal: tasks.length };
+  }), goal.status);
+}
 
 export default function GoalsList({
   searchTerm = '',
@@ -16,6 +27,8 @@ export default function GoalsList({
   selectedCategory?: GoalCategory | 'all';
 }) {
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   // const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
@@ -36,8 +49,10 @@ export default function GoalsList({
   const loadGoals = async () => {
     await handleAsyncOperation(
       async () => {
-        const loadedGoals = await getGoals();
+        const [loadedGoals, loadedMilestones, loadedTodos] = await Promise.all([getGoals(), getMilestones(), getTodos()]);
         setGoals(loadedGoals);
+        setMilestones(loadedMilestones);
+        setTodos(loadedTodos);
       },
       setLoading,
       (error) => {
@@ -64,35 +79,15 @@ export default function GoalsList({
     };
   }, []);
 
-  const handleUpdateProgress = async (goalId: string, progress: number) => {
-    await handleAsyncOperation(
-      async () => {
-        await updateGoal(goalId, { progress });
-        const updatedGoals = await getGoals();
-        setGoals(updatedGoals);
-      },
-      undefined,
-      (error) => {
-        setAlert({
-          show: true,
-          title: 'Error',
-          message: getUserFriendlyErrorMessage(error),
-          type: 'error'
-        });
-      }
-    );
-  };
-
   const handleDeleteGoal = (id: string) => {
     setAlert({
 			show: true,
 			title: 'Confirm Deletion',
-			message: 'Are you sure you want to delete this goal?',
+			message: 'This also deletes the goal\'s milestones, linked tasks, and check-ins. Continue?',
 			type: 'warning',
 			isConfirmation: true,
 			onConfirm: async () => {
 				try {
-					// console.log('Deleting goal with id:', id);
 					await deleteGoal(id);
 					const updatedGoals = await getGoals();
 					setGoals(updatedGoals);
@@ -143,7 +138,7 @@ export default function GoalsList({
   const filteredGoals = goals.filter(goal => {
     const matchesSearch = searchTerm === '' ||
       goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      goal.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (goal.description ?? '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = selectedCategory === 'all' || goal.category === selectedCategory;
 
@@ -165,7 +160,9 @@ export default function GoalsList({
           </p>
         </div>
       ) : (
-        filteredGoals.map((goal) => (
+        filteredGoals.map((goal) => {
+          const progress = getGoalProgress(goal, milestones, todos);
+          return (
           <div
             key={goal.id}
             className="surface-card p-5"
@@ -237,7 +234,9 @@ export default function GoalsList({
                         {goal.timeFrame}
                       </span>
                     </div>
-                    <h3 className="mt-3 text-lg font-semibold text-white">{goal.title}</h3>
+                    <Link href={`/goals/${goal.id}`} className="mt-3 block text-lg font-semibold text-white hover:text-[var(--accent)]">
+                      {goal.title}
+                    </Link>
                     <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
                       {goal.description}
                     </p>
@@ -270,36 +269,30 @@ export default function GoalsList({
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       Progress
                     </span>
-                    <span className="text-sm font-semibold text-white">{goal.progress}%</span>
+                    <span className="text-sm font-semibold text-white">{progress}%</span>
                   </div>
                   <div className="progress-track">
                     <div
                       className="progress-fill transition-all duration-300"
-                      style={{ width: `${goal.progress}%` }}
+                      style={{ width: `${progress}%` }}
                       role="progressbar"
-                      aria-valuenow={goal.progress}
+                      aria-valuenow={progress}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={`Goal progress: ${goal.progress}%`}
+                      aria-label={`Goal progress: ${progress}%`}
                     />
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <span className="text-sm text-[var(--text-secondary)]" aria-label="Goal timeframe">{goal.timeFrame}</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={goal.progress}
-                      onChange={(e) => handleUpdateProgress(goal.id, Number(e.target.value))}
-                      className="app-field !w-20 !px-3 !py-2 text-sm text-center"
-                      aria-label={`Update progress for ${goal.title}`}
-                    />
+                    <span className="text-xs text-[var(--text-muted)]">From milestones and tasks</span>
                   </div>
+
                 </div>
               </>
             )}
           </div>
-        ))
+          );
+        })
       )}
 
       {alert.show && (

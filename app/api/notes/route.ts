@@ -3,7 +3,7 @@ import { db } from "@/lib/db/db";
 import { notes } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { auth } from "@/lib/auth/auth";
+import { getAuthenticatedUserId } from "@/lib/server/authenticated-user";
 import { z } from "zod";
 import { readJsonBodyWithLimit } from "@/lib/server/request-body";
 
@@ -19,36 +19,40 @@ type NoteInput = {
 
 const createNoteSchema = z
   .object({
-    title: z.string().min(1),
-    content: z.string().min(1),
-    category: z.string().optional(),
+    title: z.string().trim().min(1).max(160),
+    content: z.string().trim().min(1).max(10000),
+    category: z.string().max(80).optional(),
     isPinned: z.boolean().optional(),
     userId: z.string().optional(),
   })
-  .passthrough();
+  ;
 
 const updateNoteSchema = createNoteSchema
   .partial()
   .extend({ id: z.string().min(1) })
-  .passthrough();
+  ;
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const id = new URL(request.url).searchParams.get("id");
     const userNotes = await db
       .select()
       .from(notes)
-      .where(eq(notes.userId, userId));
+      .where(id ? and(eq(notes.id, id), eq(notes.userId, userId)) : eq(notes.userId, userId));
 
-    return NextResponse.json(userNotes);
-  } catch (error) {
+    if (id && !userNotes.length) {
+      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(id ? userNotes[0] : userNotes);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch notes" },
       { status: 500 },
@@ -58,8 +62,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json(newNote[0], { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to create note" },
       { status: 500 },
@@ -102,8 +105,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -123,7 +125,8 @@ export async function PUT(request: NextRequest) {
 
     const data = parsed.data as unknown as Partial<NoteInput> & { id: string };
 
-    const { id, userId: _ignoredUserId, ...updateData } = data;
+    const { id, ...updateData } = data;
+    delete updateData.userId;
 
     const updatedNote = await db
       .update(notes)
@@ -139,7 +142,7 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json(updatedNote[0]);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update note" },
       { status: 500 },
@@ -149,13 +152,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    const userId = session?.user?.id;
+    const userId = await getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = new URL(request.url).searchParams;
     const id = searchParams.get("id");
 
     if (!id) {
@@ -175,7 +177,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to delete note" },
       { status: 500 },

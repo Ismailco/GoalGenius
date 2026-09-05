@@ -1,5 +1,4 @@
-import { Goal, Milestone, Note, Todo, CheckIn } from '@/app/types';
-// import { v4 as uuidv4 } from 'uuid';
+import { Goal, Milestone, Note, Todo, TodoOccurrence, CheckIn } from '@/app/types';
 import { sanitizeForStorage } from '@/lib/validation';
 import validator from 'validator';
 import { StorageError, ValidationError, logError } from './error';
@@ -39,21 +38,17 @@ const unescapeData = <T extends Record<string, unknown>>(data: T): T => {
   return unescaped as T;
 };
 
-// Add this helper function at the top with the other helpers
-function ensureJsonString(value: string[] | string | undefined | null): string {
-  if (!value) return '[]';
-  if (Array.isArray(value)) {
-    return JSON.stringify(value);
-  }
-  // If it's already a string, validate it's a JSON array
+function normalizeCheckInArray(value: string[] | string | undefined | null): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+
   try {
-    const parsed = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      throw new Error('Not an array');
-    }
-    return value; // Return original string if it's valid
+    const parsed: unknown = JSON.parse(validator.unescape(value));
+    return Array.isArray(parsed) && parsed.every((item): item is string => typeof item === 'string')
+      ? parsed
+      : [];
   } catch {
-    return '[]'; // Return empty array if invalid
+    return [];
   }
 }
 
@@ -205,8 +200,22 @@ function deleteCachedGoalCascade(userId: string | null, goalId: string): void {
   writeCachedList(
     STORAGE_KEYS.MILESTONES,
     userId,
-    milestones.filter((milestone) => milestone.goalId !== goalId),
+  milestones.filter((milestone) => milestone.goalId !== goalId),
   );
+
+  const todos = readCachedList<Todo>(STORAGE_KEYS.TODOS, userId);
+  writeCachedList(STORAGE_KEYS.TODOS, userId, todos.filter((todo) => todo.goalId !== goalId));
+
+  const checkIns = readCachedList<CheckIn>(STORAGE_KEYS.CHECKINS, userId);
+  writeCachedList(STORAGE_KEYS.CHECKINS, userId, checkIns.filter((checkIn) => checkIn.goalId !== goalId));
+}
+
+function deleteCachedMilestone(userId: string | null, milestoneId: string): void {
+  deleteCachedRecord(STORAGE_KEYS.MILESTONES, userId, milestoneId);
+  const todos = readCachedList<Todo>(STORAGE_KEYS.TODOS, userId);
+  writeCachedList(STORAGE_KEYS.TODOS, userId, todos.map((todo) => (
+    todo.milestoneId === milestoneId ? { ...todo, milestoneId: null } : todo
+  )));
 }
 
 function readSyncQueue(userId: string | null): PendingMutation[] {
@@ -325,6 +334,21 @@ type ApiErrorResponse = {
   error: string;
 };
 
+export interface WorkspaceExport {
+  format: 'goalgenius-export';
+  version: 1;
+  exportedAt: string;
+  data: {
+    profile: { name: string; email: string } | null;
+    goals: Goal[];
+    milestones: Milestone[];
+    tasks: Todo[];
+    taskOccurrences: TodoOccurrence[];
+    notes: Note[];
+    checkIns: CheckIn[];
+  };
+}
+
 class ApiRequestError extends StorageError {
   constructor(message: string, public statusCode: number) {
     super(message);
@@ -344,12 +368,6 @@ async function apiRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   data?: unknown
 ): Promise<T> {
-  // Debug log for request
-  // console.log(`[Debug] API Request to ${endpoint}:`, {
-  //   method,
-  //   data
-  // });
-
   const response = await fetch(`/api/${endpoint}`, {
     method,
     headers: {
@@ -361,17 +379,11 @@ async function apiRequest<T>(
   let responseData;
   try {
     responseData = await response.json();
-  } catch (e) {
-    console.error('[Debug] Failed to parse response:', e);
+  } catch {
     throw new StorageError('Invalid response format');
   }
 
   if (!response.ok) {
-    console.error('[Debug] API Error Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      data: responseData
-    });
     const errorData = responseData as ApiErrorResponse;
     throw new ApiRequestError(errorData.error || 'API request failed', response.status);
   }
@@ -460,7 +472,12 @@ export async function syncPendingChanges(): Promise<SyncResult> {
           continue;
         }
 
-        logError(error as Error, { operation: 'syncPendingChanges', mutation });
+    logError(error as Error, {
+      operation: 'syncPendingChanges',
+      resource: mutation.resource,
+      method: mutation.method,
+      entityId: mutation.entityId,
+    });
         remainingQueue = queue.slice(index);
         break;
       }
@@ -566,7 +583,7 @@ export async function createGoal(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedA
       });
       return unescapeData(newGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
-    logError(error as Error, { operation: 'createGoal', data: goal });
+    logError(error as Error, { operation: 'createGoal' });
     if (error instanceof ValidationError) {
       throw error;
     }
@@ -614,7 +631,7 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<Go
       });
       return unescapeData(updatedGoal as unknown as Record<string, unknown>) as unknown as Goal;
   } catch (error) {
-    logError(error as Error, { operation: 'updateGoal', goalId: id, updates });
+    logError(error as Error, { operation: 'updateGoal', goalId: id });
     throw new StorageError('Failed to update goal');
   }
 }
@@ -739,7 +756,7 @@ export async function createMilestone(milestone: Omit<Milestone, 'id' | 'created
       });
       return unescapeData(newMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
   } catch (error) {
-    logError(error as Error, { operation: 'createMilestone', data: milestone });
+    logError(error as Error, { operation: 'createMilestone' });
     if (error instanceof ValidationError) {
       throw error;
     }
@@ -787,7 +804,7 @@ export async function updateMilestone(id: string, updates: Partial<Milestone>): 
       });
       return unescapeData(updatedMilestone as unknown as Record<string, unknown>) as unknown as Milestone;
   } catch (error) {
-    logError(error as Error, { operation: 'updateMilestone', milestoneId: id, updates });
+    logError(error as Error, { operation: 'updateMilestone', milestoneId: id });
     throw new StorageError('Failed to update milestone');
   }
 }
@@ -814,7 +831,7 @@ export async function deleteMilestone(id: string): Promise<boolean> {
       throw new StorageError('No user ID found');
     }
 
-      deleteCachedRecord(STORAGE_KEYS.MILESTONES, userId, id);
+      deleteCachedMilestone(userId, id);
       if (shouldQueueDelete) {
         enqueueMutation(userId, {
           resource: 'milestones',
@@ -919,7 +936,7 @@ export async function createNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedA
       });
       return unescapeData(newNote as unknown as Record<string, unknown>) as unknown as Note;
   } catch (error) {
-    logError(error as Error, { operation: 'createNote', data: note });
+    logError(error as Error, { operation: 'createNote' });
     if (error instanceof ValidationError) {
       throw error;
     }
@@ -967,7 +984,7 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
       });
       return unescapeData(updatedNote as unknown as Record<string, unknown>) as unknown as Note;
   } catch (error) {
-    logError(error as Error, { operation: 'updateNote', noteId: id, updates });
+    logError(error as Error, { operation: 'updateNote', noteId: id });
     throw new StorageError('Failed to update note');
   }
 }
@@ -1032,6 +1049,22 @@ export async function getTodos(): Promise<Todo[]> {
     const localTodos = JSON.parse(cachedTodos || '[]');
     return localTodos.map((todo: Record<string, unknown>) => unescapeData(todo));
   }
+}
+
+export async function getTodoOccurrences(): Promise<TodoOccurrence[]> {
+  try {
+    if (isOnline()) {
+      return await apiRequest<TodoOccurrence[]>('todo-occurrences', 'GET');
+    }
+    return [];
+  } catch (error) {
+    logError(error as Error, { operation: 'getTodoOccurrences' });
+    return [];
+  }
+}
+
+export async function getWorkspaceExport(): Promise<WorkspaceExport> {
+  return apiRequest<WorkspaceExport>('export', 'GET');
 }
 
 export async function getTodo(id: string): Promise<Todo | null> {
@@ -1103,7 +1136,7 @@ export async function createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'updatedA
       });
       return unescapeData(newTodo as unknown as Record<string, unknown>) as unknown as Todo;
   } catch (error) {
-    logError(error as Error, { operation: 'createTodo', data: todo });
+    logError(error as Error, { operation: 'createTodo' });
     if (error instanceof ValidationError) {
       throw error;
     }
@@ -1155,7 +1188,7 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
       });
       return unescapeData(updatedTodo as unknown as Record<string, unknown>) as unknown as Todo;
   } catch (error) {
-    logError(error as Error, { operation: 'updateTodo', todoId: id, updates });
+    logError(error as Error, { operation: 'updateTodo', todoId: id });
     throw new StorageError('Failed to update todo');
   }
 }
@@ -1270,9 +1303,9 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     const processedData = {
       ...checkIn,
-      accomplishments: ensureJsonString(checkIn.accomplishments),
-      challenges: ensureJsonString(checkIn.challenges),
-      goals: ensureJsonString(checkIn.goals),
+      accomplishments: normalizeCheckInArray(checkIn.accomplishments),
+      challenges: normalizeCheckInArray(checkIn.challenges),
+      goals: normalizeCheckInArray(checkIn.goals),
     };
 
     const sanitizedCheckIn = sanitizeData(processedData);
@@ -1334,7 +1367,7 @@ export async function createCheckIn(checkIn: Omit<CheckIn, 'id' | 'createdAt' | 
       });
       return unescapeData(newCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
-    logError(error as Error, { operation: 'createCheckIn', data: checkIn });
+    logError(error as Error, { operation: 'createCheckIn' });
     if (error instanceof ValidationError) {
       throw error;
     }
@@ -1347,9 +1380,9 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
     const userId = localStorage.getItem(STORAGE_KEYS.USER_ID);
     const processedUpdates = {
       ...updates,
-      ...(updates.accomplishments !== undefined && { accomplishments: ensureJsonString(updates.accomplishments) }),
-      ...(updates.challenges !== undefined && { challenges: ensureJsonString(updates.challenges) }),
-      ...(updates.goals !== undefined && { goals: ensureJsonString(updates.goals) }),
+      ...(updates.accomplishments !== undefined && { accomplishments: normalizeCheckInArray(updates.accomplishments) }),
+      ...(updates.challenges !== undefined && { challenges: normalizeCheckInArray(updates.challenges) }),
+      ...(updates.goals !== undefined && { goals: normalizeCheckInArray(updates.goals) }),
     };
 
     const sanitizedUpdates = sanitizeData(processedUpdates);
@@ -1388,7 +1421,7 @@ export async function updateCheckIn(id: string, updates: Partial<CheckIn>): Prom
       });
       return unescapeData(updatedCheckIn as unknown as Record<string, unknown>) as unknown as CheckIn;
   } catch (error) {
-    logError(error as Error, { operation: 'updateCheckIn', checkInId: id, updates });
+    logError(error as Error, { operation: 'updateCheckIn', checkInId: id });
     throw new StorageError('Failed to update check-in');
   }
 }

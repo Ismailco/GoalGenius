@@ -146,7 +146,7 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
         </div>
       )}
 
-      <MilestoneInputForm onSubmit={handleSubmit} onCancel={hideModal} />
+      <MilestoneInputForm onSubmit={handleSubmit} onCancel={hideModal} isSubmitting={isLoading} />
 
       {alert.show && (
         <AlertModal

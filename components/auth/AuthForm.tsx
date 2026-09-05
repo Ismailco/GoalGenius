@@ -334,7 +334,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               <div className="text-left">
                 <h3 className="font-semibold">Smart Goal Setting</h3>
                 <p className="text-sm opacity-80">
-                  Set and track your personal goals with AI-powered insights
+                  Set a meaningful goal and keep the next action visible
                 </p>
               </div>
             </div>
@@ -344,9 +344,9 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <Brain className="w-6 h-6" />
               </div>
               <div className="text-left">
-                <h3 className="font-semibold">AI-Powered Insights</h3>
+                <h3 className="font-semibold">Plan with milestones</h3>
                 <p className="text-sm opacity-80">
-                  Get personalized recommendations to achieve your goals faster
+                  Break a long-term outcome into checkpoints you can act on
                 </p>
               </div>
             </div>
@@ -358,7 +358,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               <div className="text-left">
                 <h3 className="font-semibold">Progress Tracking</h3>
                 <p className="text-sm opacity-80">
-                  Stay motivated with detailed progress analytics and milestones
+                  See progress from the tasks you complete and review
                 </p>
               </div>
             </div>
@@ -368,9 +368,9 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <Users className="w-6 h-6" />
               </div>
               <div className="text-left">
-                <h3 className="font-semibold">Community Support</h3>
+                <h3 className="font-semibold">Weekly check-ins</h3>
                 <p className="text-sm opacity-80">
-                  Connect with like-minded achievers and share your journey
+                  Record progress, blockers, and what you will focus on next
                 </p>
               </div>
             </div>

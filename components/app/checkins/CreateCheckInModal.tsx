@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CheckIn } from '@/app/types';
 import { createCheckIn, updateCheckIn } from '@/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingOverlay } from '@/components/common/LoadingSpinner';
+import { todayDateOnly } from '@/lib/domain/date-only';
 
 interface CreateCheckInModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface CreateCheckInModalProps {
   existingCheckIn?: CheckIn;
   onSave?: (checkIn: CheckIn) => void;
   defaultDate?: string;
+  goalId?: string | null;
 }
 
 interface FormErrors {
@@ -29,8 +31,9 @@ export default function CreateCheckInModal({
   existingCheckIn,
   onSave,
   defaultDate,
+  goalId = null,
 }: CreateCheckInModalProps) {
-  const [date, setDate] = useState(defaultDate || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(defaultDate || todayDateOnly());
   const [mood, setMood] = useState<'great' | 'good' | 'okay' | 'bad' | 'terrible'>('good');
   const [energy, setEnergy] = useState<'high' | 'medium' | 'low'>('medium');
   const [accomplishments, setAccomplishments] = useState<string[]>(['']);
@@ -39,6 +42,17 @@ export default function CreateCheckInModal({
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    modalRef.current?.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isLoading) onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, isLoading, onClose]);
 
   useEffect(() => {
     if (existingCheckIn) {
@@ -53,7 +67,6 @@ export default function CreateCheckInModal({
           try {
             return JSON.parse(field);
           } catch {
-            console.error('Error parsing array field:', field);
             return [''];
           }
         };
@@ -66,8 +79,7 @@ export default function CreateCheckInModal({
         setChallenges(challengesArray.map(c => unescapeForDisplay(c)));
         setGoals(goalsArray.map(g => unescapeForDisplay(g)));
         setNotes(existingCheckIn.notes ? unescapeForDisplay(existingCheckIn.notes) : '');
-      } catch (error) {
-        console.error('Error setting check-in data:', error);
+      } catch {
         // Set default values in case of error
         setAccomplishments(['']);
         setChallenges(['']);
@@ -199,6 +211,7 @@ export default function CreateCheckInModal({
     await handleAsyncOperation(
       async () => {
         const checkInData = {
+          goalId: goalId ?? existingCheckIn?.goalId ?? null,
           date: dateValidation.sanitizedValue,
           mood: mood as CheckIn['mood'],
           energy: energy as CheckIn['energy'],
@@ -248,6 +261,7 @@ export default function CreateCheckInModal({
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       role="dialog"
       aria-labelledby="checkin-modal-title"
@@ -457,6 +471,7 @@ export default function CreateCheckInModal({
               <button
                 type="button"
                 onClick={onClose}
+                disabled={isLoading}
                 className="px-4 py-2 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
                 aria-label="Cancel check-in"
               >
@@ -464,6 +479,7 @@ export default function CreateCheckInModal({
               </button>
               <button
                 type="submit"
+                disabled={isLoading}
                 className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:from-indigo-600 hover:to-purple-600 transform hover:scale-[1.02] transition-all duration-200"
                 aria-label={existingCheckIn ? 'Save check-in changes' : 'Submit check-in'}
               >
