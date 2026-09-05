@@ -24,7 +24,10 @@ jobs:
       - run: pnpm build
       - run: pnpm_config_verify_deps_before_run=false pnpm exec opennextjs-cloudflare build
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
-        env:
-          BETTER_AUTH_SECRET: goalgenius-ci-only-test-secret-not-for-production
+      - run: |
+          printf '%s\n' \
+            'BETTER_AUTH_URL=http://localhost:8788' \
+            'NEXT_PUBLIC_APP_URL=http://localhost:8788' \
+            'BETTER_AUTH_SECRET=goalgenius-ci-only-test-secret-not-for-production' > .dev.vars
+          pnpm test:e2e
       - run: pnpm test
