@@ -19,7 +19,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec eslint . --max-warnings=0
-      - run: pnpm exec tsc --noEmit
+      - run: pnpm typecheck
       - run: pnpm test:migrations
       - run: pnpm build
       - run: pnpm_config_verify_deps_before_run=false pnpm exec opennextjs-cloudflare build
