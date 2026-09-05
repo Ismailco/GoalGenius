@@ -35,6 +35,8 @@ test('local workspace data is cleared across account transitions', async ({ page
   await expect(page).toHaveURL(/\/auth\/signin/);
   await expect.poll(() => page.evaluate(() => localStorage.getItem('userId'))).toBeNull();
   expect(await page.evaluate((userId) => localStorage.getItem(`goals:${userId}`), accountAStorage.userId)).toBeNull();
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL(/\/auth\/signin/);
 
   await signUp(page, 'Cache Owner B', `cache-b-${suffix}@example.com`);
   expect(await page.evaluate(() => localStorage.getItem('userId'))).not.toBe(accountAStorage.userId);

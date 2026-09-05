@@ -2,11 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { LogOut, Settings, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { signOut, useSession } from '@/lib/auth/auth-client';
-import { clearUserCache } from '@/lib/storage';
+import { clearOfflineCaches, clearUserCache } from '@/lib/storage';
 
 interface UserProfileProps {
   isMenuButton?: boolean;
@@ -34,7 +33,6 @@ export default function UserProfile({
   const initials = getInitials(user?.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -49,12 +47,15 @@ export default function UserProfile({
 
   async function handleSignOut() {
     try {
+      sessionStorage.setItem('goalgenius-logged-out', 'true');
       if (user?.id) {
         clearUserCache(user.id);
       }
+      await clearOfflineCaches();
       const response = await signOut();
+      await clearOfflineCaches();
       if (response) {
-        router.push('/');
+        window.location.replace('/');
       }
     } catch (error) {
       console.error('Error signing out:', error);

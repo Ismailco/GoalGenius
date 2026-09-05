@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Bell,
@@ -34,6 +33,7 @@ import {
 import { signOut, useSession } from '@/lib/auth/auth-client';
 import {
   clearUserCache,
+  clearOfflineCaches,
   deleteCheckIn,
   deleteGoal,
   deleteMilestone,
@@ -124,7 +124,6 @@ function MetricCard({
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const { data: session } = useSession();
   const { hasPermission, requestPermission } = useNotification();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
@@ -388,12 +387,15 @@ export default function SettingsPage() {
 
   async function handleSignOut() {
     try {
+      sessionStorage.setItem('goalgenius-logged-out', 'true');
       if (session?.user?.id) {
         clearUserCache(session.user.id);
       }
+      await clearOfflineCaches();
       const response = await signOut();
+      await clearOfflineCaches();
       if (response) {
-        router.push('/');
+        window.location.replace('/');
       }
     } catch (error) {
       console.error('Error signing out:', error);

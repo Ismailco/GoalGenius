@@ -40,6 +40,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
   const goToApp = useCallback(() => {
+    sessionStorage.removeItem('goalgenius-logged-out');
     void cacheAppPages().catch((cacheError) => {
       console.warn("Offline app cache could not be refreshed yet:", cacheError);
     });

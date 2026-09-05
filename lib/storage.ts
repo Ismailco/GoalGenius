@@ -133,6 +133,19 @@ export function clearUserCache(userId: string): void {
   }
 }
 
+export async function clearOfflineCaches(): Promise<void> {
+  if (typeof window === 'undefined' || !('caches' in window)) return;
+
+  const cacheKeys = await caches.keys();
+  await Promise.all(
+    cacheKeys
+      .filter((cacheKey) => cacheKey.startsWith('goalgenius-'))
+      .map((cacheKey) => caches.delete(cacheKey)),
+  );
+  localStorage.removeItem('pwaCacheReady');
+  localStorage.removeItem('pwaCacheVersion');
+}
+
 function createClientId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return `${prefix}_${crypto.randomUUID()}`;
