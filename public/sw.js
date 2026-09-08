@@ -2,6 +2,8 @@ const CACHE_VERSION = 'v4';
 const APP_SHELL_CACHE = `goalgenius-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `goalgenius-runtime-${CACHE_VERSION}`;
 const STATIC_CACHE = `goalgenius-static-${CACHE_VERSION}`;
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+const IS_LOCAL_HOST = LOCAL_HOSTNAMES.has(self.location.hostname);
 
 const APP_ROUTES = [
   '/',
@@ -45,6 +47,7 @@ function shouldSkipRequest(request) {
     !isSameOrigin(url) ||
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/_next/webpack-hmr') ||
+    (IS_LOCAL_HOST && url.pathname.startsWith('/_next/')) ||
     request.headers.has('authorization')
   );
 }
@@ -213,6 +216,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (IS_LOCAL_HOST) {
+    return;
+  }
+
   const { request } = event;
   const url = new URL(request.url);
 

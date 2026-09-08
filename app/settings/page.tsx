@@ -76,7 +76,7 @@ interface ToggleRowProps {
 function ToggleRow({ checked, description, label, onChange }: ToggleRowProps) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-[20px] border border-white/10 bg-[rgba(8,17,30,0.42)] px-4 py-4">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white">{label}</p>
         <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
           {description}
@@ -87,17 +87,16 @@ function ToggleRow({ checked, description, label, onChange }: ToggleRowProps) {
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full border transition-colors ${
+        className={`mt-0.5 flex h-7 w-12 shrink-0 items-center rounded-full border p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel-strong)] ${
           checked
             ? 'border-[rgba(93,166,255,0.32)] bg-[rgba(93,166,255,0.24)]'
             : 'border-white/10 bg-white/5'
         }`}
       >
         <span
-          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
+          className={`h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : ''}`}
         />
       </button>
     </div>

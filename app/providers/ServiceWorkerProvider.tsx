@@ -8,8 +8,13 @@ import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
 const PWA_CACHE_VERSION = 'v4';
 const PWA_CACHE_VERSION_KEY = 'pwaCacheVersion';
+const isProductionBuild = process.env.NODE_ENV === 'production';
 
-export const cacheAppPages = async () => {
+export const cacheAppPages = async (): Promise<boolean> => {
+  if (!isProductionBuild) {
+    return false;
+  }
+
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -51,7 +56,26 @@ export const cacheAppPages = async () => {
   } else {
     return Promise.reject(new Error('Service Worker unsupported'));
   }
+
+  return false;
 };
+
+async function disableDevelopmentServiceWorkers() {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if ('caches' in window) {
+    const cacheKeys = await caches.keys();
+    await Promise.all(
+      cacheKeys
+        .filter((cacheKey) => cacheKey.startsWith('goalgenius-'))
+        .map((cacheKey) => caches.delete(cacheKey)),
+    );
+  }
+
+  localStorage.removeItem('pwaCacheReady');
+  localStorage.removeItem(PWA_CACHE_VERSION_KEY);
+}
 
 export default function ServiceWorkerProvider({
   children,
@@ -100,18 +124,24 @@ export default function ServiceWorkerProvider({
     };
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((reg) => {
-          console.log('✅ Service Worker registered:', reg.scope);
-          void navigator.serviceWorker.ready.then(() => prepareOfflineApp());
-        })
-        .catch((err) => console.error('❌ SW registration failed:', err));
+      if (!isProductionBuild) {
+        void disableDevelopmentServiceWorkers().catch((error) => {
+          console.warn('Development service worker cleanup failed:', error);
+        });
+      } else {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((reg) => {
+            console.log('✅ Service Worker registered:', reg.scope);
+            void navigator.serviceWorker.ready.then(() => prepareOfflineApp());
+          })
+          .catch((err) => console.error('❌ SW registration failed:', err));
 
-      navigator.serviceWorker.addEventListener(
-        'message',
-        handleServiceWorkerMessage,
-      );
+        navigator.serviceWorker.addEventListener(
+          'message',
+          handleServiceWorkerMessage,
+        );
+      }
     }
 
     const handleOnline = () => {
