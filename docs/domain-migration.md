@@ -114,9 +114,9 @@ Edit. The deployed allowlist accepts `rungset.com`,
 version `d7be61fd` reports no editor problems.
 
 The new hostname responds to the Worker contract (`GET` is rejected with
-`405`; `POST` and `OPTIONS` are allowed). A synthetic feedback POST was
-not submitted during this pass, so delivery to the configured mailbox remains
-the only unconfirmed feedback check.
+`405`; `POST` and `OPTIONS` are allowed). A synthetic production POST
+from `https://rungset.com` returned `200` with the Worker success response,
+confirming the end-to-end submission path.
 
 ## Analytics and search
 
@@ -171,6 +171,5 @@ repository metadata was not changed.
 
 1. Run the full authenticated CRUD/export/check-in/logout regression with a
    disposable test goal.
-2. Submit one synthetic feedback form and confirm the Worker delivery result.
-3. Configure transactional email only if email verification or password-reset
+2. Configure transactional email only if email verification or password-reset
    flows are required.
