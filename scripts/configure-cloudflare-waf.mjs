@@ -34,6 +34,16 @@ const DATA_API_PATHS = [
   "/api/milestones",
   "/api/notes",
   "/api/todos",
+  "/api/export",
+  "/api/todo-occurrences",
+];
+
+const DATA_API_PREFIXES = [
+  "/api/checkins/",
+  "/api/goals/",
+  "/api/milestones/",
+  "/api/notes/",
+  "/api/todos/",
 ];
 
 const ALLOWED_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"];
@@ -58,15 +68,26 @@ const knownPathExpression = [
     ...withOptionalTrailingSlash(DATA_API_PATHS),
     "/api/auth",
   ])}`,
+  ...DATA_API_PREFIXES.map(
+    (prefix) =>
+      `starts_with(lower(http.request.uri.path), ${JSON.stringify(prefix)})`,
+  ),
+  'starts_with(lower(http.request.uri.path), "/goals/")',
   ...ALLOWED_PREFIXES.map(
     (prefix) =>
       `starts_with(lower(http.request.uri.path), ${JSON.stringify(prefix)})`,
   ),
 ].join(" or ");
 
-const dataApiExpression = `lower(http.request.uri.path) in ${quoteSet(
-  withOptionalTrailingSlash(DATA_API_PATHS),
-)}`;
+const dataApiExpression = `(${[
+  `lower(http.request.uri.path) in ${quoteSet(
+    withOptionalTrailingSlash(DATA_API_PATHS),
+  )}`,
+  ...DATA_API_PREFIXES.map(
+    (prefix) =>
+      `starts_with(lower(http.request.uri.path), ${JSON.stringify(prefix)})`,
+  ),
+].join(" or ")})`;
 
 const hasSessionCookieExpression = [
   'http.cookie contains "__Secure-better-auth.session_token="',

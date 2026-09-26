@@ -39,6 +39,11 @@
   "observability": {
     "enabled": true,
   },
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://app.rungset.com",
+    "NEXT_PUBLIC_BETTER_AUTH_URL": "https://app.rungset.com",
+    "NEXT_PUBLIC_SITE_URL": "https://rungset.com",
+  },
   "d1_databases": [
     {
       "binding": "DB",
