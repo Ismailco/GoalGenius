@@ -20,10 +20,12 @@ being observed:
 - `app.goalgenius.online` -> `https://app.rungset.com` with path and query preserved.
 - `www.app.goalgenius.online` -> `https://app.rungset.com` with path and query preserved.
 
-The marketing site was deployed to Pages as deployment
-`0daa9c7d.goalgenius-website.pages.dev`. The application Worker was deployed
-with version `4aa4b27b-bae4-4282-8097-330ed456d5e0`; the immediately previous
-production version was `d37eb9ee-a620-4c88-bc3a-cab19c929634`.
+The previously verified Pages deployment was
+`0daa9c7d.goalgenius-website.pages.dev`. The feedback-hostname source change
+was pushed as commit `e79ef3f` and Cloudflare Pages created deployment
+`a9f56abe-b403-4c16-895d-d849e4fc5ce9` from that commit. The application
+Worker production version is `4aa4b27b-bae4-4282-8097-330ed456d5e0`; the
+rollback target is `d37eb9ee-a620-4c88-bc3a-cab19c929634`.
 
 ## Application configuration
 
@@ -42,89 +44,133 @@ The Worker was deployed with `--keep-vars`, so existing secrets and unrelated
 production variables were retained. A fresh production build was used because
 the public Next.js values are build-time inputs.
 
-## Authentication and email
+## OAuth and authentication
 
-The new sign-in page, Better Auth session endpoint, and Google/GitHub social
-sign-in initiation endpoints respond successfully on `app.rungset.com`. The
-application still retains the old app origins for transition compatibility.
+The exact production Better Auth callbacks captured from the live provider
+requests are:
+
+- Google: `https://app.rungset.com/api/auth/callback/google`
+- GitHub: `https://app.rungset.com/api/auth/callback/github`
+
+Google’s matching production Web client now contains the Rungset JavaScript
+origin and callback while retaining localhost and the old GoalGenius values
+for transition. A full Google flow completed through the callback and opened
+an authenticated Rungset dashboard session.
+
+The matching GitHub OAuth App was updated to application name `Rungset`,
+homepage `https://rungset.com`, and callback
+`https://app.rungset.com/api/auth/callback/github`. A full GitHub flow
+completed through the callback and opened an authenticated Rungset dashboard
+session. The old single GitHub callback is no longer the active callback.
 
 The current repository does not contain a transactional email provider,
 sender configuration, verification-email hook, or password-reset email hook.
 No email sender migration was attempted, and no email delivery claim should be
 made until an email provider is explicitly configured and tested.
 
-Provider-dashboard verification remains required for the exact Google and
-GitHub callback allowlists. The runtime callback base is the new app origin and
-the old origin remains available for rollback/transition purposes.
+The runtime callback base is the new app origin. The old Google callback and
+localhost values remain available for transition; GitHub’s single callback was
+switched to the production Rungset callback.
 
 ## Redirect verification
 
 Browser verification passed for:
 
-- `goalgenius.online/docs?source=migration` ->
-  `rungset.com/docs/?source=migration`.
-- `www.goalgenius.online/privacy?source=migration` ->
-  `rungset.com/privacy/?source=migration`.
-- `app.goalgenius.online/auth/signin?source=migration` ->
-  `app.rungset.com/auth/signin?source=migration`.
-- `www.app.goalgenius.online/goals/example?source=migration` ->
-  `app.rungset.com/auth/signin?callbackUrl=%2Fgoals%2Fexample%3Fsource%3Dmigration`.
-- `www.rungset.com/terms?source=check` ->
-  `rungset.com/terms/?source=check`.
+- `goalgenius.online/docs?source=stabilization` ->
+  `rungset.com/docs/?source=stabilization`.
+- `www.goalgenius.online/privacy?source=stabilization` ->
+  `rungset.com/privacy/?source=stabilization`.
+- `app.goalgenius.online/auth/signin?source=stabilization` ->
+  `app.rungset.com/auth/signin?source=stabilization`.
+- `www.app.goalgenius.online/goals/redirect-check-rungset-20260926?source=stabilization` ->
+  `app.rungset.com/auth/signin?callbackUrl=%2Fgoals%2Fredirect-check-rungset-20260926%3Fsource%3Dstabilization`.
+- `www.rungset.com/terms?source=stabilization` ->
+  `rungset.com/terms/?source=stabilization`.
 
 The trailing slash on static marketing routes is the normal static-export
 normalization and does not remove the query string.
 
 ## Cloudflare security
 
-The new Pages custom domains are active with SSL, and the app custom domain is
-active on the existing Worker. The WAF policy was not applied because the
-available authenticated session does not include the required Zone WAF Edit
-permission and no scoped WAF token was available.
+Cloudflare dashboard verification shows two active custom rules: the narrow
+Rungset application-surface rule and a managed challenge rule for suspicious
+automated clients. One active authentication-write rate-limit rule covers the
+Better Auth email/social sign-in and sign-up write endpoints.
 
-The local WAF configuration script was corrected and committed so its intended
-allowlist covers dynamic goal pages, `/api/export`, `/api/todo-occurrences`,
-and the dynamic goal, milestone, note, todo, and check-in API prefixes. The
-policy must still be reviewed and applied with a properly scoped token or from
-the Cloudflare dashboard.
+The application-surface rule covers dynamic `/goals/*`, `/api/export`,
+`/api/todo-occurrences`, Better Auth, and the dynamic goal, milestone, note,
+todo, and check-in API prefixes. WAF was not disabled globally.
 
 ## Feedback Worker
 
-The public feedback form still uses the existing endpoint
-`goalgenius-feedback-form.soultware.workers.dev`. Its Worker source/configuration
-was not present in either GoalGenius repository, so it was not renamed or
-repointed without a verified replacement. The endpoint remains a known
-legacy-branded external dependency and should be migrated only after its owning
-Worker source, bindings, and delivery behavior are identified.
+The existing Worker `goalgenius-feedback-form` now has the custom domain
+`https://feedback.rungset.com`. The original
+`goalgenius-feedback-form.soultware.workers.dev` endpoint remains attached.
+
+The public marketing form now targets `https://feedback.rungset.com`. The
+Worker’s legacy CORS-only response was found and corrected in Cloudflare Quick
+Edit. The deployed allowlist accepts `rungset.com`,
+`www.rungset.com`, and the legacy GoalGenius marketing origins; active Worker
+version `d7be61fd` reports no editor problems.
+
+The new hostname responds to the Worker contract (`GET` is rejected with
+`405`; `POST` and `OPTIONS` are allowed). A synthetic feedback POST was
+not submitted during this pass, so delivery to the configured mailbox remains
+the only unconfirmed feedback check.
 
 ## Analytics and search
 
 No analytics provider or measurement ID is present in the marketing-site
-source, so no analytics property was changed. Search Console was not changed
-because no authenticated Search Console session was available. The deployed
-marketing site should be added to Search Console and its sitemap submitted
-manually when access is available.
+source, so no analytics property was changed. The `rungset.com` Domain
+property was verified in Google Search Console using Cloudflare DNS
+authorization, and `https://rungset.com/sitemap.xml` was submitted
+successfully. Existing GoalGenius properties were not removed.
+
+The live app manifest reports `Rungset` for both `name` and `short_name`,
+with `start_url: "/"` and standalone display. The live service worker is
+version `v5`, uses Rungset cache names, and removes old `goalgenius-*` and
+stale Rungset caches. Browser verification observed successful
+service-worker registration at the app origin and no app-specific console
+errors in the captured app logs.
+
+Local app typecheck, tests, and production build passed. The marketing lint
+and static export build passed, including generated `robots.txt` and
+`sitemap.xml` routes.
 
 ## Rollback notes
 
 - Cloudflare Worker rollback target: version
   `d37eb9ee-a620-4c88-bc3a-cab19c929634`.
+- Current application Worker version:
+  `4aa4b27b-bae4-4282-8097-330ed456d5e0`.
+- Feedback Worker corrected active version: `d7be61fd`.
 - The old app and marketing custom domains remain attached, so redirects can
   be disabled or adjusted without deleting DNS records.
 - Pages deployment history remains available in Cloudflare Pages for restoring
   the previous marketing deployment.
-- Do not remove legacy OAuth callback entries or old domains until the new
-  provider callbacks, email links, and active-session behavior are confirmed.
+- Legacy domains, old Google OAuth entries where supported, and the original
+  feedback workers.dev hostname remain available for transition.
 
-## Remaining manual actions
+## Authenticated smoke-test boundary
 
-1. Verify/add Google OAuth origins and callback URLs for `app.rungset.com`.
-2. Verify/update the GitHub OAuth callback URL for `app.rungset.com`.
-3. Configure and test a transactional email provider if verification or reset
-   emails are required.
-4. Apply the reviewed WAF rules with Zone WAF Edit access.
-5. Identify and migrate the external feedback Worker behind a Rungset-facing
-   hostname, preserving the old endpoint during transition.
-6. Add `rungset.com` to Search Console and submit its sitemap.
-7. Update any external analytics, repository metadata, or official social/listing
-   profiles when authenticated access is available.
+The dashboard was reached through completed Google and GitHub OAuth sessions,
+and signed-in navigation and existing goal data rendered. A full destructive
+CRUD pass against a temporary goal, milestone, task, recurrence, check-in,
+export, and logout cycle was not completed in this pass. No real user content
+was modified or deleted.
+
+The existing migration commits are pushed to their existing `main` branches:
+
+- App: `c0c0de6`, `808301b`, and prior rebrand commit `67e4c33`.
+- Marketing: `279b66b` and feedback-hostname commit `e79ef3f`.
+
+No repository slug was renamed, no force push was used, and optional GitHub
+repository metadata was not changed.
+
+## Remaining blockers
+
+1. Run the full authenticated CRUD/export/check-in/logout regression with a
+   disposable test goal.
+2. Submit one synthetic feedback form and confirm the Worker delivery result.
+3. Configure transactional email only if email verification or password-reset
+   flows are required.
