@@ -22,6 +22,8 @@ const trustedOrigins = Array.from(
       "http://localhost",
       "http://localhost:3000",
       "http://localhost:8787",
+      "https://app.rungset.com",
+      // Keep the former app origins trusted during the domain migration.
       "https://app.goalgenius.online",
       "https://www.app.goalgenius.online",
       authBaseURL ? new URL(authBaseURL).origin : undefined,

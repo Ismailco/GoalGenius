@@ -1,5 +1,5 @@
 const DEFAULT_CALLBACK_URL = "/dashboard";
-const CALLBACK_BASE_URL = "https://goalgenius.invalid";
+const CALLBACK_BASE_URL = "https://rungset.invalid";
 const CALLBACK_BASE_ORIGIN = new URL(CALLBACK_BASE_URL).origin;
 
 export function getSafeCallbackUrl(callbackUrl: string | null): string {

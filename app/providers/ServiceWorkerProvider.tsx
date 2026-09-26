@@ -6,7 +6,7 @@ import { isPublicPath } from '@/components/app/shared/navigation';
 import { syncWorkspaceData } from '@/lib/storage';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
-const PWA_CACHE_VERSION = 'v4';
+const PWA_CACHE_VERSION = 'v5';
 const PWA_CACHE_VERSION_KEY = 'pwaCacheVersion';
 const isProductionBuild = process.env.NODE_ENV === 'production';
 
@@ -68,7 +68,10 @@ async function disableDevelopmentServiceWorkers() {
     const cacheKeys = await caches.keys();
     await Promise.all(
       cacheKeys
-        .filter((cacheKey) => cacheKey.startsWith('goalgenius-'))
+        .filter(
+          (cacheKey) =>
+            cacheKey.startsWith('goalgenius-') || cacheKey.startsWith('rungset-'),
+        )
         .map((cacheKey) => caches.delete(cacheKey)),
     );
   }

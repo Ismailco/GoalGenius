@@ -139,7 +139,10 @@ export async function clearOfflineCaches(): Promise<void> {
   const cacheKeys = await caches.keys();
   await Promise.all(
     cacheKeys
-      .filter((cacheKey) => cacheKey.startsWith('goalgenius-'))
+      .filter(
+        (cacheKey) =>
+          cacheKey.startsWith('goalgenius-') || cacheKey.startsWith('rungset-'),
+      )
       .map((cacheKey) => caches.delete(cacheKey)),
   );
   localStorage.removeItem('pwaCacheReady');

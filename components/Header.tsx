@@ -63,7 +63,7 @@ export default function Header() {
 				<div className="max-w-7xl mx-auto px-4 pt-3 pb-0 sm:py-3 sm:px-4">
 					<div className="flex justify-between items-center">
 						<div className="flex items-center">
-							<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
+							<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">Rungset</h1>
 						</div>
 					</div>
 				</div>
@@ -108,7 +108,7 @@ export default function Header() {
 								</svg>
 							</div>
 							<div>
-								<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
+								<h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">Rungset</h1>
 								<p className="text-sm text-gray-400">Transform your aspirations into achievements</p>
 							</div>
 						</div>
@@ -143,7 +143,7 @@ export default function Header() {
 							</svg>
 						</div>
 						<div>
-							<h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">GoalGenius</h1>
+							<h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">Rungset</h1>
 						</div>
 					</div>
 				</div>

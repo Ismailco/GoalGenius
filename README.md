@@ -1,12 +1,12 @@
-# GoalGenius
+# Rungset application
 
-GoalGenius is an open-source beta for turning long-term goals into weekly actions and measurable progress.
+Rungset is an open-source beta for turning long-term goals into weekly actions and measurable progress.
 
 The core loop is: **Goal → Milestone → Task → Completion → Check-in → Review → Adjust**.
 
 ## Status
 
-GoalGenius is currently a focused beta. Goals, milestones, tasks, check-ins, notes, offline caching, recurring task history, task reminders, export, and Better Auth are implemented. Calendar synchronization, analytics, and team features are intentionally not presented as finished features.
+Rungset is currently a focused beta. Goals, milestones, tasks, check-ins, notes, offline caching, recurring task history, task reminders, export, and Better Auth are implemented. Calendar synchronization, analytics, and team features are intentionally not presented as finished features.
 
 ## Features
 
@@ -72,4 +72,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Keep chan
 
 ## License
 
-GoalGenius is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
+Rungset is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).

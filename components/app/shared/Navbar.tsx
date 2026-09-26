@@ -58,7 +58,7 @@ export default function Navbar() {
 
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            GoalGenius
+            Rungset
           </p>
           <p className="truncate text-sm font-semibold text-white">
             {activeItem?.name ?? 'Workspace'}
@@ -87,7 +87,7 @@ export default function Navbar() {
               <AppLogoMark />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  GoalGenius
+                  Rungset
                 </p>
                 <p className="text-sm font-semibold text-white">Workspace</p>
               </div>

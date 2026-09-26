@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
 const API_BASE_URL = "https://api.cloudflare.com/client/v4";
-const ZONE_NAME = "goalgenius.online";
-const HOSTS = ["app.goalgenius.online", "www.app.goalgenius.online"];
+const ZONE_NAME = "rungset.com";
+const HOSTS = ["app.rungset.com"];
 
 const PAGE_PATHS = [
   "/",
@@ -75,7 +75,7 @@ const hasSessionCookieExpression = [
 
 const customRules = [
   {
-    description: "GoalGenius - block traffic outside application surface",
+    description: "Rungset - block traffic outside application surface",
     expression: `(${hostnameExpression} and (not http.request.method in ${quoteSet(
       ALLOWED_METHODS,
     )} or not (${knownPathExpression}) or (${dataApiExpression} and not (${hasSessionCookieExpression}))))`,
@@ -83,7 +83,7 @@ const customRules = [
     enabled: true,
   },
   {
-    description: "GoalGenius - challenge suspicious automated clients",
+    description: "Rungset - challenge suspicious automated clients",
     expression: `(${hostnameExpression} and not cf.client.bot and (len(http.user_agent) eq 0 or lower(http.user_agent) contains "curl/" or lower(http.user_agent) contains "wget/" or lower(http.user_agent) contains "python-requests" or lower(http.user_agent) contains "go-http-client" or lower(http.user_agent) contains "sqlmap" or lower(http.user_agent) contains "nikto" or lower(http.user_agent) contains "masscan" or lower(http.user_agent) contains "zgrab" or lower(http.user_agent) contains "gobuster" or lower(http.user_agent) contains "ffuf" or lower(http.user_agent) contains "wpscan"))`,
     action: "managed_challenge",
     enabled: true,
@@ -92,7 +92,7 @@ const customRules = [
 
 const rateLimitRules = [
   {
-    description: "GoalGenius - rate limit authentication writes",
+    description: "Rungset - rate limit authentication writes",
     expression:
       '(lower(http.request.uri.path) in {"/api/auth/sign-in/email" "/api/auth/sign-in/social" "/api/auth/sign-up/email"})',
     action: "block",
@@ -229,13 +229,13 @@ async function main() {
   await upsertRules(
     zoneId,
     "http_request_firewall_custom",
-    "GoalGenius application traffic protection",
+    "Rungset application traffic protection",
     customRules,
   );
   await upsertRules(
     zoneId,
     "http_ratelimit",
-    "GoalGenius authentication rate limits",
+    "Rungset authentication rate limits",
     rateLimitRules,
   );
 }

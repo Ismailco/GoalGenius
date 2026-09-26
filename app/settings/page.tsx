@@ -414,7 +414,7 @@ export default function SettingsPage() {
     <AppPage>
       <AppPageHeader
         eyebrow="Settings"
-        title="Control how GoalGenius behaves"
+        title="Control how Rungset behaves"
         description="Manage the app behavior, offline readiness, notifications, and your workspace data from one place."
         meta={
           <>
@@ -525,7 +525,7 @@ export default function SettingsPage() {
             <ToggleRow
               checked={settings.enableInAppNotifications}
               label="Enable in-app toast notifications"
-              description="Controls the notification toasts that appear inside GoalGenius."
+              description="Controls the notification toasts that appear inside Rungset."
               onChange={(checked) =>
                 updateSettings({ enableInAppNotifications: checked })
               }

@@ -1,8 +1,8 @@
-# Contributing to GoalGenius
+# Contributing to Rungset
 
-GoalGenius is a focused beta. Keep contributions centered on the goal → milestone → task → check-in loop and avoid speculative feature surface.
+Rungset is a focused beta. Keep contributions centered on the goal → milestone → task → check-in loop and avoid speculative feature surface.
 
-First off, thank you for considering contributing to GoalGenius! It's people like you that make GoalGenius such a great tool.
+First off, thank you for considering contributing to Rungset! It's people like you that make Rungset such a great tool.
 
 ## Code of Conduct
 
@@ -152,14 +152,14 @@ goalgenius/
 
 If you have any questions, please feel free to:
 
-1. Check the in-app documentation at [https://goalgenius.online/docs](https://goalgenius.online/docs)
+1. Check the in-app documentation at [https://rungset.com/docs](https://rungset.com/docs)
 2. Create an issue for discussion
 3. Reach out through GitHub issues
 
 ## License
 
-By contributing to GoalGenius, you agree that your contributions will be licensed under its AGPLv3 license.
+By contributing to Rungset, you agree that your contributions will be licensed under its AGPLv3 license.
 
 ---
 
-Thank you for contributing to GoalGenius! 🎯
+Thank you for contributing to Rungset! 🎯

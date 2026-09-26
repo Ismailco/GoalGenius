@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import logoMark from '@/public/images/logo_full_trans_white.png';
+import logoMark from '@/public/images/rungset-logo-mark.png';
 
 interface AppLogoMarkProps {
   className?: string;
@@ -10,7 +10,7 @@ export default function AppLogoMark({ className = '' }: AppLogoMarkProps) {
     <div className={`brand-mark ${className}`}>
       <Image
         src={logoMark}
-        alt="GoalGenius logo"
+        alt="Rungset logo"
         width={30}
         height={30}
         className="h-[30px] w-[30px] object-contain"

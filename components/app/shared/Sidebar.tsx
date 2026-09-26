@@ -52,7 +52,7 @@ export default function Sidebar() {
               <AppLogoMark className="shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  GoalGenius
+                  Rungset
                 </p>
                 <p className="truncate text-sm font-semibold text-white">
                   Focus Workspace

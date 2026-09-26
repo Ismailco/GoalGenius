@@ -84,7 +84,7 @@
 
   <!-- Text -->
   <text x="100" y="160" text-anchor="middle" font-family="sans-serif" font-size="24" fill="url(#brandGradient)" opacity="0">
-    GoalGenius
+    Rungset
     <animate
       attributeName="opacity"
       from="0"

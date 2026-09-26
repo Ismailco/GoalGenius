@@ -14,7 +14,7 @@ interface UserProfileProps {
 
 function getInitials(name?: string | null) {
   if (!name) {
-    return 'GG';
+    return 'RS';
   }
 
   return name

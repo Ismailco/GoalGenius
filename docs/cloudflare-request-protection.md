@@ -1,13 +1,13 @@
 # Cloudflare request protection
 
-GoalGenius uses a narrow, hostname-scoped Cloudflare WAF policy so requests
+Rungset uses a narrow, hostname-scoped Cloudflare WAF policy so requests
 outside the application's public surface are rejected before the Worker runs.
 The policy is maintained by `scripts/configure-cloudflare-waf.mjs`.
 
 ## What the policy protects
 
 - Only the known application pages, static assets, and API routes are allowed on
-  `app.goalgenius.online` and `www.app.goalgenius.online`.
+  `app.rungset.com`.
 - Methods outside `GET`, `HEAD`, `POST`, `PUT`, `DELETE`, and `OPTIONS` are
   blocked.
 - Data API requests without a Better Auth session cookie are blocked at the
@@ -25,7 +25,7 @@ Those headers can be absent in legitimate flows and can be spoofed by clients.
 ## Apply the rules
 
 Create a scoped Cloudflare API token with these permissions for the
-`goalgenius.online` zone:
+`rungset.com` zone:
 
 - Zone > Zone > Read
 - Zone > WAF > Edit
@@ -34,11 +34,11 @@ Keep the token outside the repository. Place it in a mode-`600` temporary file
 and pass only its path so the value is not stored in shell history:
 
 ```bash
-CLOUDFLARE_API_TOKEN_FILE=/tmp/goalgenius-waf-token pnpm run cf:waf
+CLOUDFLARE_API_TOKEN_FILE=/tmp/rungset-waf-token pnpm run cf:waf
 ```
 
 The script creates or updates only rules whose descriptions start with
-`GoalGenius -`; it preserves unrelated rules in both entry-point rulesets.
+`Rungset -`; it preserves unrelated rules in both entry-point rulesets.
 
 Review the generated expressions without changing Cloudflare:
 
@@ -59,11 +59,11 @@ Use a browser user agent for allowed-route probes because command-line clients
 are intentionally challenged:
 
 ```bash
-curl -I -A 'Mozilla/5.0' https://app.goalgenius.online/auth/signin
-curl -I -A 'Mozilla/5.0' https://app.goalgenius.online/dashboard
-curl -I -A 'Mozilla/5.0' https://app.goalgenius.online/manifest.json
-curl -I -A 'Mozilla/5.0' https://app.goalgenius.online/wp-plain.php
-curl -I -A 'Mozilla/5.0' https://app.goalgenius.online/api/goals
+curl -I -A 'Mozilla/5.0' https://app.rungset.com/auth/signin
+curl -I -A 'Mozilla/5.0' https://app.rungset.com/dashboard
+curl -I -A 'Mozilla/5.0' https://app.rungset.com/manifest.json
+curl -I -A 'Mozilla/5.0' https://app.rungset.com/wp-plain.php
+curl -I -A 'Mozilla/5.0' https://app.rungset.com/api/goals
 ```
 
 Expected results:

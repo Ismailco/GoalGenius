@@ -17,17 +17,22 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | GoalGenius',
-    default: 'GoalGenius - Track Your Goals',
+    template: '%s | Rungset',
+    default: 'Rungset - Build momentum, one rung at a time',
   },
-  description: 'Personal goal tracking and productivity dashboard',
+  description:
+    'Rungset turns goals into milestones, tasks, check-ins, and steady progress.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [{ url: '/images/rungset-app-icon.png', type: 'image/png' }],
+    apple: [{ url: '/images/rungset-app-icon.png', type: 'image/png' }],
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#08111e',
+  themeColor: '#102866',
 };
 
 export default function RootLayout({

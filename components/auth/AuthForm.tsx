@@ -11,7 +11,7 @@ import { getAuthError } from "@/lib/auth/auth-errors";
 import { getSafeCallbackUrl } from "@/lib/auth/callback-url";
 import { Target, Brain, TrendingUp, Users } from "lucide-react";
 import { cacheAppPages } from "@/app/providers/ServiceWorkerProvider";
-import logoTransWhite from "@/public/images/logo_full_trans_white.png";
+import logoTransWhite from "@/public/images/rungset-logo-full.png";
 
 interface AuthFormProps {
   mode: "signin" | "signup";
@@ -315,10 +315,10 @@ export function AuthForm({ mode }: AuthFormProps) {
             <div className="relative h-24 w-72 mx-auto mb-30 transform hover:scale-105 transition-transform duration-300">
               <Image
                 src={logoTransWhite}
-                alt="GoalGenius Logo"
+                alt="Rungset logo"
                 width={300}
                 height={120}
-                className="object-contain drop-shadow-lg"
+                className="rounded-2xl bg-white/95 p-4 object-contain drop-shadow-lg"
                 priority
               />
             </div>
@@ -380,7 +380,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       {/* Form Section - Right side on desktop, bottom on mobile */}
-      <div className="w-full md:w-1/2 p-8 flex items-center justify-center bg-white">
+      <div className="w-full md:w-1/2 p-8 flex items-center justify-center bg-white text-slate-900">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold">

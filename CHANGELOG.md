@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to GoalGenius are documented here.
+All notable changes to Rungset are documented here.
 
 ## [0.1.0-beta.1] - 2026-09-05
 

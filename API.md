@@ -1,6 +1,6 @@
-# GoalGenius API Documentation
+# Rungset API Documentation
 
-This document provides detailed information about the GoalGenius API endpoints. All API routes are prefixed with `/api`.
+This document provides detailed information about the Rungset API endpoints. All API routes are prefixed with `/api`.
 
 ## Authentication
 
@@ -279,7 +279,7 @@ The current API version is v1. All endpoints are currently unversioned, but futu
 ## Support
 
 If you encounter any issues or need help with the API:
-1. Check the in-app [documentation](https://goalgenius.online/docs)
+1. Check the in-app [documentation](https://rungset.com/docs)
 2. Create an issue on [GitHub](https://github.com/ismailco/goalgenius/issues)
 
 ---

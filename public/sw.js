@@ -1,7 +1,7 @@
-const CACHE_VERSION = 'v4';
-const APP_SHELL_CACHE = `goalgenius-app-shell-${CACHE_VERSION}`;
-const RUNTIME_CACHE = `goalgenius-runtime-${CACHE_VERSION}`;
-const STATIC_CACHE = `goalgenius-static-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v5';
+const APP_SHELL_CACHE = `rungset-app-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `rungset-runtime-${CACHE_VERSION}`;
+const STATIC_CACHE = `rungset-static-${CACHE_VERSION}`;
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 const IS_LOCAL_HOST = LOCAL_HOSTNAMES.has(self.location.hostname);
 
@@ -25,12 +25,10 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/favicon.ico',
   '/splash.svg',
-  '/images/logo.png',
-  '/images/logo_full.png',
-  '/images/logo_trans_white.png',
-  '/images/logo_trans_dark.png',
-  '/images/logo_full_trans_white.png',
-  '/images/logo_full_trans_dark.png',
+  '/images/rungset-logo-mark.png',
+  '/images/rungset-logo-full.png',
+  '/images/rungset-app-icon.png',
+  '/images/rungset-banner-wide.png',
 ];
 
 const PRECACHE_URLS = [...APP_ROUTES, ...STATIC_ASSETS];
@@ -139,7 +137,10 @@ async function cleanupOldCaches() {
 
   await Promise.all(
     cacheNames
-      .filter((cacheName) => cacheName.startsWith('goalgenius-') && !currentCaches.has(cacheName))
+      .filter((cacheName) =>
+        (cacheName.startsWith('goalgenius-') || cacheName.startsWith('rungset-')) &&
+        !currentCaches.has(cacheName),
+      )
       .map((cacheName) => caches.delete(cacheName)),
   );
 }
@@ -175,7 +176,7 @@ async function networkFirst(request) {
     }
 
     if (request.mode === 'navigate') {
-      return caches.match('/') || new Response('GoalGenius is offline.', {
+      return caches.match('/') || new Response('Rungset is offline.', {
         headers: { 'Content-Type': 'text/plain' },
         status: 503,
       });
