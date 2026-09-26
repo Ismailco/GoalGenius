@@ -45,7 +45,7 @@ export default function AppShell({
 
   if (!isPublicRoute && (!authCheckReady || isPending || logoutRequested || !session)) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--bg)] p-6">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg-canvas)] p-6">
         <div className="text-sm text-[var(--text-secondary)]" role="status">
           Checking your session…
         </div>
@@ -55,10 +55,17 @@ export default function AppShell({
 
   return (
     <div className="app-shell flex min-h-screen">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       {!isPublicRoute && <Sidebar />}
       <main
+        id="main-content"
+        tabIndex={-1}
         className={`shell-main ${
-          isPublicRoute ? '' : 'pb-28 pt-24 md:pb-8 md:pt-8'
+          isPublicRoute
+            ? ''
+            : 'pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pb-8 lg:pt-8'
         }`}
       >
         {children}

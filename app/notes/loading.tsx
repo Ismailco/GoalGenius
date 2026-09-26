@@ -1,5 +1,5 @@
-import PageLoading from "@/components/PageLoading";
+import NotesSkeleton from '@/components/app/notes/NotesSkeleton';
 
 export default function Loading() {
-  return <PageLoading />;
+  return <div className="app-page"><NotesSkeleton /></div>;
 }

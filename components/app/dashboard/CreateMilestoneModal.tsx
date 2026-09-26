@@ -11,9 +11,10 @@ import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateMilestoneModalProps {
   goal?: Goal;
+  onCreated?: () => void | Promise<void>;
 }
 
-export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilestoneModalProps) {
+export default function CreateMilestoneModal({ goal: initialGoal, onCreated }: CreateMilestoneModalProps) {
   const { hideModal } = useModal();
   const [selectedGoal, setSelectedGoal] = useState<Goal | undefined>(initialGoal);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -92,7 +93,11 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
         };
         await createMilestone(milestone);
         hideModal();
-        window.location.reload();
+        if (onCreated) {
+          await onCreated();
+        } else {
+          window.location.reload();
+        }
       },
       setIsLoading,
       (error) => {
@@ -107,7 +112,7 @@ export default function CreateMilestoneModal({ goal: initialGoal }: CreateMilest
   };
 
   return (
-    <div className="space-y-6 relative" role="dialog" aria-label="Create Milestone">
+    <div className="space-y-6 relative">
       {isLoading && <LoadingOverlay />}
       {!initialGoal && (
         <div>

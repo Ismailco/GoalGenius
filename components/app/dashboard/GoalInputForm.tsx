@@ -112,9 +112,11 @@ export default function GoalInputForm({ onSubmit, onCancel, initialData, submitL
           className={`app-field mt-1 ${errors.title ? 'border-red-500' : ''}`}
           placeholder="Enter goal title"
           required
+          aria-invalid={!!errors.title}
+          aria-describedby={errors.title ? 'goal-title-error' : undefined}
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-red-500">{errors.title}</p>
+          <p id="goal-title-error" className="app-form-error mt-1" role="alert">{errors.title}</p>
         )}
       </div>
 
@@ -130,9 +132,11 @@ export default function GoalInputForm({ onSubmit, onCancel, initialData, submitL
           className={`app-field mt-1 ${errors.description ? 'border-red-500' : ''}`}
           placeholder="Describe your goal"
           rows={3}
+          aria-invalid={!!errors.description}
+          aria-describedby={errors.description ? 'goal-description-error' : undefined}
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+          <p id="goal-description-error" className="app-form-error mt-1" role="alert">{errors.description}</p>
         )}
       </div>
 
@@ -171,7 +175,7 @@ export default function GoalInputForm({ onSubmit, onCancel, initialData, submitL
         </select>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="app-form-actions pt-4">
         <button
           type="button"
           onClick={onCancel}

@@ -1,6 +1,6 @@
 'use client';
 
-import { GoalCategory, TimeFrame } from '@/app/types';
+import { Goal, GoalCategory, TimeFrame } from '@/app/types';
 import { createGoal } from '@/lib/storage';
 import { useModal } from '@/app/providers/ModalProvider';
 import GoalInputForm from '@/components/app/dashboard/GoalInputForm';
@@ -8,8 +8,14 @@ import AlertModal from '@/components/common/AlertModal';
 import { useState } from 'react';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingOverlay } from '@/components/common/LoadingSpinner';
+import { Plus } from 'lucide-react';
 
-export default function CreateGoalModal() {
+interface CreateGoalModalProps {
+  onCreated?: (goal: Goal) => void | Promise<void>;
+  label?: string;
+}
+
+export default function CreateGoalModal({ onCreated, label = 'Add Goal' }: CreateGoalModalProps) {
   const { showModal, hideModal } = useModal();
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
@@ -32,13 +38,17 @@ export default function CreateGoalModal() {
   }) => {
     await handleAsyncOperation(
       async () => {
-        await createGoal({
+        const createdGoal = await createGoal({
           ...data,
           status: 'not-started',
           progress: 0,
         });
         hideModal();
-        window.location.reload();
+        if (onCreated) {
+          await onCreated(createdGoal);
+        } else {
+          window.location.reload();
+        }
       },
       setIsLoading,
       (error) => {
@@ -67,16 +77,8 @@ export default function CreateGoalModal() {
         className="app-button"
         aria-label="Create new goal"
       >
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-        Add Goal
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        {label}
       </button>
 
       {alert.show && (

@@ -41,5 +41,6 @@ test('local workspace data is cleared across account transitions', async ({ page
   await signUp(page, 'Cache Owner B', `cache-b-${suffix}@example.com`);
   expect(await page.evaluate(() => localStorage.getItem('userId'))).not.toBe(accountAStorage.userId);
   await expect(page.getByText('Private goal for account A')).not.toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Start with one meaningful goal' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No tasks yet' })).toBeVisible();
 });

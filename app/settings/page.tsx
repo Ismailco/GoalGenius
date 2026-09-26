@@ -16,7 +16,7 @@ import {
 import { useNotification } from '@/app/providers/NotificationProvider';
 import { cacheAppPages } from '@/app/providers/ServiceWorkerProvider';
 import type { Todo } from '@/app/types';
-import { AppPage, AppPageHeader, AppPanel } from '@/components/app/shared/AppPage';
+import { AppPage, AppPanel } from '@/components/app/shared/AppPage';
 import AlertModal from '@/components/common/AlertModal';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import {
@@ -75,7 +75,7 @@ interface ToggleRowProps {
 
 function ToggleRow({ checked, description, label, onChange }: ToggleRowProps) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[20px] border border-white/10 bg-[rgba(8,17,30,0.42)] px-4 py-4">
+    <div className="app-setting-row">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white">{label}</p>
         <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
@@ -89,14 +89,11 @@ function ToggleRow({ checked, description, label, onChange }: ToggleRowProps) {
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className={`mt-0.5 flex h-7 w-12 shrink-0 items-center rounded-full border p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel-strong)] ${
-          checked
-            ? 'border-[rgba(93,166,255,0.32)] bg-[rgba(93,166,255,0.24)]'
-            : 'border-white/10 bg-white/5'
-        }`}
+        data-checked={checked}
+        className="app-switch mt-0.5 focus-visible:outline-none"
       >
         <span
-          className={`h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : ''}`}
+          className="app-switch-thumb"
         />
       </button>
     </div>
@@ -111,11 +108,11 @@ function MetricCard({
   value: number;
 }) {
   return (
-    <div className="surface-card-compact surface-card">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+    <div className="border-b border-[var(--border-subtle)] py-3 last:border-b-0">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
         {label}
       </p>
-      <p className="mt-3 text-3xl font-bold tracking-[-0.04em] text-white">
+      <p className="mt-1 text-xl font-semibold tracking-[-0.02em] text-white">
         {value}
       </p>
     </div>
@@ -126,7 +123,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const { hasPermission, requestPermission } = useNotification();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pwaCacheReady, setPwaCacheReady] = useState(false);
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermissionState>('default');
@@ -241,7 +238,7 @@ export default function SettingsPage() {
       const workspaceExport = await getWorkspaceExport();
 
       downloadJsonFile(
-        `goalgenius-workspace-${new Date().toISOString().slice(0, 10)}.json`,
+        `rungset-workspace-${new Date().toISOString().slice(0, 10)}.json`,
         workspaceExport,
       );
 
@@ -412,22 +409,17 @@ export default function SettingsPage() {
 
   return (
     <AppPage>
-      <AppPageHeader
-        eyebrow="Settings"
-        title="Control how Rungset behaves"
-        description="Manage the app behavior, offline readiness, notifications, and your workspace data from one place."
-        meta={
-          <>
-            <span className={`app-pill ${isOnline ? 'app-pill-success' : 'app-pill-warning'}`}>
-              {isOnline ? 'Online' : 'Offline'}
-            </span>
-            <span className="app-pill app-pill-blue">{notificationStatusLabel} notifications</span>
-            <span className={`app-pill ${pwaCacheReady ? 'app-pill-success' : 'app-pill-warning'}`}>
-              {pwaCacheReady ? 'Offline cache ready' : 'Offline cache not ready'}
-            </span>
-          </>
-        }
-      />
+      <header className="flex flex-col gap-3 border-b border-[var(--border-subtle)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-description">Manage your Rungset preferences.</p>
+        </div>
+        <div className="flex flex-wrap gap-2" aria-label="Workspace status">
+          <span className={`app-pill ${isOnline ? 'app-pill-success' : 'app-pill-warning'}`}>{isOnline ? 'Online' : 'Offline'}</span>
+          <span className="app-pill app-pill-blue">{notificationStatusLabel} notifications</span>
+          <span className={`app-pill ${pwaCacheReady ? 'app-pill-success' : 'app-pill-warning'}`}>{pwaCacheReady ? 'Offline cache ready' : 'Offline cache not ready'}</span>
+        </div>
+      </header>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <AppPanel className="p-6">
@@ -640,7 +632,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-x-6 md:grid-cols-5">
             <MetricCard label="Goals" value={counts.goals} />
             <MetricCard label="Milestones" value={counts.milestones} />
             <MetricCard label="Notes" value={counts.notes} />
@@ -648,7 +640,7 @@ export default function SettingsPage() {
             <MetricCard label="Check-ins" value={counts.checkIns} />
           </div>
 
-          <div className="mt-6 rounded-[20px] border border-white/10 bg-[rgba(8,17,30,0.42)] p-4">
+          <div className="mt-6 border-t border-[var(--border-subtle)] pt-4">
             <p className="text-sm font-semibold text-white">Total tracked items</p>
             <p className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white">
               {totalItems}

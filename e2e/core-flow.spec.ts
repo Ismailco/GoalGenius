@@ -31,7 +31,8 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
   await page.getByLabel('Confirm Password').fill('GoalGenius-e2e-2026');
   await page.getByRole('button', { name: 'Sign up', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
-  await expect(page.getByRole('heading', { name: 'Start with one meaningful goal' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No tasks yet' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Create new goal' }).first().click();
   await page.getByLabel('Title', { exact: true }).fill('Ship browser-tested beta');
@@ -45,7 +46,7 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
   await expect(page.getByRole('heading', { name: 'Ship browser-tested beta' })).toBeVisible();
   const goalUrl = page.url();
 
-  await page.getByRole('button', { name: 'Create new milestone' }).last().click();
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).last().click();
   await expect(page.getByRole('heading', { name: 'Create New Milestone' })).toBeVisible();
   await page.getByLabel('Title', { exact: true }).fill('Beta workflow');
   await page.getByLabel('Description', { exact: true }).fill('Complete the first useful execution loop.');
@@ -54,19 +55,19 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
   await expect(page.getByText('Beta workflow')).toBeVisible();
 
   const milestonesSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Milestones' }) });
-  await milestonesSection.getByRole('button', { name: 'Task', exact: true }).click();
+  await milestonesSection.getByRole('button', { name: 'Add task', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Create New Task' })).toBeVisible();
   await page.getByLabel('Title', { exact: true }).fill('Complete browser journey');
   await page.getByLabel('Due Date (optional)').fill('2099-01-10');
   await page.getByLabel('Reminder').selectOption('1d');
   await page.getByRole('button', { name: 'Create new task' }).click();
   await expect(page.getByText('Complete browser journey')).toBeVisible();
-  await expect(page.locator('p').filter({ hasText: /^0%$/ })).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: /Ship browser-tested beta progress/ })).toHaveAttribute('aria-valuenow', '0');
 
-  await page.getByRole('button', { name: 'Complete task Complete browser journey' }).click();
-  await expect(page.locator('p').filter({ hasText: /^100%$/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Mark Complete browser journey complete' }).click();
+  await expect(page.getByRole('progressbar', { name: /Ship browser-tested beta progress/ })).toHaveAttribute('aria-valuenow', '100');
 
-  await page.getByRole('button', { name: 'Check-in', exact: true }).click();
+  await page.getByRole('button', { name: 'Check in', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Daily Check-in' })).toBeVisible();
   await page.getByLabel('Accomplishment 1').fill('Completed the execution loop');
   await page.getByLabel('Challenge 1').fill('None');
@@ -74,7 +75,7 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
   await page.getByRole('button', { name: 'Submit check-in' }).click();
   await expect(page.getByText('Completed the execution loop')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Task', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Add task', exact: true }).first().click();
   await page.getByRole('heading', { name: 'Create New Task' }).waitFor();
   await page.getByLabel('Title', { exact: true }).fill('Review every month');
   await page.getByLabel('Due Date (optional)').fill('2099-01-31');
@@ -82,46 +83,46 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
   await page.getByLabel('Reminder').selectOption('at_due');
   await page.getByRole('button', { name: 'Create new task' }).click();
   await expect(page.getByText('Review every month')).toBeVisible();
-  await page.getByRole('button', { name: 'Complete task Review every month' }).click();
-  await expect(page.getByText(/Due Feb 28, 2099/)).toBeVisible();
-  await expect(page.getByText(/monthly/i)).toBeVisible();
+  await page.getByRole('button', { name: 'Mark Review every month complete' }).click();
+  await page.getByRole('button', { name: /Show completed/ }).click();
+  await expect(page.getByText(/Feb 28, 2099/)).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Ship browser-tested beta' })).toBeVisible();
   await expect(page.getByText('Completed the execution loop')).toBeVisible();
 
   for (const viewport of [
-    { width: 375, height: 812 },
+    { width: 360, height: 800 },
     { width: 390, height: 844 },
     { width: 768, height: 1024 },
-    { width: 1280, height: 800 },
+    { width: 1024, height: 768 },
     { width: 1440, height: 900 },
   ]) {
     await page.setViewportSize(viewport);
-    for (const path of ['/dashboard', '/goals', '/todos', '/notes', '/checkins', '/milestones', '/settings']) {
+    for (const path of ['/dashboard', '/goals', '/todos', '/notes', '/checkins', '/milestones', '/settings', goalUrl]) {
       await page.goto(path);
       await expect(page.locator('main')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width + 1);
     }
   }
 
-  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 360, height: 800 });
   await page.goto(goalUrl);
-  await page.getByRole('button', { name: 'Task', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Add task', exact: true }).first().click();
   await expect(page.getByLabel('Title', { exact: true })).toBeFocused();
   const taskDialog = page.getByRole('heading', { name: 'Create New Task' }).locator('..').locator('..');
   const taskDialogBox = await taskDialog.boundingBox();
-  expect(taskDialogBox?.width ?? 0).toBeLessThanOrEqual(375);
-  expect(taskDialogBox?.height ?? 0).toBeLessThanOrEqual(812);
+  expect(taskDialogBox?.width ?? 0).toBeLessThanOrEqual(360);
+  expect(taskDialogBox?.height ?? 0).toBeLessThanOrEqual(800);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { name: 'Create New Task' })).not.toBeVisible();
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/settings');
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export JSON' }).click();
   const exportFile = await download;
-  expect(exportFile.suggestedFilename()).toMatch(/^goalgenius-workspace-.*\.json$/);
+  expect(exportFile.suggestedFilename()).toMatch(/^rungset-workspace-.*\.json$/);
   const exportContent = await exportFile.createReadStream();
   let exportJson = '';
   for await (const chunk of exportContent ?? []) exportJson += chunk.toString();
@@ -145,10 +146,10 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
 
 test('core screens fit common viewport sizes without horizontal overflow', async ({ page }) => {
   const viewports = [
-    { width: 375, height: 812 },
+    { width: 360, height: 800 },
     { width: 390, height: 844 },
     { width: 768, height: 1024 },
-    { width: 1280, height: 800 },
+    { width: 1024, height: 768 },
     { width: 1440, height: 900 },
   ];
 

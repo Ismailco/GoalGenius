@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { GoalCategory, TimeFrame } from '@/app/types';
+import { Goal, GoalCategory, TimeFrame } from '@/app/types';
 import { createGoal } from '@/lib/storage';
 import AlertModal from '@/components/common/AlertModal';
 
@@ -13,7 +13,7 @@ interface SuggestedGoal {
   timeFrame: string;
 }
 
-export default function GoalSuggestions() {
+export default function GoalSuggestions({ onCreated, label = 'Get Ideas' }: { onCreated?: (goal: Goal) => void | Promise<void>; label?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<GoalCategory>('health');
   const [alert, setAlert] = useState<{
@@ -137,13 +137,14 @@ export default function GoalSuggestions() {
 
   const handleAddGoal = async (suggestion: SuggestedGoal) => {
     try {
-      await createGoal({
+      const createdGoal = await createGoal({
         ...suggestion,
         progress: 0,
         status: 'not-started',
         timeFrame: suggestion.timeFrame as TimeFrame,
         category: suggestion.category as GoalCategory,
       });
+      await onCreated?.(createdGoal);
       setAlert({
         show: true,
         title: 'Success',
@@ -242,7 +243,7 @@ export default function GoalSuggestions() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="app-button-secondary"
+        className="app-button-secondary shrink-0 whitespace-nowrap"
       >
         <svg
           className="h-5 w-5 text-[var(--accent)]"
@@ -257,7 +258,7 @@ export default function GoalSuggestions() {
             d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
           />
         </svg>
-        Get Ideas
+        {label}
       </button>
       {typeof document !== 'undefined' && createPortal(modal, document.body)}
 

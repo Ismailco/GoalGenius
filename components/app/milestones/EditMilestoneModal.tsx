@@ -52,7 +52,7 @@ export default function EditMilestoneModal({ milestone, onUpdate }: EditMileston
   };
 
   return (
-    <div className="space-y-6 relative" role="dialog" aria-label="Edit Milestone">
+    <div className="space-y-6 relative">
       {isLoading && <LoadingOverlay />}
 
       <MilestoneInputForm

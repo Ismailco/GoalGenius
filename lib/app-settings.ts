@@ -88,12 +88,12 @@ export function subscribeToAppSettings(listener: () => void) {
 
 export function readSidebarCollapsed() {
   if (!canUseStorage()) {
-    return true;
+    return false;
   }
 
   const rawValue = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
   if (rawValue === null) {
-    return true;
+    return false;
   }
 
   return rawValue === 'true';

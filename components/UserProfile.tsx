@@ -3,13 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { LogOut, Settings, User } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { signOut, useSession } from '@/lib/auth/auth-client';
 import { clearOfflineCaches, clearUserCache } from '@/lib/storage';
 
 interface UserProfileProps {
   isMenuButton?: boolean;
   isMobile?: boolean;
+  menuAlign?: 'start' | 'end';
+  menuPlacement?: 'above' | 'below';
 }
 
 function getInitials(name?: string | null) {
@@ -27,12 +29,16 @@ function getInitials(name?: string | null) {
 
 export default function UserProfile({
   isMenuButton = false,
+  menuAlign = 'start',
+  menuPlacement = 'above',
 }: UserProfileProps) {
   const { data: session } = useSession();
   const user = session?.user;
   const initials = getInitials(user?.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -44,6 +50,26 @@ export default function UserProfile({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const firstMenuItem = menuRef.current?.querySelector<HTMLElement>(
+      '[role="menuitem"]',
+    );
+    firstMenuItem?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsMenuOpen(false);
+        requestAnimationFrame(() => triggerRef.current?.focus());
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMenuOpen]);
 
   async function handleSignOut() {
     try {
@@ -64,12 +90,18 @@ export default function UserProfile({
 
   const menu = isMenuOpen ? (
     <div
-      className={`surface-panel absolute bottom-full z-[90] mb-3 p-2 ${
-        isMenuButton ? 'left-0 w-56' : 'left-0 right-0'
+      id={menuId}
+      className={`surface-panel absolute z-[90] p-2 ${
+        menuPlacement === 'below' ? 'top-full mt-2' : 'bottom-full mb-3'
+      } ${
+        isMenuButton
+          ? `${menuAlign === 'end' ? 'right-0' : 'left-0'} w-56`
+          : 'left-0 right-0'
       }`}
       role="menu"
+      aria-label="Account menu"
     >
-      <div className="rounded-[18px] border border-white/5 bg-white/5 px-4 py-3">
+      <div className="app-surface-subtle rounded-[var(--radius-control)] border px-4 py-3">
         <p className="truncate text-sm font-semibold text-white">
           {user?.name || 'Guest User'}
         </p>
@@ -109,10 +141,12 @@ export default function UserProfile({
         <button
           type="button"
           onClick={() => setIsMenuOpen((current) => !current)}
-          className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/10 bg-white/5 hover:bg-white/10"
+          className="app-button-secondary app-button-icon"
+          ref={triggerRef}
           aria-label={isMenuOpen ? 'Close user menu' : 'Open user menu'}
           aria-expanded={isMenuOpen}
           aria-haspopup="menu"
+          aria-controls={isMenuOpen ? menuId : undefined}
         >
           {user?.image ? (
             <Image
@@ -120,7 +154,7 @@ export default function UserProfile({
               alt="User avatar"
               width={40}
               height={40}
-              className="rounded-[14px]"
+              className="rounded-[var(--radius-control)]"
             />
           ) : (
             <span className="text-sm font-bold text-white">{initials}</span>
@@ -136,20 +170,22 @@ export default function UserProfile({
 
       <button
         type="button"
-        className="flex w-full items-center gap-3 rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-left hover:border-white/15 hover:bg-white/10"
+        className="flex min-h-14 w-full items-center gap-3 rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--bg-surface-subtle)] px-3 py-3 text-left hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface-hover)]"
         onClick={() => setIsMenuOpen((current) => !current)}
+        ref={triggerRef}
         aria-label={isMenuOpen ? 'Close user menu' : 'Open user menu'}
         aria-expanded={isMenuOpen}
         aria-haspopup="menu"
+        aria-controls={isMenuOpen ? menuId : undefined}
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-[rgba(93,166,255,0.12)] text-white">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-[var(--brand-border)] bg-[var(--brand-subtle)] text-white">
           {user?.image ? (
             <Image
               src={user.image}
               alt="User avatar"
               width={40}
               height={40}
-              className="rounded-[14px]"
+              className="rounded-[var(--radius-control)]"
             />
           ) : (
             <span className="text-sm font-bold">{initials}</span>
@@ -165,7 +201,7 @@ export default function UserProfile({
           </p>
         </div>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-[16px] border border-white/5 bg-white/5 text-[var(--text-secondary)]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)]">
           <User className="h-4 w-4" />
         </div>
       </button>
