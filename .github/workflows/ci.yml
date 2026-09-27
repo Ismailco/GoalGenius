@@ -33,4 +33,12 @@ jobs:
             'NEXT_PUBLIC_APP_URL=http://localhost:8788' \
             'BETTER_AUTH_SECRET=goalgenius-ci-only-test-secret-not-for-production' > .dev.vars
           pnpm test:e2e
+      - name: Preserve browser-test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - run: pnpm test
