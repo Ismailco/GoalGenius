@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Code2, Globe2, X } from "lucide-react";
-import AppLogoMark from "@/components/app/shared/AppLogoMark";
+import AppLogoFull from "@/components/app/shared/AppLogoFull";
 import { signIn, signUp, useSession } from "@/lib/auth/auth-client";
 import { validateAndSanitizeInput, ValidationResult } from "@/lib/validation";
 import { getAuthError } from "@/lib/auth/auth-errors";
@@ -133,9 +133,8 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <main className="auth-page">
       <section className="auth-panel" aria-labelledby="auth-title">
-        <div className="mb-8 flex items-center gap-2.5">
-          <AppLogoMark className="shrink-0" />
-          <span className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Rungset</span>
+        <div className="mb-8">
+          <AppLogoFull className="h-8 max-w-40" />
         </div>
 
         <h1 id="auth-title" className="text-2xl font-semibold tracking-tight text-white">

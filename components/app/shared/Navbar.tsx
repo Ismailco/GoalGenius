@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import AppLogoMark from '@/components/app/shared/AppLogoMark';
+import AppLogoFull from '@/components/app/shared/AppLogoFull';
 import NavigationItem from '@/components/app/shared/NavigationItem';
 import {
   APP_NAV_ITEMS,
@@ -125,8 +125,7 @@ export default function Navbar() {
                   onClick={() => closeDrawer(false)}
                   aria-label="Rungset Today"
                 >
-                  <AppLogoMark className="shrink-0" />
-                  <span className="sidebar-wordmark">Rungset</span>
+                  <AppLogoFull alt="" className="h-7 max-w-36" />
                 </Link>
 
                 <button
