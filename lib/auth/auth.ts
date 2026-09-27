@@ -16,6 +16,14 @@ const authBaseURL =
   readEnv("NEXT_PUBLIC_SITE_URL");
 
 const authSecret = readEnv("BETTER_AUTH_SECRET");
+const localTestAuthOrigins = new Set([
+  "http://localhost:8787",
+  "http://localhost:8788",
+]);
+const disableRateLimitForLocalTests =
+  readEnv("BETTER_AUTH_E2E_TEST_MODE") === "true" &&
+  authBaseURL !== undefined &&
+  localTestAuthOrigins.has(authBaseURL);
 const trustedOrigins = Array.from(
   new Set(
     [
@@ -46,6 +54,10 @@ export const auth = betterAuth({
       refreshCache: false,
     },
   },
+  // OpenNext executes the browser-test Worker from a production build. This
+  // explicit, localhost-only test switch prevents Better Auth's production
+  // limiter from coupling independent browser journeys in that disposable DB.
+  ...(disableRateLimitForLocalTests ? { rateLimit: { enabled: false } } : {}),
   emailAndPassword: {
     enabled: true,
   },

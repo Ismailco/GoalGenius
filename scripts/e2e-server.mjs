@@ -27,6 +27,7 @@ const worker = spawn('pnpm', [
   env: {
     ...process.env,
     BETTER_AUTH_URL: baseUrl,
+    BETTER_AUTH_E2E_TEST_MODE: 'true',
     NEXT_PUBLIC_APP_URL: baseUrl,
     NODE_ENV: 'test',
   },

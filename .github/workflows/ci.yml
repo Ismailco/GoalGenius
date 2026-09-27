@@ -30,6 +30,7 @@ jobs:
       - run: |
           printf '%s\n' \
             'BETTER_AUTH_URL=http://localhost:8788' \
+            'BETTER_AUTH_E2E_TEST_MODE=true' \
             'NEXT_PUBLIC_APP_URL=http://localhost:8788' \
             'BETTER_AUTH_SECRET=goalgenius-ci-only-test-secret-not-for-production' > .dev.vars
           pnpm test:e2e

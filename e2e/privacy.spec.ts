@@ -18,9 +18,10 @@ async function signUp(page: Page, name: string, email: string) {
   try {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
   } catch (error) {
-    const alert = await page.getByRole('alert').textContent().catch(() => null);
+    const alert = page.getByRole('alert');
+    const alertText = (await alert.count()) > 0 ? await alert.textContent() : null;
     throw new Error(
-      `Sign-up returned HTTP ${response.status()}${alert ? ` with UI error: ${alert}` : ''}. ${error instanceof Error ? error.message : String(error)}`,
+      `Sign-up returned HTTP ${response.status()}${alertText ? ` with UI error: ${alertText}` : ''}. ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }

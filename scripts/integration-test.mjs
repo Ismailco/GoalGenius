@@ -60,7 +60,7 @@ try {
   run('pnpm', ['exec', 'wrangler', 'd1', 'migrations', 'apply', 'goalgenius_db', '--local', '--persist-to', persistDir, '--config', 'wrangler.jsonc']);
   worker = spawn('pnpm', ['exec', 'wrangler', 'dev', '--local', '--persist-to', persistDir, '--port', String(port), '--config', 'wrangler.jsonc', '--show-interactive-dev-session', 'false'], {
     cwd: root,
-    env: { ...process.env, BETTER_AUTH_URL: baseUrl, NEXT_PUBLIC_APP_URL: baseUrl, NODE_ENV: 'test' },
+    env: { ...process.env, BETTER_AUTH_URL: baseUrl, BETTER_AUTH_E2E_TEST_MODE: 'true', NEXT_PUBLIC_APP_URL: baseUrl, NODE_ENV: 'test' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   worker.stderr.on('data', () => undefined);
