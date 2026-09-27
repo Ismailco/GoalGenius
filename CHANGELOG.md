@@ -31,4 +31,12 @@ All notable changes to Rungset are documented here.
 
 ## Unreleased
 
-No unreleased changes.
+### Changed
+
+- Completed the Rungset product rebrand across the app shell, navigation, visual system, and public documentation.
+- Replaced combined mark-and-text treatments with the full Rungset wordmark where space allows.
+- Reduced automatic client route prefetching to keep navigation work bounded during longer sessions.
+
+### Fixed
+
+- Scoped offline workspace data is cleared when the active account changes, preventing one account's cached work from appearing for another.
