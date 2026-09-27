@@ -1,287 +1,52 @@
-# Rungset API Documentation
+# Rungset application API
 
-This document provides detailed information about the Rungset API endpoints. All API routes are prefixed with `/api`.
+Rungset's `/api` routes serve the web application. They are not a versioned public API contract; request shapes may evolve with the product.
 
-## Authentication
+## Authentication and ownership
 
-All API endpoints require authentication. The application uses [Better Auth](https://github.com/better-auth/better-auth) for authentication, supporting both GitHub and Google OAuth providers.
+All workspace routes require a Better Auth session. The server derives the active user from that session—clients must not send a `userId` query parameter or rely on a `userId` in a request body. Any supplied body `userId` is ignored for ownership. Resource lookups, writes, and goal/milestone relationships are scoped to the signed-in user.
 
-## Response Format
+Authentication endpoints are provided by Better Auth under `/api/auth/*`. Email/password is available, with Google and GitHub sign-in available when those providers are configured.
 
-All responses are returned in JSON format. Successful responses will contain the requested data, while error responses will have the following structure:
+## Conventions
+
+- Requests and successful responses use JSON, except for browser download handling of the workspace export.
+- Dates use `YYYY-MM-DD` where a date-only value is accepted.
+- Write bodies are limited to 2 MB and validated at the route boundary.
+- Collection routes accept `GET`, `POST`, `PUT`, and `DELETE` as listed below. `GET` and `DELETE` are also available through the matching `/:id` alias.
+
+Errors use this shape:
 
 ```json
-{
-  "error": "Error message description"
-}
+{ "error": "A short explanation" }
 ```
 
-## Common HTTP Status Codes
+Validation errors may additionally include `details`. Common status codes are `400` (invalid request), `401` (not signed in), `404` (missing or inaccessible resource), `413` (payload too large), and `500` (unexpected server error).
 
-- `200`: Success
-- `201`: Created
-- `400`: Bad Request
-- `401`: Unauthorized
-- `403`: Forbidden
-- `404`: Not Found
-- `500`: Internal Server Error
+## Workspace routes
 
-## API Endpoints
+| Resource | Read | Create | Update | Delete |
+| --- | --- | --- | --- | --- |
+| Goals | `GET /api/goals` or `GET /api/goals/:id` | `POST /api/goals` | `PUT /api/goals` | `DELETE /api/goals?id=:id` or `DELETE /api/goals/:id` |
+| Tasks | `GET /api/todos`, `?completed=true|false`, or `GET /api/todos/:id` | `POST /api/todos` | `PUT /api/todos` | `DELETE /api/todos?id=:id` or `DELETE /api/todos/:id` |
+| Milestones | `GET /api/milestones`, optional `?goalId=:goalId`, or `GET /api/milestones/:id` | `POST /api/milestones` | `PUT /api/milestones` | `DELETE /api/milestones?id=:id` or `DELETE /api/milestones/:id` |
+| Notes | `GET /api/notes` or `GET /api/notes/:id` | `POST /api/notes` | `PUT /api/notes` | `DELETE /api/notes?id=:id` or `DELETE /api/notes/:id` |
+| Check-ins | `GET /api/checkins` or `GET /api/checkins/:id` | `POST /api/checkins` | `PUT /api/checkins` | `DELETE /api/checkins?id=:id` or `DELETE /api/checkins/:id` |
 
-### Goals
+Goals require a title, category, timeframe, and status. Tasks require a title and priority; optional `goalId` and `milestoneId` must refer to resources owned by the current user, and a milestone must belong to its supplied goal. Milestones require an owned `goalId`, title, and date. Check-ins accept date, mood, energy, accomplishments, challenges, goals, optional notes, and an optional owned `goalId`.
 
-#### Get All Goals
-```http
-GET /api/goals?userId={userId}
+`GET /api/todo-occurrences` returns completion history for the current user's recurring tasks; pass `?todoId=:id` to narrow it to one task. `GET /api/export` returns the current user's complete workspace export (profile, goals, milestones, tasks, task occurrences, notes, and check-ins).
+
+## Local development
+
+```bash
+cp .dev.vars.example .dev.vars
+cp .env.local.example .env.local
+pnpm dev
 ```
 
-**Query Parameters:**
-- `userId` (required): The ID of the user whose goals to retrieve
-
-**Response:**
-```json
-[
-  {
-    "id": "uuid",
-    "userId": "string",
-    "title": "string",
-    "description": "string?",
-    "category": "health" | "career" | "learning" | "relationships",
-    "timeFrame": "string",
-    "status": "not-started" | "in-progress" | "completed",
-    "progress": number,
-    "dueDate": "string?",
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-]
-```
-
-#### Create Goal
-```http
-POST /api/goals
-```
-
-**Request Body:**
-```json
-{
-  "userId": "string",
-  "title": "string",
-  "description": "string?",
-  "category": "health" | "career" | "learning" | "relationships",
-  "timeFrame": "string",
-  "status": "not-started" | "in-progress" | "completed",
-  "progress": number,
-  "dueDate": "string?"
-}
-```
-
-**Response:** The created goal object
-
-#### Update Goal
-```http
-PUT /api/goals
-```
-
-**Request Body:**
-```json
-{
-  "id": "uuid",
-  "title": "string?",
-  "description": "string?",
-  "category": "string?",
-  "timeFrame": "string?",
-  "status": "string?",
-  "progress": number?,
-  "dueDate": "string?"
-}
-```
-
-**Response:** The updated goal object
-
-#### Delete Goal
-```http
-DELETE /api/goals?id={goalId}
-```
-
-**Query Parameters:**
-- `id` (required): The ID of the goal to delete
-
-**Response:**
-```json
-{
-  "success": true
-}
-```
-
-### Todos
-
-#### Get All Todos
-```http
-GET /api/todos?userId={userId}
-```
-
-**Query Parameters:**
-- `userId` (required): The ID of the user whose todos to retrieve
-
-#### Create Todo
-```http
-POST /api/todos
-```
-
-**Request Body:**
-```json
-{
-  "userId": "string",
-  "title": "string",
-  "description": "string?",
-  "priority": "low" | "medium" | "high",
-  "status": "pending" | "in-progress" | "completed",
-  "dueDate": "string?"
-}
-```
-
-#### Update Todo
-```http
-PUT /api/todos
-```
-
-#### Delete Todo
-```http
-DELETE /api/todos?id={todoId}
-```
-
-### Notes
-
-#### Get All Notes
-```http
-GET /api/notes?userId={userId}
-```
-
-#### Create Note
-```http
-POST /api/notes
-```
-
-#### Update Note
-```http
-PUT /api/notes
-```
-
-#### Delete Note
-```http
-DELETE /api/notes?id={noteId}
-```
-
-### Milestones
-
-#### Get All Milestones
-```http
-GET /api/milestones?goalId={goalId}
-```
-
-#### Create Milestone
-```http
-POST /api/milestones
-```
-
-#### Update Milestone
-```http
-PUT /api/milestones
-```
-
-#### Delete Milestone
-```http
-DELETE /api/milestones?id={milestoneId}
-```
-
-### Check-ins
-
-#### Get All Check-ins
-```http
-GET /api/checkins?userId={userId}
-```
-
-#### Create Check-in
-```http
-POST /api/checkins
-```
-
-#### Update Check-in
-```http
-PUT /api/checkins
-```
-
-#### Delete Check-in
-```http
-DELETE /api/checkins?id={checkinId}
-```
-
-## Error Handling
-
-The API uses standard HTTP status codes to indicate the success or failure of requests. Here are some common error scenarios:
-
-### Validation Errors (400)
-```json
-{
-  "error": "Missing required fields"
-}
-```
-
-### Authentication Errors (401)
-```json
-{
-  "error": "Unauthorized access"
-}
-```
-
-### Not Found Errors (404)
-```json
-{
-  "error": "Resource not found"
-}
-```
-
-### Server Errors (500)
-```json
-{
-  "error": "Failed to process request"
-}
-```
-
-## Rate Limiting
-
-The API is protected by Cloudflare's rate limiting. Please be mindful of the following limits:
-- Maximum of 100 requests per minute per IP
-- Maximum of 1000 requests per hour per IP
-
-## Development and Testing
-
-For local development and testing:
-
-1. Set up your environment variables:
-   ```bash
-   cp .dev.vars.example .dev.vars
-   cp .env.local.example .env.local
-   ```
-
-2. Start the development server:
-   ```bash
-   pnpm dev
-   ```
-
-3. The API will be available at `http://localhost:3000/api`
-
-## API Versioning
-
-The current API version is v1. All endpoints are currently unversioned, but future breaking changes will be introduced under new versioned paths (e.g., `/api/v2/`).
+The development server exposes routes at `http://localhost:3000/api`. For the Cloudflare Worker path, run `pnpm cf:preview` and use `http://localhost:8787/api`.
 
 ## Support
 
-If you encounter any issues or need help with the API:
-1. Check the in-app [documentation](https://rungset.com/docs)
-2. Create an issue on [GitHub](https://github.com/ismailco/goalgenius/issues)
-
----
-
-Last updated: 2026
+See the [README](README.md) for project setup and open a [GitHub issue](https://github.com/Ismailco/Rungset/issues) for reproducible bugs or proposals.
