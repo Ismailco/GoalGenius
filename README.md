@@ -1,37 +1,41 @@
-# Rungset application
+# Rungset
 
-Rungset is an open-source beta for turning long-term goals into weekly actions and measurable progress.
+**A focused, open-source goal-planning app for turning long-term intent into meaningful weekly progress.**
 
-The core loop is: **Goal → Milestone → Task → Completion → Check-in → Review → Adjust**.
+[Website](https://rungset.com) · [Open the app](https://app.rungset.com) · [Website repository](https://github.com/Ismailco/Rungset-website) · [AGPL-3.0](LICENSE)
 
-## Status
+Rungset gives goals a practical rhythm: define the outcome, break it into milestones, turn those milestones into tasks, then reflect and adjust as the work evolves.
 
-Rungset is currently a focused beta. Goals, milestones, tasks, check-ins, notes, offline caching, recurring task history, task reminders, export, and Better Auth are implemented. Calendar synchronization, analytics, and team features are intentionally not presented as finished features.
+> **Goal → Milestone → Task → Completion → Check-in → Review → Adjust**
 
-## Features
+## What Rungset includes
 
-- Goal planning with category, timeframe, target date, status, and progress.
-- Goal execution pages with milestones, actionable tasks, and recent check-ins.
-- Fast task completion with optional due dates and priorities.
-- Daily, weekly, and monthly recurring tasks with preserved completion history.
-- Task reminder configuration with in-app due/overdue surfacing; external delivery is not implemented yet.
-- Concise historical check-ins for progress, blockers, and next focus.
-- Notes, offline cache, and a user-scoped JSON export.
-- Server-side Better Auth sessions and user-scoped D1 queries.
+- Goal planning with categories, timeframes, target dates, statuses, and progress.
+- Goal workspaces that bring milestones, tasks, and recent check-ins together.
+- Focused task management with priorities, due dates, recurring schedules, and completion history.
+- Check-ins for recording progress, blockers, and the next area of focus.
+- Notes, user-scoped JSON export, and offline caching for continuity between connections.
+- Email/password and social sign-in through Better Auth, with user-scoped data access.
 
-## Stack and architecture
+## Product scope
 
-- Next.js 16.2.12 App Router and React 19.
-- TypeScript and Tailwind CSS 4.
-- Better Auth for email/password and social authentication.
-- Drizzle ORM over Cloudflare D1 (SQLite).
-- OpenNext for Cloudflare Workers deployment.
+Rungset is a focused beta. Calendar synchronization, analytics, team features, and external reminder delivery are deliberately not presented as finished capabilities. Reminder configuration currently supports in-app due and overdue guidance only.
 
-The App Router provides the pages and route handlers. Client storage in `lib/storage.ts` keeps the existing offline-first behavior and synchronizes mutations through the authenticated `/api/*` routes. Database definitions and forward-only migrations live in `lib/db/schema.ts` and `drizzle/`.
+## Architecture
 
-## Local development
+Rungset is built as a Next.js App Router application and deployed to Cloudflare Workers through OpenNext.
 
-Prerequisites: Node.js 24 (see `.nvmrc`) and pnpm 11.
+- Next.js 16 and React 19
+- TypeScript and Tailwind CSS 4
+- Better Auth for authentication
+- Drizzle ORM with Cloudflare D1 (SQLite)
+- OpenNext and Wrangler for Cloudflare Workers
+
+Client storage preserves the existing offline-first experience and synchronizes changes through authenticated `/api/*` routes. Database definitions and forward-only migrations live in `lib/db/schema.ts` and `drizzle/`.
+
+## Run locally
+
+**Prerequisites:** Node.js 24 (see `.nvmrc`) and pnpm 11.
 
 ```bash
 pnpm install
@@ -41,35 +45,32 @@ pnpm db:migrate:local
 pnpm dev
 ```
 
-Use `http://localhost:3000` for `pnpm dev`. Use `http://localhost:8787` for the OpenNext/Workers preview path. Put local-only values in `.env.local` and `.dev.vars`; neither should contain committed secrets.
+Open [http://localhost:3000](http://localhost:3000). For the Cloudflare Workers preview path, use `pnpm cf:preview` and open [http://localhost:8787](http://localhost:8787).
 
-Required authentication values are documented in the example files. `BETTER_AUTH_SECRET` must be a long random value outside test fixtures. Google/GitHub credentials are optional unless those providers are enabled for local testing.
+Keep local-only values in `.env.local` and `.dev.vars`; neither file should contain committed secrets. `BETTER_AUTH_SECRET` must be a strong, unique value outside test fixtures. Google and GitHub credentials are optional unless those sign-in providers are enabled locally.
 
-## Commands
+## Quality checks and delivery
 
 ```bash
-pnpm dev                 # Next development server
-pnpm lint                # ESLint
-pnpm exec tsc --noEmit   # TypeScript
-pnpm build               # Production Next build
-pnpm db:migrate:local    # Apply D1 migrations locally
-pnpm db:migrate:prod     # Apply D1 migrations remotely
-pnpm test                # Unit and API/database integration tests
-pnpm test:e2e            # Critical browser journey and viewport smoke test
-pnpm cf:preview          # OpenNext Cloudflare preview
-pnpm cf:deploy           # Build and deploy the Worker
+pnpm lint              # ESLint
+pnpm typecheck         # Generate Next types and run TypeScript
+pnpm test              # Unit and integration coverage
+pnpm test:e2e          # Critical browser journeys
+pnpm build             # Production Next build
+pnpm cf:preview        # OpenNext Cloudflare preview
+pnpm cf:deploy         # Build and deploy the Worker
 ```
 
-## Database and deployment
+## Data and deployment
 
-Create or select a D1 database, set its ID in `wrangler.jsonc`, then apply the migrations. Never edit a migration that may already have been applied; add a new migration instead. This project deploys to Cloudflare Workers through OpenNext, not Cloudflare Pages.
+Create or select a Cloudflare D1 database, configure its ID in `wrangler.jsonc`, then apply migrations with `pnpm db:migrate:local` or `pnpm db:migrate:prod`. Never modify a migration that may already have run; create a new forward-only migration instead.
 
-Remote deployment requires authenticated Wrangler access and the configured Worker secrets. A successful local build does not prove a live deployment. External reminder delivery requires a future scheduler and notification provider; this beta stores reminder configuration only.
+Production deployment requires authenticated Wrangler access and the configured Worker secrets. A successful local build is source evidence, not proof that a live deployment is healthy.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Keep changes focused on the goal execution loop, add behavior tests for security-critical changes, and run lint, typecheck, tests, and the production build before submitting.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Keep changes focused, protect user data, add coverage where behavior changes, and run the relevant checks before submitting.
 
 ## License
 
-Rungset is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
+Rungset is licensed under the [GNU Affero General Public License v3.0](LICENSE).
