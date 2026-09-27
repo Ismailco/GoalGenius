@@ -1,21 +1,28 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import { isPublicPath } from '@/components/app/shared/navigation';
 import { syncWorkspaceData } from '@/lib/storage';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
 
-const PWA_CACHE_VERSION = 'v5';
+const PWA_CACHE_VERSION = 'v6';
 const PWA_CACHE_VERSION_KEY = 'pwaCacheVersion';
 const isProductionBuild = process.env.NODE_ENV === 'production';
+let activePageCacheRequest: Promise<boolean> | null = null;
 
 export const cacheAppPages = async (): Promise<boolean> => {
   if (!isProductionBuild) {
     return false;
   }
 
-  if ('serviceWorker' in navigator) {
+  if (!('serviceWorker' in navigator)) {
+    return Promise.reject(new Error('Service Worker unsupported'));
+  }
+
+  if (activePageCacheRequest) {
+    return activePageCacheRequest;
+  }
+
+  const cacheRequest = (async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
       const serviceWorker = navigator.serviceWorker.controller ?? registration.active;
@@ -24,9 +31,9 @@ export const cacheAppPages = async (): Promise<boolean> => {
         throw new Error('Service Worker not ready');
       }
 
-      return new Promise((resolve, reject) => {
+      return await new Promise<boolean>((resolve, reject) => {
         const messageHandler = (event: MessageEvent) => {
-          if (event.data.type === 'CACHE_COMPLETE') {
+          if (event.data?.type === 'CACHE_COMPLETE') {
             navigator.serviceWorker.removeEventListener('message', messageHandler);
             if (event.data.success) {
               localStorage.setItem('pwaCacheReady', 'true');
@@ -40,7 +47,7 @@ export const cacheAppPages = async (): Promise<boolean> => {
               console.warn('⚠️ Some pages failed to cache:', event.data.failedUrls);
               resolve(false);
             }
-          } else if (event.data.type === 'CACHE_ERROR') {
+          } else if (event.data?.type === 'CACHE_ERROR') {
             navigator.serviceWorker.removeEventListener('message', messageHandler);
             console.error('❌ Cache error:', event.data.error);
             reject(new Error(event.data.error));
@@ -53,11 +60,23 @@ export const cacheAppPages = async (): Promise<boolean> => {
       console.error('Failed to initiate caching:', error);
       throw error;
     }
-  } else {
-    return Promise.reject(new Error('Service Worker unsupported'));
-  }
+  })();
 
-  return false;
+  activePageCacheRequest = cacheRequest;
+  void cacheRequest.then(
+    () => {
+      if (activePageCacheRequest === cacheRequest) {
+        activePageCacheRequest = null;
+      }
+    },
+    () => {
+      if (activePageCacheRequest === cacheRequest) {
+        activePageCacheRequest = null;
+      }
+    },
+  );
+
+  return cacheRequest;
 };
 
 async function disableDevelopmentServiceWorkers() {
@@ -85,11 +104,8 @@ export default function ServiceWorkerProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const shouldPrepareOfflinePages = !isPublicPath(pathname);
-
   useEffect(() => {
-    const prepareOfflineApp = async () => {
+    const syncPendingWorkspaceChanges = async () => {
       if (navigator.onLine) {
         try {
           await syncWorkspaceData();
@@ -97,32 +113,6 @@ export default function ServiceWorkerProvider({
         } catch (error) {
           console.warn('Offline changes could not be synced yet:', error);
         }
-      }
-
-      const cachedVersion = localStorage.getItem(PWA_CACHE_VERSION_KEY);
-      if (shouldPrepareOfflinePages && cachedVersion !== PWA_CACHE_VERSION) {
-        try {
-          await cacheAppPages();
-        } catch (error) {
-          console.warn('Offline app cache could not be refreshed yet:', error);
-        }
-      }
-    };
-
-    const handleServiceWorkerMessage = (event: MessageEvent) => {
-      if (event.data.type === 'CACHE_COMPLETE') {
-        if (event.data.success) {
-          localStorage.setItem('pwaCacheReady', 'true');
-          localStorage.setItem(
-            PWA_CACHE_VERSION_KEY,
-            event.data.version ?? PWA_CACHE_VERSION,
-          );
-          console.log('✅ App pages cached successfully');
-        } else {
-          console.warn('⚠️ Some pages failed to cache:', event.data.failedUrls);
-        }
-      } else if (event.data.type === 'CACHE_ERROR') {
-        console.error('❌ Cache error:', event.data.error);
       }
     };
 
@@ -135,34 +125,25 @@ export default function ServiceWorkerProvider({
         navigator.serviceWorker
           .register('/sw.js')
           .then((reg) => {
+            if (!reg) return;
+
             console.log('✅ Service Worker registered:', reg.scope);
-            void navigator.serviceWorker.ready.then(() => prepareOfflineApp());
+            void syncPendingWorkspaceChanges();
           })
           .catch((err) => console.error('❌ SW registration failed:', err));
-
-        navigator.serviceWorker.addEventListener(
-          'message',
-          handleServiceWorkerMessage,
-        );
       }
     }
 
     const handleOnline = () => {
-      void prepareOfflineApp();
+      void syncPendingWorkspaceChanges();
     };
 
     window.addEventListener('online', handleOnline);
 
     return () => {
       window.removeEventListener('online', handleOnline);
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.removeEventListener(
-          'message',
-          handleServiceWorkerMessage,
-        );
-      }
     };
-  }, [shouldPrepareOfflinePages]);
+  }, []);
 
   return children;
 }

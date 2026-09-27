@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useState } from 'react';
+import { AlertTriangle, CheckCircle2, CircleAlert, Info } from 'lucide-react';
+import AppModal from '@/components/app/shared/AppModal';
 
 interface AlertModalProps {
   title: string;
@@ -9,6 +11,7 @@ interface AlertModalProps {
   onClose: () => void;
   isConfirmation?: boolean;
   onConfirm?: () => void | Promise<void>;
+  confirmLabel?: string;
   'aria-label'?: string;
   role?: 'alertdialog' | 'dialog';
 }
@@ -20,23 +23,11 @@ export default function AlertModal({
   onClose,
   isConfirmation,
   onConfirm,
+  confirmLabel = 'Confirm',
   'aria-label': ariaLabel,
   role = 'alertdialog'
 }: AlertModalProps) {
-  const titleId = useId();
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [isConfirming, setIsConfirming] = useState(false);
-
-  useEffect(() => {
-    closeButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
 
   function handleConfirm() {
     if (isConfirming) return;
@@ -47,85 +38,42 @@ export default function AlertModal({
 
   const getIcon = () => {
     switch (type) {
-      case 'success':
-        return (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        );
-      case 'warning':
-        return (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        );
-      case 'error':
-        return (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        );
-      default:
-        return (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        );
+      case 'success': return <CheckCircle2 className="h-5 w-5" aria-hidden="true" />;
+      case 'warning': return <AlertTriangle className="h-5 w-5" aria-hidden="true" />;
+      case 'error': return <CircleAlert className="h-5 w-5" aria-hidden="true" />;
+      default: return <Info className="h-5 w-5" aria-hidden="true" />;
     }
   };
 
-  const getBackgroundColor = () => {
+  const getStatusClass = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-500/20 text-green-400 border-green-500/50';
+        return 'app-status-icon-success';
       case 'warning':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+        return 'app-status-icon-warning';
       case 'error':
-        return 'bg-red-500/20 text-red-400 border-red-500/50';
+        return 'app-status-icon-danger';
       default:
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+        return 'app-status-icon-info';
     }
   };
 
   return (
-    <div
-      className="app-modal-backdrop"
-      role={role}
-      aria-label={ariaLabel || `${type} alert: ${title}`}
-      aria-labelledby={titleId}
-      aria-modal="true"
-    >
-      <div className="app-modal-panel app-modal-panel-sm">
-        <div className="p-6">
-          <div className="flex items-center gap-4">
-            <div className={`rounded-2xl border p-3 ${getBackgroundColor()}`}>
-              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              {getIcon()}
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 id={titleId} className="text-xl font-semibold text-white">{title}</h3>
-              <p className="mt-1 text-[var(--text-secondary)]">{message}</p>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end gap-3">
-                <button
-                  ref={closeButtonRef}
-                  type="button"
-                  onClick={onClose}
-                  disabled={isConfirming}
-                  className="app-button-secondary !px-4"
-              aria-label="Close alert"
-                >
-              {isConfirmation ? 'Cancel' : 'Close'}
-                </button>
-            {isConfirmation && onConfirm && (
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={isConfirming}
-                className="app-button-danger"
-                aria-label="Confirm action"
-              >
-                Confirm
-              </button>
-            )}
-          </div>
-        </div>
+    <AppModal title={title} onClose={onClose} size="sm" role={role} initialFocus="close" ariaLabel={ariaLabel} closeDisabled={isConfirming}>
+      <div className="flex items-start gap-3">
+        <div className={`app-status-icon ${getStatusClass()}`}>{getIcon()}</div>
+        <p className="min-w-0 flex-1 text-sm leading-6 text-[var(--text-secondary)]">{message}</p>
       </div>
-    </div>
+      <div className="app-modal-footer mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" onClick={onClose} disabled={isConfirming} aria-label={!isConfirmation ? 'Close alert' : undefined} className="app-button-secondary">
+          {isConfirmation ? 'Cancel' : 'Close'}
+        </button>
+        {isConfirmation && onConfirm ? (
+          <button type="button" onClick={handleConfirm} disabled={isConfirming} className="app-button-danger">
+            {confirmLabel}
+          </button>
+        ) : null}
+      </div>
+    </AppModal>
   );
 }

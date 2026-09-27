@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const APP_SHELL_CACHE = `rungset-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `rungset-runtime-${CACHE_VERSION}`;
 const STATIC_CACHE = `rungset-static-${CACHE_VERSION}`;

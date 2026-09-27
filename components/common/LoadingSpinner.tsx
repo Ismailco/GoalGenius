@@ -13,7 +13,7 @@ export default function LoadingSpinner({ size = 'medium', className = '' }: Load
   return (
     <div className={`relative ${className}`} role="status" aria-label="Loading">
       <div className={`${sizeClasses[size]} animate-spin`}>
-        <div className="h-full w-full rounded-full border-4 border-blue-500/30 border-t-blue-500"></div>
+        <div className="h-full w-full rounded-full border-4 border-[var(--brand-subtle)] border-t-[var(--brand-primary)]"></div>
       </div>
     </div>
   );
@@ -27,7 +27,7 @@ interface LoadingOverlayProps {
 export function LoadingOverlay({ role = 'status', 'aria-label': ariaLabel = 'Loading...' }: LoadingOverlayProps) {
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center bg-[rgba(3,8,16,0.56)] backdrop-blur-sm"
+      className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--overlay)]"
       role={role}
       aria-label={ariaLabel}
     >

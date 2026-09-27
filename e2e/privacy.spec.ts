@@ -6,8 +6,24 @@ async function signUp(page: Page, name: string, email: string) {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill('GoalGenius-e2e-2026');
   await page.getByLabel('Confirm Password').fill('GoalGenius-e2e-2026');
+  const signUpResponse = page.waitForResponse((response) => (
+    response.url().includes('/api/auth/sign-up/email') && response.request().method() === 'POST'
+  ));
   await page.getByRole('button', { name: 'Sign up', exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+  const response = await signUpResponse;
+  if (!response.ok()) {
+    throw new Error(`Sign-up failed with HTTP ${response.status()}: ${await response.text()}`);
+  }
+
+  try {
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+  } catch (error) {
+    const alert = page.getByRole('alert');
+    const alertText = (await alert.count()) > 0 ? await alert.textContent() : null;
+    throw new Error(
+      `Sign-up returned HTTP ${response.status()}${alertText ? ` with UI error: ${alertText}` : ''}. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 test('local workspace data is cleared across account transitions', async ({ page }) => {
@@ -41,5 +57,6 @@ test('local workspace data is cleared across account transitions', async ({ page
   await signUp(page, 'Cache Owner B', `cache-b-${suffix}@example.com`);
   expect(await page.evaluate(() => localStorage.getItem('userId'))).not.toBe(accountAStorage.userId);
   await expect(page.getByText('Private goal for account A')).not.toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Start with one meaningful goal' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No tasks yet' })).toBeVisible();
 });

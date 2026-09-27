@@ -1,5 +1,5 @@
-import PageLoading from "@/components/PageLoading";
+import CheckInsSkeleton from '@/components/app/checkins/CheckInsSkeleton';
 
 export default function Loading() {
-  return <PageLoading />;
+  return <div className="app-page"><CheckInsSkeleton /></div>;
 }

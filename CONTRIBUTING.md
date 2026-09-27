@@ -2,8 +2,6 @@
 
 Rungset is a focused beta. Keep contributions centered on the goal → milestone → task → check-in loop and avoid speculative feature surface.
 
-First off, thank you for considering contributing to Rungset! It's people like you that make Rungset such a great tool.
-
 ## Code of Conduct
 
 By participating in this project, you are expected to uphold our Code of Conduct:
@@ -51,8 +49,8 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/ismailco/goalgenius.git
-   cd goalgenius
+   git clone https://github.com/Ismailco/Rungset.git
+   cd Rungset
    ```
 
 2. Install dependencies
@@ -69,7 +67,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 4. Create a new branch
    ```bash
-   git checkout -b feature/your-feature-name
+   git switch -c feature/your-feature-name
    ```
 
 ### Coding Style
@@ -140,12 +138,12 @@ When adding tests, prioritize authorization, ownership checks, progress calculat
 Please maintain the existing project structure:
 
 ```
-goalgenius/
-├── app/                # Next.js app router pages
+rungset/
+├── app/                # Next.js App Router pages and route handlers
 ├── components/         # Reusable React components
-├── lib/               # Utility functions and helpers
-├── drizzle/           # Database schema and migrations
-└── public/            # Static assets
+├── lib/                # Domain, auth, storage, and server utilities
+├── drizzle/            # Forward-only D1 migrations
+└── public/             # Static assets and PWA files
 ```
 
 ## Questions?

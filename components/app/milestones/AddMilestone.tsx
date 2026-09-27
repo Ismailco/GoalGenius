@@ -3,19 +3,22 @@
 import { Goal } from '@/app/types';
 import { useModal } from '@/app/providers/ModalProvider';
 import CreateMilestoneModal from '@/components/app/dashboard/CreateMilestoneModal';
+import { Plus } from 'lucide-react';
 
 interface AddMilestoneProps {
   goal?: Goal;
   className?: string;
+  label?: string;
+  onCreated?: () => void | Promise<void>;
 }
 
-export default function AddMilestone({ goal, className = '' }: AddMilestoneProps) {
+export default function AddMilestone({ goal, className = '', label = 'Add Milestone', onCreated }: AddMilestoneProps) {
   const { showModal } = useModal();
 
   const handleAddMilestone = () => {
     showModal({
       title: 'Create New Milestone',
-      content: <CreateMilestoneModal goal={goal} />
+      content: <CreateMilestoneModal goal={goal} onCreated={onCreated} />
     });
   };
 
@@ -23,18 +26,10 @@ export default function AddMilestone({ goal, className = '' }: AddMilestoneProps
     <button
       onClick={handleAddMilestone}
       className={`app-button ${className}`}
-      aria-label="Create new milestone"
+      aria-label={label}
     >
-      <svg
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        aria-hidden="true"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-      </svg>
-      Add Milestone
+      <Plus className="h-4 w-4" aria-hidden="true" />
+      {label}
     </button>
   );
 }

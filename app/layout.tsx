@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#102866',
+  themeColor: '#060f1b',
 };
 
 export default function RootLayout({
@@ -48,7 +48,7 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>
           <AppShell>{children}</AppShell>
-          <div className="fixed bottom-24 right-4 z-50 md:bottom-6 md:right-6">
+          <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-50 lg:bottom-6 lg:right-6">
             <InstallPWA />
           </div>
         </Providers>

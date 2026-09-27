@@ -51,20 +51,21 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // You can render any custom fallback UI
       return this.props.fallback || (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 max-w-lg w-full border border-white/10 text-center">
-            <div className="text-4xl mb-4">😕</div>
-            <h2 className="text-2xl font-bold text-white mb-4">Something went wrong</h2>
-            <p className="text-gray-300 mb-6">
-              We&apos;re sorry, but something unexpected happened. Please try refreshing the page.
+        <div className="flex min-h-screen items-center justify-center bg-[var(--bg-canvas)] p-4">
+          <div className="surface-panel w-full max-w-lg p-6 text-center sm:p-8" role="alert">
+            <div className="app-status-icon app-status-icon-danger mx-auto mb-4" aria-hidden="true">
+              !
+            </div>
+            <h2 className="text-xl font-semibold text-white">Something went wrong</h2>
+            <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+              Rungset could not finish loading this view. Refresh the page to try again.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
+              className="app-button mt-6"
             >
-              Refresh Page
+              Refresh
             </button>
           </div>
         </div>

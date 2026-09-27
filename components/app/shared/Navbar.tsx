@@ -1,23 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import AppLogoMark from '@/components/app/shared/AppLogoMark';
-import UserProfile from '@/components/UserProfile';
+import AppLogoFull from '@/components/app/shared/AppLogoFull';
+import NavigationItem from '@/components/app/shared/NavigationItem';
 import {
   APP_NAV_ITEMS,
   MOBILE_PRIMARY_NAV_ITEMS,
   getActiveNavigationItem,
   isNavigationItemActive,
 } from '@/components/app/shared/navigation';
+import UserProfile from '@/components/UserProfile';
+
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export default function Navbar() {
   const pathname = usePathname();
   const activeItem = getActiveNavigationItem(pathname);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [todayLabel, setTodayLabel] = useState('Today');
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,131 +30,154 @@ export default function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
-    setTodayLabel(
-      new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date()),
-    );
-  }, []);
+    if (!isMenuOpen) return;
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        drawerRef.current &&
-        !drawerRef.current.contains(event.target as Node)
-      ) {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
         setIsMenuOpen(false);
+        requestAnimationFrame(() => menuButtonRef.current?.focus());
+        return;
+      }
+
+      if (event.key !== 'Tab' || !drawerRef.current) return;
+
+      const focusable = Array.from(
+        drawerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((element) => !element.hasAttribute('disabled'));
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  function closeDrawer(returnFocus = true) {
+    setIsMenuOpen(false);
+    if (returnFocus) {
+      requestAnimationFrame(() => menuButtonRef.current?.focus());
+    }
+  }
 
   return (
     <>
-      <header className="mobile-bar flex items-center justify-between md:hidden">
+      <header className="mobile-bar lg:hidden">
         <button
+          ref={menuButtonRef}
           type="button"
           onClick={() => setIsMenuOpen(true)}
-          className="app-button-secondary !h-11 !w-11 !rounded-[18px] !p-0"
+          className="app-button-secondary app-button-icon"
           aria-label="Open navigation menu"
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-navigation-drawer"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Rungset
-          </p>
-          <p className="truncate text-sm font-semibold text-white">
-            {activeItem?.name ?? 'Workspace'}
-          </p>
-        </div>
+        <p className="mobile-bar-title">{activeItem?.name ?? 'Workspace'}</p>
 
-        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">
-          {todayLabel}
-        </div>
+        <UserProfile isMenuButton menuAlign="end" menuPlacement="below" />
       </header>
 
-      <div
-        className={`mobile-drawer-backdrop md:hidden ${
-          isMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-      />
+      {isMenuOpen ? (
+        <>
+          <button
+            type="button"
+            className="mobile-drawer-backdrop lg:hidden"
+            onClick={() => closeDrawer()}
+            aria-label="Close navigation menu"
+          />
 
-      <div
-        className={`mobile-drawer md:hidden ${
-          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-transform duration-300 ease-out`}
-      >
-        <div ref={drawerRef} className="surface-panel flex h-full flex-col p-4">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AppLogoMark />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  Rungset
-                </p>
-                <p className="text-sm font-semibold text-white">Workspace</p>
+          <div
+            id="mobile-navigation-drawer"
+            ref={drawerRef}
+            className="mobile-drawer lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation"
+          >
+            <div className="mobile-drawer-panel">
+              <header className="mobile-drawer-header">
+                <Link
+                  href="/dashboard"
+                  prefetch={false}
+                  className="sidebar-brand"
+                  onClick={() => closeDrawer(false)}
+                  aria-label="Rungset Today"
+                >
+                  <AppLogoFull alt="" className="h-7 max-w-36" />
+                </Link>
+
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={() => closeDrawer()}
+                  className="app-button-secondary app-button-icon"
+                  aria-label="Close navigation menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </header>
+
+              <nav className="mobile-drawer-nav" aria-label="Mobile primary navigation">
+                <p className="sidebar-label">Workspace</p>
+                <div className="space-y-1">
+                  {APP_NAV_ITEMS.map((item) => (
+                    <NavigationItem
+                      key={item.href}
+                      item={item}
+                      pathname={pathname}
+                      onNavigate={() => closeDrawer(false)}
+                    />
+                  ))}
+                </div>
+              </nav>
+
+              <div className="mobile-drawer-account">
+                <UserProfile isMobile />
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen(false)}
-              className="app-button-secondary !h-11 !w-11 !rounded-[18px] !p-0"
-              aria-label="Close navigation menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
+        </>
+      ) : null}
 
-          <p className="sidebar-label px-2">Navigate</p>
-
-          <nav className="flex-1 space-y-1" aria-label="Mobile navigation">
-            {APP_NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = isNavigationItemActive(pathname, item.href);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`shell-nav-button ${
-                    isActive ? 'shell-nav-button-active' : ''
-                  }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.3 : 1.95} />
-                  <span className="text-sm font-medium">{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="mt-4 border-t border-white/5 pt-4">
-            <UserProfile isMobile />
-          </div>
-        </div>
-      </div>
-
-      <nav className="mobile-bottom-nav grid grid-cols-4 md:hidden" aria-label="Bottom navigation">
+      <nav className="mobile-bottom-nav lg:hidden" aria-label="Mobile primary navigation">
         {MOBILE_PRIMARY_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = isNavigationItemActive(pathname, item.href);
+          const isActive = isNavigationItemActive(pathname, item);
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 rounded-[18px] px-2 py-2.5 text-center ${
-                isActive
-                  ? 'bg-[rgba(93,166,255,0.14)] text-white'
-                  : 'text-[var(--text-secondary)]'
+              prefetch={false}
+              className={`mobile-bottom-nav-item ${
+                isActive ? 'mobile-bottom-nav-item-active' : ''
               }`}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className="h-5 w-5" strokeWidth={isActive ? 2.3 : 1.95} />
-              <span className="text-[11px] font-semibold">{item.name}</span>
+              <Icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.2 : 1.9} />
+              <span>{item.name}</span>
             </Link>
           );
         })}

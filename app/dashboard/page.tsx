@@ -1,72 +1,223 @@
 'use client';
 
-import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CheckIn, Goal, Milestone, Todo } from '@/app/types';
+import CreateCheckInModal from '@/components/app/checkins/CreateCheckInModal';
 import CreateGoalModal from '@/components/app/dashboard/CreateGoalModal';
-import DashboardCard from '@/components/app/dashboard/DashboardCard';
-import DashboardFocus from '@/components/app/dashboard/DashboardFocus';
+import DashboardGoals from '@/components/app/dashboard/DashboardGoals';
 import GoalSuggestions from '@/components/app/dashboard/GoalSuggestions';
-import GoalsList from '@/components/app/dashboard/GoalsList';
-import DashboardSection from '@/components/app/dashboard/DashboardSection';
-import SectionHeader from '@/components/app/dashboard/SectionHeader';
-import { AppPage, AppPageHeader } from '@/components/app/shared/AppPage';
-import { getCheckIns, getGoals, getMilestones, getTodos } from '@/lib/storage';
-import { calculateGoalProgress } from '@/lib/domain/progress';
+import NextUp from '@/components/app/dashboard/NextUp';
+import TodayHeader from '@/components/app/dashboard/TodayHeader';
+import UpcomingTasks from '@/components/app/dashboard/UpcomingTasks';
+import WeeklyReview from '@/components/app/dashboard/WeeklyReview';
+import CreateTodoModal from '@/components/app/todos/CreateTodoModal';
+import { AppPage } from '@/components/app/shared/AppPage';
+import {
+  getDashboardGoals,
+  getGoalProgress,
+  getGoalsNeedingCheckIn,
+  groupUpcomingTasks,
+  selectNextTask,
+  type DashboardReviewGoal,
+} from '@/lib/domain/dashboard';
+import { todayDateOnly } from '@/lib/domain/date-only';
+import {
+  getCheckIns,
+  getGoals,
+  getMilestones,
+  getTodos,
+  toggleTodoComplete,
+} from '@/lib/storage';
 import { WORKSPACE_SYNC_EVENT } from '@/lib/workspace-sync-events';
-import { formatDateOnly } from '@/lib/domain/date-only';
 
 export default function DashboardPage() {
-  const [mounted, setMounted] = useState(false);
+  const [today, setToday] = useState('');
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
-  const [asOf, setAsOf] = useState(0);
-  const [stats, setStats] = useState({ totalGoals: 0, averageProgress: 0, completedTodos: 0, lastCheckIn: null as string | null });
+  const [pendingTodoId, setPendingTodoId] = useState<string | null>(null);
+  const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+  const [reviewGoal, setReviewGoal] = useState<DashboardReviewGoal | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const refreshDashboard = useCallback(async () => {
+    setIsRefreshing(true);
+    setError(null);
+    setToday(todayDateOnly());
+
     try {
-      setError(null);
-      const [loadedGoals, loadedMilestones, loadedTodos, loadedCheckIns] = await Promise.all([getGoals(), getMilestones(), getTodos(), getCheckIns()]);
+      const [loadedGoals, loadedMilestones, loadedTodos, loadedCheckIns] = await Promise.all([
+        getGoals(),
+        getMilestones(),
+        getTodos(),
+        getCheckIns(),
+      ]);
+
       setGoals(loadedGoals);
       setMilestones(loadedMilestones);
       setTodos(loadedTodos);
       setCheckIns(loadedCheckIns);
-      setAsOf(Date.now());
-      const recentCheckIn = [...loadedCheckIns].sort((a, b) => b.date.localeCompare(a.date))[0];
-      setStats({
-        totalGoals: loadedGoals.length,
-        averageProgress: loadedGoals.length ? Math.round(loadedGoals.reduce((total, goal) => {
-          const goalMilestones = loadedMilestones.filter((milestone) => milestone.goalId === goal.id);
-          const goalTasks = loadedTodos.filter((todo) => todo.goalId === goal.id);
-          return total + calculateGoalProgress(goalMilestones.map((milestone) => { const tasks = goalTasks.filter((todo) => todo.milestoneId === milestone.id); return { completed: milestone.completed, tasksCompleted: tasks.filter((task) => task.completed).length, tasksTotal: tasks.length }; }), goal.status);
-        }, 0) / loadedGoals.length) : 0,
-        completedTodos: loadedTodos.filter((todo) => todo.completed).length,
-        lastCheckIn: recentCheckIn ? formatDateOnly(recentCheckIn.date) : null,
-      });
     } catch {
-      setError('The dashboard could not load your workspace. Try again.');
+      setError('Today could not load your workspace. Try again.');
     } finally {
-      setMounted(true);
+      setHasLoaded(true);
+      setIsRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    void fetchData();
-    const handleWorkspaceSync = () => void fetchData();
+    void refreshDashboard();
+    const handleWorkspaceSync = () => void refreshDashboard();
     window.addEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
     return () => window.removeEventListener(WORKSPACE_SYNC_EVENT, handleWorkspaceSync);
-  }, [fetchData]);
+  }, [refreshDashboard]);
 
-  if (!mounted) return <AppPage><div className="page-skeleton animate-pulse p-6"><div className="h-3 w-28 rounded-full bg-white/10" /><div className="mt-4 h-10 w-3/5 rounded-2xl bg-white/10" /><div className="mt-3 h-4 w-2/5 rounded-full bg-white/5" /></div></AppPage>;
+  const goalsById = useMemo(
+    () => new Map(goals.map((goal) => [goal.id, goal])),
+    [goals],
+  );
+  const milestonesById = useMemo(
+    () => new Map(milestones.map((milestone) => [milestone.id, milestone])),
+    [milestones],
+  );
+  const nextTask = today ? selectNextTask(todos, today) : null;
+  const nextTaskGoal = nextTask?.goalId ? goalsById.get(nextTask.goalId) ?? null : null;
+  const nextTaskMilestone = nextTask?.milestoneId
+    ? milestonesById.get(nextTask.milestoneId) ?? null
+    : null;
+  const nextTaskProgress = nextTaskGoal
+    ? getGoalProgress(nextTaskGoal, milestones, todos)
+    : null;
+  const dashboardGoals = getDashboardGoals(goals, milestones, todos);
+  const reviewGoals = today ? getGoalsNeedingCheckIn(goals, checkIns, today) : [];
+  const upcomingGroups = today ? groupUpcomingTasks(todos, today) : [];
+  const activeGoalCount = goals.filter((goal) => goal.status !== 'completed').length;
 
-  return <AppPage>
-    <AppPageHeader eyebrow="Overview" title="What should you work on next?" description="Turn long-term goals into weekly actions, then review what moved." meta={<><span className="app-pill app-pill-blue">{stats.totalGoals} goals in focus</span><span className="app-pill app-pill-success">{stats.completedTodos} tasks completed</span><span className="app-pill app-pill-warning">{stats.lastCheckIn || 'No recent check-in'}</span></>} action={<><GoalSuggestions /><CreateGoalModal /></>} />
-    {error ? <div className="rounded-[18px] border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-100" role="alert">{error} <button type="button" className="ml-2 underline" onClick={() => void fetchData()}>Try again</button></div> : null}
-    {stats.totalGoals === 0 ? <section className="surface-panel p-6 md:p-8"><p className="page-kicker">First plan</p><h2 className="mt-2 text-2xl font-semibold text-white">Start with one meaningful goal</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">Goals define where you want to go. Milestones define the major steps. Tasks define what you can do next. Create one goal, then add its first milestone and task from the goal page.</p><div className="mt-5 flex flex-wrap gap-3"><CreateGoalModal /><Link href="/docs" className="app-button-secondary">How the workflow works</Link></div></section> : <DashboardFocus goals={goals} milestones={milestones} todos={todos} checkIns={checkIns} asOf={asOf} />}
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3"><DashboardCard title="Goals in focus" value={stats.totalGoals} subtitle="Choose a goal to turn into this week’s actions" icon={<span aria-hidden="true">◎</span>} /><DashboardCard title="Average progress" value={`${stats.averageProgress}%`} subtitle="Calculated from milestone and task completion" icon={<span aria-hidden="true">↗</span>} /><DashboardCard title="Completed tasks" value={stats.completedTodos} subtitle="Small actions already moved forward" icon={<span aria-hidden="true">✓</span>} /></div>
-    <DashboardSection><SectionHeader title="Current Goals" icon={<span aria-hidden="true">◎</span>} /><GoalsList /></DashboardSection>
-  </AppPage>;
+  async function handleCompleteTodo(todo: Todo) {
+    if (pendingTodoId) return;
+
+    setActionError(null);
+    setPendingTodoId(todo.id);
+    try {
+      await toggleTodoComplete(todo.id);
+      await refreshDashboard();
+    } catch {
+      setActionError('Task could not be completed. Try again.');
+    } finally {
+      setPendingTodoId(null);
+    }
+  }
+
+  function handleTodoSaved() {
+    setIsTodoModalOpen(false);
+    void refreshDashboard();
+  }
+
+  function handleCheckInSaved() {
+    setReviewGoal(null);
+    void refreshDashboard();
+  }
+
+  if (!hasLoaded) {
+    return (
+      <AppPage>
+        <div className="space-y-5" aria-busy="true" aria-label="Loading Today">
+          <div className="animate-pulse">
+            <div className="h-8 w-24 rounded-lg bg-[var(--bg-surface-hover)]" />
+            <div className="mt-3 h-4 w-44 rounded bg-[var(--bg-surface-subtle)]" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.85fr)]">
+            <div className="surface-panel h-64 animate-pulse bg-[var(--bg-surface-subtle)]" />
+            <div className="surface-panel h-64 animate-pulse bg-[var(--bg-surface-subtle)]" />
+          </div>
+          <div className="h-48 animate-pulse rounded-[var(--radius-container)] bg-[var(--bg-surface-subtle)]" />
+          <div className="h-56 animate-pulse rounded-[var(--radius-container)] bg-[var(--bg-surface-subtle)]" />
+        </div>
+      </AppPage>
+    );
+  }
+
+  return (
+    <AppPage>
+      <TodayHeader date={today} />
+
+      {error ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--danger)]/30 bg-[var(--danger-soft)] px-4 py-3 text-sm text-[#ffe0e6]" role="alert">
+          <span>{error}</span>
+          <button type="button" className="app-button-secondary app-button-sm" onClick={() => void refreshDashboard()}>
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--danger)]/30 bg-[var(--danger-soft)] px-4 py-3 text-sm text-[#ffe0e6]" role="alert">
+          <span>{actionError}</span>
+          <button type="button" className="app-button-ghost app-button-sm" onClick={() => setActionError(null)}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.85fr)]">
+        <NextUp
+          goal={nextTaskGoal}
+          goalProgress={nextTaskProgress}
+          hasTasks={todos.length > 0}
+          isCompleting={pendingTodoId === nextTask?.id}
+          milestone={nextTaskMilestone}
+          onComplete={handleCompleteTodo}
+          onCreateTask={() => setIsTodoModalOpen(true)}
+          task={nextTask}
+          today={today}
+        />
+        <WeeklyReview
+          activeGoalCount={activeGoalCount}
+          onCheckIn={setReviewGoal}
+          reviews={reviewGoals}
+        />
+      </div>
+
+      <DashboardGoals
+        createGoalAction={<CreateGoalModal />}
+        goalIdeasAction={<GoalSuggestions />}
+        goals={dashboardGoals}
+      />
+
+      <UpcomingTasks
+        goalsById={goalsById}
+        groups={upcomingGroups}
+        onToggle={handleCompleteTodo}
+        pendingTodoId={pendingTodoId}
+        today={today}
+      />
+
+      {isRefreshing ? (
+        <p className="text-xs text-[var(--text-muted)]" role="status" aria-live="polite">
+          Updating Today…
+        </p>
+      ) : null}
+
+      {isTodoModalOpen ? (
+        <CreateTodoModal
+          isOpen={isTodoModalOpen}
+          onClose={() => setIsTodoModalOpen(false)}
+          onSave={handleTodoSaved}
+        />
+      ) : null}
+
+      {reviewGoal ? (
+        <CreateCheckInModal
+          isOpen
+          goalId={reviewGoal.goal.id}
+          onClose={() => setReviewGoal(null)}
+          onSave={handleCheckInSaved}
+        />
+      ) : null}
+    </AppPage>
+  );
 }

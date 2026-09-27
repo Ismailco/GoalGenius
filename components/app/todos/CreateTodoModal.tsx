@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Todo, TodoRecurrence, TodoReminder } from '@/app/types';
+import { Goal, Milestone, Todo, TodoRecurrence, TodoReminder } from '@/app/types';
 import { readAppSettings } from '@/lib/app-settings';
 import { createTodo, updateTodo } from '@/lib/storage';
 import { validateAndSanitizeInput, ValidationResult, unescapeForDisplay } from '@/lib/validation';
 import { handleAsyncOperation, getUserFriendlyErrorMessage } from '@/lib/error';
 import { LoadingOverlay } from '@/components/common/LoadingSpinner';
+import AppModal from '@/components/app/shared/AppModal';
 
 interface CreateTodoModalProps {
   isOpen: boolean;
@@ -15,6 +16,9 @@ interface CreateTodoModalProps {
   onSave?: (todo: Todo) => void;
   goalId?: string | null;
   milestoneId?: string | null;
+  goals?: Goal[];
+  milestones?: Milestone[];
+  allowRelationshipSelection?: boolean;
 }
 
 interface FormErrors {
@@ -24,6 +28,9 @@ interface FormErrors {
   dueDate?: string;
 }
 
+const EMPTY_GOALS: Goal[] = [];
+const EMPTY_MILESTONES: Milestone[] = [];
+
 export default function CreateTodoModal({
   isOpen,
   onClose,
@@ -31,6 +38,9 @@ export default function CreateTodoModal({
   onSave,
   goalId = null,
   milestoneId = null,
+  goals = EMPTY_GOALS,
+  milestones = EMPTY_MILESTONES,
+  allowRelationshipSelection = false,
 }: CreateTodoModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -41,6 +51,8 @@ export default function CreateTodoModal({
   const [category, setCategory] = useState('');
   const [recurrence, setRecurrence] = useState<TodoRecurrence>('none');
   const [reminder, setReminder] = useState<TodoReminder>('none');
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(goalId);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string | null>(milestoneId);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -48,15 +60,8 @@ export default function CreateTodoModal({
   useEffect(() => {
     if (isOpen) {
       modalRef.current?.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
-      const handleEscape = (event: KeyboardEvent) => {
-        if (event.key === 'Escape' && !isLoading) onClose();
-      };
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
     }
-
-    return undefined;
-  }, [isOpen, isLoading, onClose]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -71,6 +76,9 @@ export default function CreateTodoModal({
       setCategory(existingTodo.category ? unescapeForDisplay(existingTodo.category) : '');
       setRecurrence(existingTodo.recurrence ?? 'none');
       setReminder(existingTodo.reminder ?? 'none');
+      const existingMilestone = existingTodo.milestoneId ? milestones.find((milestone) => milestone.id === existingTodo.milestoneId) : undefined;
+      setSelectedGoalId(existingTodo.goalId ?? existingMilestone?.goalId ?? null);
+      setSelectedMilestoneId(existingTodo.milestoneId ?? null);
       setErrors({});
       return;
     }
@@ -83,8 +91,14 @@ export default function CreateTodoModal({
     setCategory('');
     setRecurrence('none');
     setReminder('none');
+    setSelectedGoalId(goalId);
+    setSelectedMilestoneId(milestoneId);
     setErrors({});
-  }, [existingTodo, isOpen]);
+  }, [existingTodo, goalId, isOpen, milestoneId, milestones]);
+
+  const relationshipMilestones = selectedGoalId
+    ? milestones.filter((milestone) => milestone.goalId === selectedGoalId)
+    : [];
 
   if (!isOpen) return null;
 
@@ -132,6 +146,15 @@ export default function CreateTodoModal({
       case 'reminder':
         setReminder(value as TodoReminder);
         break;
+      case 'goalId':
+        setSelectedGoalId(value || null);
+        if (selectedMilestoneId && !milestones.some((milestone) => milestone.id === selectedMilestoneId && milestone.goalId === value)) {
+          setSelectedMilestoneId(null);
+        }
+        break;
+      case 'milestoneId':
+        setSelectedMilestoneId(value || null);
+        break;
     }
 
     // Update errors
@@ -171,8 +194,8 @@ export default function CreateTodoModal({
     }
 
     const todoData = {
-      goalId: goalId ?? existingTodo?.goalId ?? null,
-      milestoneId: milestoneId ?? existingTodo?.milestoneId ?? null,
+      goalId: allowRelationshipSelection ? selectedGoalId : goalId ?? existingTodo?.goalId ?? null,
+      milestoneId: allowRelationshipSelection ? selectedMilestoneId : milestoneId ?? existingTodo?.milestoneId ?? null,
       title: titleValidation.sanitizedValue,
       description: descriptionValidation.sanitizedValue || undefined,
       priority: priority as 'low' | 'medium' | 'high',
@@ -202,21 +225,9 @@ export default function CreateTodoModal({
   };
 
   return (
-    <div
-      ref={modalRef}
-      className="app-modal-backdrop"
-      role="dialog"
-      aria-labelledby="todo-modal-title"
-      aria-modal="true"
-    >
-      <div className="app-modal-panel relative flex max-h-[80vh] flex-col">
+    <AppModal title={existingTodo ? 'Edit Task' : 'Create New Task'} onClose={onClose} size="lg" closeDisabled={isLoading}>
+      <div ref={modalRef} className="relative">
         {isLoading && <LoadingOverlay role="status" aria-label="Saving task..." />}
-        <div className="shrink-0 border-b border-white/5 p-6">
-          <h2 id="todo-modal-title" className="text-2xl font-semibold text-white">
-            {existingTodo ? 'Edit Task' : 'Create New Task'}
-          </h2>
-        </div>
-        <div className="p-6 overflow-y-auto">
           <form onSubmit={handleSubmit} aria-label={existingTodo ? 'Edit task form' : 'Create task form'}>
             <div className="space-y-6">
               <div>
@@ -329,6 +340,31 @@ export default function CreateTodoModal({
                 </div>
               </div>
 
+              {allowRelationshipSelection ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="goalId" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+                      Goal (optional)
+                    </label>
+                    <select id="goalId" name="goalId" value={selectedGoalId ?? ''} onChange={handleChange} className="app-select">
+                      <option value="">No goal</option>
+                      {goals.map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="milestoneId" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+                      Milestone (optional)
+                    </label>
+                    <select id="milestoneId" name="milestoneId" value={selectedMilestoneId ?? ''} onChange={handleChange} className="app-select" disabled={!selectedGoalId}>
+                      <option value="">No milestone</option>
+                      {relationshipMilestones.map((milestone) => <option key={milestone.id} value={milestone.id}>{milestone.title}</option>)}
+                    </select>
+                    {!selectedGoalId ? <p className="mt-1 text-xs text-[var(--text-muted)]">Choose a goal first.</p> : null}
+                  </div>
+                </div>
+              ) : null}
+
               <div>
                 <label htmlFor="category" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
                   Category (optional)
@@ -352,7 +388,7 @@ export default function CreateTodoModal({
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3">
+            <div className="app-form-actions mt-8">
               <button
                 type="button"
                 onClick={onClose}
@@ -372,8 +408,7 @@ export default function CreateTodoModal({
               </button>
             </div>
           </form>
-        </div>
       </div>
-    </div>
+    </AppModal>
   );
 }

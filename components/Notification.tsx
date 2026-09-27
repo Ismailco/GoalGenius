@@ -35,41 +35,41 @@ export default function Notification({
     switch (type) {
       case 'success':
         return (
-          <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6 text-[var(--success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         );
       case 'error':
         return (
-          <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6 text-[var(--danger)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         );
       case 'warning':
         return (
-          <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6 text-[var(--warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         );
       default:
         return (
-          <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6 text-[var(--info)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
     }
   };
 
-  const getColors = () => {
+  const getNotificationClass = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-500/20 border-green-500/50';
+        return 'app-notification-success';
       case 'error':
-        return 'bg-red-500/20 border-red-500/50';
+        return 'app-notification-danger';
       case 'warning':
-        return 'bg-yellow-500/20 border-yellow-500/50';
+        return 'app-notification-warning';
       default:
-        return 'bg-blue-500/20 border-blue-500/50';
+        return 'app-notification-info';
     }
   };
 
@@ -80,7 +80,7 @@ export default function Notification({
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`fixed top-4 right-4 w-96 p-4 rounded-2xl border backdrop-blur-xl z-50 ${getColors()}`}
+          className={`app-notification fixed top-4 right-4 z-50 p-4 ${getNotificationClass()}`}
           role="alert"
           aria-labelledby={`notification-${id}-title`}
           aria-describedby={`notification-${id}-message`}
@@ -92,13 +92,13 @@ export default function Notification({
             <div className="flex-1 pt-0.5">
               <h3
                 id={`notification-${id}-title`}
-                className="text-sm font-medium text-white"
+                className="text-sm font-semibold text-[var(--text-primary)]"
               >
                 {title}
               </h3>
               <p
                 id={`notification-${id}-message`}
-                className="mt-1 text-sm text-gray-300"
+                className="mt-1 text-sm text-[var(--text-secondary)]"
               >
                 {message}
               </p>
@@ -108,7 +108,7 @@ export default function Notification({
                 setIsVisible(false);
                 setTimeout(() => onClose(id), 300);
               }}
-              className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
+              className="app-button-ghost app-button-icon !min-h-8 !h-8 !w-8 text-[var(--text-muted)]"
               aria-label="Close notification"
             >
               <span aria-hidden="true">×</span>

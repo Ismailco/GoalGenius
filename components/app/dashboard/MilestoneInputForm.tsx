@@ -108,9 +108,11 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData, is
           className={`app-field ${errors.title ? 'border-red-500' : ''}`}
           placeholder="Enter milestone title"
           required
+          aria-invalid={!!errors.title}
+          aria-describedby={errors.title ? 'milestone-title-error' : undefined}
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-red-500">{errors.title}</p>
+          <p id="milestone-title-error" className="app-form-error mt-1" role="alert">{errors.title}</p>
         )}
       </div>
 
@@ -126,9 +128,11 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData, is
           className={`app-field ${errors.description ? 'border-red-500' : ''}`}
           rows={3}
           placeholder="Enter milestone description"
+          aria-invalid={!!errors.description}
+          aria-describedby={errors.description ? 'milestone-description-error' : undefined}
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+          <p id="milestone-description-error" className="app-form-error mt-1" role="alert">{errors.description}</p>
         )}
       </div>
 
@@ -145,13 +149,15 @@ export default function MilestoneInputForm({ onSubmit, onCancel, initialData, is
           className={`app-field ${errors.date ? 'border-red-500' : ''}`}
           required
           min={todayDateOnly()}
+          aria-invalid={!!errors.date}
+          aria-describedby={errors.date ? 'milestone-date-error' : undefined}
         />
         {errors.date && (
-          <p className="mt-1 text-sm text-red-500">{errors.date}</p>
+          <p id="milestone-date-error" className="app-form-error mt-1" role="alert">{errors.date}</p>
         )}
       </div>
 
-      <div className="flex justify-end gap-2 mt-6">
+      <div className="app-form-actions mt-6">
         <button
           type="button"
           onClick={onCancel}
