@@ -8,7 +8,6 @@ import AppLogoMark from '@/components/app/shared/AppLogoMark';
 import NavigationItem from '@/components/app/shared/NavigationItem';
 import {
   APP_NAV_ITEMS,
-  APP_UTILITY_NAV_ITEMS,
   MOBILE_PRIMARY_NAV_ITEMS,
   getActiveNavigationItem,
   isNavigationItemActive,
@@ -121,6 +120,7 @@ export default function Navbar() {
               <header className="mobile-drawer-header">
                 <Link
                   href="/dashboard"
+                  prefetch={false}
                   className="sidebar-brand"
                   onClick={() => closeDrawer(false)}
                   aria-label="Rungset Today"
@@ -154,20 +154,6 @@ export default function Navbar() {
                 </div>
               </nav>
 
-              <nav className="mobile-drawer-utility" aria-label="Mobile utility navigation">
-                <p className="sidebar-label">Utility</p>
-                <div className="space-y-1">
-                  {APP_UTILITY_NAV_ITEMS.map((item) => (
-                    <NavigationItem
-                      key={item.href}
-                      item={item}
-                      pathname={pathname}
-                      onNavigate={() => closeDrawer(false)}
-                    />
-                  ))}
-                </div>
-              </nav>
-
               <div className="mobile-drawer-account">
                 <UserProfile isMobile />
               </div>
@@ -185,6 +171,7 @@ export default function Navbar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`mobile-bottom-nav-item ${
                 isActive ? 'mobile-bottom-nav-item-active' : ''
               }`}

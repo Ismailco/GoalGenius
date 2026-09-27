@@ -57,11 +57,10 @@ export default function ActivityGrid({
         </div>
 
         <div className="flex gap-2">
-          <div className="flex w-10 shrink-0 flex-col justify-between py-0.5 text-[0.65rem] text-[var(--text-muted)]" aria-hidden="true">
-            <span>Sun</span>
-            <span>Mon</span>
-            <span>Wed</span>
-            <span>Fri</span>
+          <div className="grid w-10 shrink-0 grid-rows-7 gap-1 py-0.5 text-[0.65rem] text-[var(--text-muted)]" aria-hidden="true">
+            <span className="row-start-1">Sun</span>
+            <span className="row-start-3">Tue</span>
+            <span className="row-start-5">Thu</span>
           </div>
 
           <div className="flex gap-1">
@@ -92,9 +91,17 @@ export default function ActivityGrid({
 
                   if (checkIns.length === 0) {
                     return (
-                      <span key={date} className={className} aria-label={getDayLabel(date, checkIns, today)}>
+                      <button
+                        key={date}
+                        type="button"
+                        className={className}
+                        aria-label={getDayLabel(date, checkIns, today)}
+                        aria-pressed={isSelected}
+                        title={getDayLabel(date, checkIns, today)}
+                        onClick={() => onSelectDate(date)}
+                      >
                         <span className="sr-only">{getDayLabel(date, checkIns, today)}</span>
-                      </span>
+                      </button>
                     );
                   }
 

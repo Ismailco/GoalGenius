@@ -9,7 +9,7 @@ import {
 
 assert.deepEqual(
   APP_NAV_ITEMS.map((item) => item.name),
-  ['Today', 'Goals', 'Tasks', 'Check-ins', 'Notes'],
+  ['Today', 'Goals', 'Tasks', 'Check-ins', 'Calendar', 'Analytics', 'Notes'],
 );
 assert.deepEqual(
   MOBILE_PRIMARY_NAV_ITEMS.map((item) => item.name),
@@ -28,6 +28,8 @@ assert.equal(isNavigationItemActive('/milestones', goals), true);
 assert.equal(getActiveNavigationItem('/dashboard')?.name, 'Today');
 assert.equal(getActiveNavigationItem('/todos/todo-123')?.name, 'Tasks');
 assert.equal(getActiveNavigationItem('/checkins')?.name, 'Check-ins');
+assert.equal(getActiveNavigationItem('/calendar')?.name, 'Calendar');
+assert.equal(getActiveNavigationItem('/analytics')?.name, 'Analytics');
 assert.equal(getActiveNavigationItem('/notes')?.name, 'Notes');
 assert.equal(getActiveNavigationItem('/settings')?.name, 'Settings');
 assert.equal(getActiveNavigationItem('/milestones')?.name, 'Goals');

@@ -39,6 +39,11 @@ test('global Check-ins supports review activity, history, and management', async
   await expect(page.getByRole('heading', { name: 'Review activity' })).toBeVisible();
 
   const activity = page.locator('section[aria-labelledby="review-activity-heading"]');
+  const emptyDay = activity.locator('button[aria-label*="no check-in"]').first();
+  await emptyDay.click();
+  await expect(activity.getByText(/^No check-in on /)).toBeVisible();
+  await expect(activity.getByRole('button', { name: 'Check in', exact: true })).toBeVisible();
+
   const checkedDay = activity.locator('button[aria-label*="check-in"]').first();
   await checkedDay.focus();
   await expect(checkedDay).toHaveAttribute('aria-label', /check-in/);

@@ -388,6 +388,27 @@ optgroup {
   padding: 0;
 }
 
+.app-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.app-icon-button:hover {
+  border-color: var(--border-subtle);
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.app-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .app-button:disabled,
 .app-button-secondary:disabled,
 .app-button-ghost:disabled,
@@ -586,8 +607,6 @@ optgroup {
   display: flex;
   min-height: 3rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
   padding: 0 0.35rem 0.85rem;
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -602,8 +621,24 @@ optgroup {
   text-decoration: none;
 }
 
+.sidebar-brand-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
 .sidebar-brand-collapsed {
   justify-content: center;
+}
+
+.sidebar-full-logo {
+  width: auto;
+  height: 1.5rem;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .sidebar-wordmark {
@@ -614,25 +649,6 @@ optgroup {
   letter-spacing: -0.015em;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sidebar-collapse-button {
-  display: inline-flex;
-  width: 2rem;
-  height: 2rem;
-  flex: 0 0 2rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  background: transparent;
-  color: var(--text-muted);
-}
-
-.sidebar-collapse-button:hover {
-  border-color: var(--border-subtle);
-  background: var(--bg-surface-hover);
-  color: var(--text-primary);
 }
 
 .sidebar-primary-nav {
@@ -646,13 +662,8 @@ optgroup {
   border-top: 1px solid var(--border-subtle);
 }
 
-.sidebar-utility-nav {
-  padding-bottom: 0.75rem;
-}
-
-.sidebar-account {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-subtle);
+.notes-list-panel {
+  overflow: visible;
 }
 
 .mobile-bar {

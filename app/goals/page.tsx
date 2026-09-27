@@ -163,7 +163,7 @@ export default function GoalsPage() {
           <h1 className="page-title">Goals</h1>
           <p className="page-description">Keep active outcomes and next milestones in view.</p>
         </div>
-        <CreateGoalModal onCreated={() => loadData()} label="New goal" />
+        {goals.length > 0 ? <CreateGoalModal onCreated={() => loadData()} label="New goal" /> : null}
       </header>
 
       <GoalsToolbar
@@ -171,7 +171,7 @@ export default function GoalsPage() {
         selectedCategory={selectedCategory}
         onSearchChange={setSearchTerm}
         onCategoryChange={setSelectedCategory}
-        goalIdeasAction={goalIdeasAction}
+        goalIdeasAction={goals.length > 0 ? goalIdeasAction : null}
       />
 
       {refreshing ? <span className="sr-only" role="status">Updating goals…</span> : null}

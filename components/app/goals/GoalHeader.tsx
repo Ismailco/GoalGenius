@@ -42,7 +42,7 @@ export default function GoalHeader({
   return (
     <header className="border-b border-[var(--border-default)] pb-6">
       <nav aria-label="Breadcrumb" className="mb-5 flex min-w-0 items-center gap-1 text-sm text-[var(--text-muted)]">
-        <Link href="/goals" className="app-button-ghost !min-h-0 !px-0 !py-1 hover:text-[var(--text-primary)]">
+        <Link href="/goals" prefetch={false} className="app-button-ghost !min-h-0 !px-0 !py-1 hover:text-[var(--text-primary)]">
           Goals
         </Link>
         <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />

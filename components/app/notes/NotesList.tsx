@@ -32,7 +32,7 @@ export default function NotesList({ notes, onDelete, onEdit, onTogglePin }: Note
   const otherNotes = notes.filter((note) => !note.isPinned);
 
   return (
-    <div className="surface-panel overflow-hidden">
+    <div className="surface-panel notes-list-panel">
       <NoteGroup heading="Pinned" notes={pinnedNotes} onDelete={onDelete} onEdit={onEdit} onTogglePin={onTogglePin} />
       <NoteGroup heading="Notes" notes={otherNotes} onDelete={onDelete} onEdit={onEdit} onTogglePin={onTogglePin} />
     </div>

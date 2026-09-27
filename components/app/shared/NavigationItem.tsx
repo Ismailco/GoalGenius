@@ -21,6 +21,7 @@ export default function NavigationItem({
   return (
     <Link
       href={item.href}
+      prefetch={false}
       onClick={onNavigate}
       className={`shell-nav-button ${
         isActive ? 'shell-nav-button-active' : ''

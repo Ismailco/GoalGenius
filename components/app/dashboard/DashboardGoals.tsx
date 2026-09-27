@@ -15,7 +15,7 @@ export default function DashboardGoals({ createGoalAction, goalIdeasAction, goal
     <section aria-labelledby="today-goals-heading">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 id="today-goals-heading" className="text-lg font-semibold text-[var(--text-primary)]">Goals</h2>
-        <Link href="/goals" className="app-button-ghost app-button-sm">
+        <Link href="/goals" prefetch={false} className="app-button-ghost app-button-sm">
           View all goals <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </div>
@@ -37,6 +37,7 @@ export default function DashboardGoals({ createGoalAction, goalIdeasAction, goal
             <Link
               key={goal.id}
               href={`/goals/${goal.id}`}
+              prefetch={false}
               className="group flex flex-col gap-4 border-b border-[var(--border-subtle)] p-4 last:border-b-0 hover:bg-[var(--bg-surface-hover)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5"
             >
               <div className="flex min-w-0 items-start gap-3">

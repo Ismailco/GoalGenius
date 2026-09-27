@@ -16,6 +16,14 @@ test('Goals overview keeps filtering and management actions available', async ({
   await expect(page.getByRole('heading', { name: 'Goals', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'No goals yet' })).toBeVisible();
 
+  await page.getByRole('button', { name: 'Goal ideas', exact: true }).click();
+  const ideasDialog = page.getByRole('dialog', { name: 'Goal ideas' });
+  await expect(ideasDialog).toBeVisible();
+  await expect(ideasDialog.getByRole('button', { name: 'Add goal', exact: true }).first()).toBeVisible();
+  await ideasDialog.getByRole('button', { name: 'Add goal', exact: true }).first().click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Goal added' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Daily Exercise Routine', exact: true })).toBeVisible();
+
   await page.getByRole('button', { name: 'Create new goal' }).first().click();
   await page.getByLabel('Title', { exact: true }).fill('Ship the first release');
   await page.getByLabel('Description', { exact: true }).fill('Validate the product with early users.');
@@ -52,5 +60,5 @@ test('Goals overview keeps filtering and management actions available', async ({
   await page.getByRole('button', { name: 'Actions for Ship the first release' }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
   await page.getByRole('button', { name: 'Delete goal' }).click();
-  await expect(page.getByRole('heading', { name: 'No goals yet' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Daily Exercise Routine', exact: true })).toBeVisible();
 });

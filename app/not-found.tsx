@@ -38,6 +38,7 @@ export default function NotFound() {
 
           <Link
             href={getParentPath()}
+            prefetch={false}
             className="app-button-secondary block w-full"
           >
             Return to parent
@@ -45,6 +46,7 @@ export default function NotFound() {
 
           <Link
             href="/dashboard"
+            prefetch={false}
             className="app-button-secondary block w-full"
           >
             Go to Today

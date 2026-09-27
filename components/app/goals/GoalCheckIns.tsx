@@ -32,7 +32,7 @@ export default function GoalCheckIns({ checkIns, onCheckIn, today }: GoalCheckIn
           <h2 id="goal-check-ins-heading" className="text-lg font-semibold text-[var(--text-primary)]">Check-ins</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">A short review history for this goal.</p>
         </div>
-        <Link href="/checkins" className="app-button-ghost app-button-sm">View all check-ins</Link>
+        <Link href="/checkins" prefetch={false} className="app-button-ghost app-button-sm">View all check-ins</Link>
       </div>
 
       {checkIns.length === 0 ? (

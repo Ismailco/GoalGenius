@@ -138,7 +138,7 @@ export default function GoalExecutionView({ goalId }: { goalId: string }) {
       <AppPage>
         <div className="app-empty-state px-5 py-8">
           <h1 className="text-lg font-semibold text-[var(--text-primary)]">Goal not found</h1>
-          <Link className="app-button mt-5 inline-flex" href="/goals">Back to Goals</Link>
+          <Link className="app-button mt-5 inline-flex" href="/goals" prefetch={false}>Back to Goals</Link>
         </div>
       </AppPage>
     );

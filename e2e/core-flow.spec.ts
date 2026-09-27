@@ -99,7 +99,7 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
     { width: 1440, height: 900 },
   ]) {
     await page.setViewportSize(viewport);
-    for (const path of ['/dashboard', '/goals', '/todos', '/notes', '/checkins', '/milestones', '/settings', goalUrl]) {
+    for (const path of ['/dashboard', '/goals', '/todos', '/notes', '/checkins', '/calendar', '/analytics', '/milestones', '/settings', goalUrl]) {
       await page.goto(path);
       await expect(page.locator('main')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width + 1);

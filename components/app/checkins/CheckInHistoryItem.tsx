@@ -57,7 +57,7 @@ export default function CheckInHistoryItem({ checkIn, goal, today, onEdit, onDel
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">{dateLabel}</h3>
-            {goal ? <Link href={`/goals/${goal.id}`} className="max-w-full truncate text-sm text-[var(--accent)] hover:text-[var(--text-primary)]">{goal.title}</Link> : null}
+            {goal ? <Link href={`/goals/${goal.id}`} prefetch={false} className="max-w-full truncate text-sm text-[var(--accent)] hover:text-[var(--text-primary)]">{goal.title}</Link> : null}
           </div>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             {label(checkIn.mood)} mood <span className="px-1 text-[var(--text-muted)]">·</span> {label(checkIn.energy)} energy

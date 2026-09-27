@@ -94,6 +94,13 @@ test('global Tasks supports finding, grouping, managing, and completing work', a
   await page.getByRole('button', { name: 'Delete task' }).click();
   await expect(page.getByText('Overdue standalone task', { exact: true })).not.toBeVisible();
 
+  await page.goto('/settings');
+  const showCompletedByDefault = page.getByRole('switch', { name: 'Show completed tasks by default' });
+  await showCompletedByDefault.click();
+  await expect(showCompletedByDefault).toHaveAttribute('aria-checked', 'true');
+  await page.goto('/todos');
+  await expect(page.getByLabel('Filter tasks by status')).toHaveValue('all');
+
   for (const viewport of [
     { width: 360, height: 800 },
     { width: 390, height: 844 },

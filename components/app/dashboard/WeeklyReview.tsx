@@ -37,7 +37,7 @@ export default function WeeklyReview({
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {createGoalAction}
-            <Link href="/goals" className="app-button-secondary">View goals</Link>
+            <Link href="/goals" prefetch={false} className="app-button-secondary">View goals</Link>
           </div>
         </div>
       ) : reviews.length === 0 ? (
@@ -53,7 +53,7 @@ export default function WeeklyReview({
               </p>
             </div>
           </div>
-          <Link href="/checkins" className="app-button-secondary app-button-sm mt-4 inline-flex">
+          <Link href="/checkins" prefetch={false} className="app-button-secondary app-button-sm mt-4 inline-flex">
             View check-ins
           </Link>
         </div>
@@ -69,6 +69,7 @@ export default function WeeklyReview({
               </h3>
               <Link
                 href={`/goals/${reviews[0].goal.id}`}
+                prefetch={false}
                 className="mt-2 block break-words text-sm font-medium text-[var(--brand-primary)] hover:text-[var(--brand-primary-hover)]"
               >
                 {reviews[0].goal.title}
@@ -84,7 +85,7 @@ export default function WeeklyReview({
             <button type="button" className="app-button app-button-sm" onClick={() => onCheckIn(reviews[0])}>
               Check in
             </button>
-            <Link href="/checkins" className="app-button-secondary app-button-sm">
+            <Link href="/checkins" prefetch={false} className="app-button-secondary app-button-sm">
               View check-ins
             </Link>
           </div>

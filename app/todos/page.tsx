@@ -11,6 +11,7 @@ import TasksEmptyState from '@/components/app/todos/TasksEmptyState';
 import TasksHeader from '@/components/app/todos/TasksHeader';
 import TasksSkeleton from '@/components/app/todos/TasksSkeleton';
 import TasksToolbar, { TaskStatusFilter } from '@/components/app/todos/TasksToolbar';
+import { readAppSettings } from '@/lib/app-settings';
 import { todayDateOnly } from '@/lib/domain/date-only';
 import { getTodoDueBucket, matchesTodoFilters, resolveTodoGoalId, sortTodosByActionability } from '@/lib/domain/todos';
 import { deleteTodo, getGoals, getMilestones, getTodos, toggleTodoComplete } from '@/lib/storage';
@@ -41,6 +42,12 @@ export default function TasksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | undefined>();
   const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
+
+  useEffect(() => {
+    if (readAppSettings().showCompletedTodosByDefault) {
+      setStatusFilter('all');
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setRefreshing(true);

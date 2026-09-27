@@ -54,7 +54,7 @@ export default function ActivityDayDetails({ selectedDate, today, checkIns, goal
             {checkIns.length} {checkIns.length === 1 ? 'check-in' : 'check-ins'}
           </p>
         </div>
-        <Link href="#recent-check-ins" className="app-button-ghost app-button-sm">View in history</Link>
+        <Link href="#recent-check-ins" prefetch={false} className="app-button-ghost app-button-sm">View in history</Link>
       </div>
 
       <div className="space-y-2">
@@ -66,7 +66,7 @@ export default function ActivityDayDetails({ selectedDate, today, checkIns, goal
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--text-secondary)]">
                 <span>{checkIn.mood[0].toUpperCase() + checkIn.mood.slice(1)} mood</span>
                 <span>{checkIn.energy[0].toUpperCase() + checkIn.energy.slice(1)} energy</span>
-                {goal ? <Link href={`/goals/${goal.id}`} className="text-[var(--accent)] hover:text-[var(--text-primary)]">{goal.title}</Link> : null}
+                {goal ? <Link href={`/goals/${goal.id}`} prefetch={false} className="text-[var(--accent)] hover:text-[var(--text-primary)]">{goal.title}</Link> : null}
               </div>
               {progress ? <p className="mt-1 truncate text-[var(--text-primary)]">{progress}</p> : null}
             </div>

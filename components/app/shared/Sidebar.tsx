@@ -1,21 +1,18 @@
 'use client';
 
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AppLogoMark from '@/components/app/shared/AppLogoMark';
 import NavigationItem from '@/components/app/shared/NavigationItem';
-import {
-  APP_NAV_ITEMS,
-  APP_UTILITY_NAV_ITEMS,
-} from '@/components/app/shared/navigation';
+import { APP_NAV_ITEMS } from '@/components/app/shared/navigation';
 import UserProfile from '@/components/UserProfile';
 import {
   readSidebarCollapsed,
   subscribeToAppSettings,
   writeSidebarCollapsed,
 } from '@/lib/app-settings';
+import logoFull from '@/public/images/rungset-logo-full.png';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -45,26 +42,24 @@ export default function Sidebar() {
     >
       <div className="desktop-sidebar-inner">
         <header className="desktop-sidebar-header">
-          <Link
-            href="/dashboard"
-            className={`sidebar-brand ${isCollapsed ? 'sidebar-brand-collapsed' : ''}`}
-            aria-label="Rungset Today"
-          >
-            <AppLogoMark className="shrink-0" />
-            {!isCollapsed ? <span className="sidebar-wordmark">Rungset</span> : null}
-          </Link>
-
           <button
             type="button"
             onClick={toggleSidebar}
-            className="sidebar-collapse-button"
+            className={`sidebar-brand sidebar-brand-toggle ${
+              isCollapsed ? 'sidebar-brand-collapsed' : ''
+            }`}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!isCollapsed}
           >
             {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <AppLogoMark className="shrink-0" />
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <Image
+                src={logoFull}
+                alt="Rungset"
+                className="sidebar-full-logo"
+                priority
+              />
             )}
           </button>
         </header>
@@ -84,23 +79,7 @@ export default function Sidebar() {
         </nav>
 
         <div className="sidebar-footer">
-          <nav className="sidebar-utility-nav" aria-label="Utility navigation">
-            {!isCollapsed ? <p className="sidebar-label">Utility</p> : null}
-            <div className="space-y-1">
-              {APP_UTILITY_NAV_ITEMS.map((item) => (
-                <NavigationItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  collapsed={isCollapsed}
-                />
-              ))}
-            </div>
-          </nav>
-
-          <div className="sidebar-account">
-            <UserProfile isMenuButton={isCollapsed} />
-          </div>
+          <UserProfile isMenuButton={isCollapsed} />
         </div>
       </div>
     </aside>

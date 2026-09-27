@@ -1,16 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Code2, Globe2, X } from "lucide-react";
+import AppLogoMark from "@/components/app/shared/AppLogoMark";
 import { signIn, signUp, useSession } from "@/lib/auth/auth-client";
 import { validateAndSanitizeInput, ValidationResult } from "@/lib/validation";
 import { getAuthError } from "@/lib/auth/auth-errors";
 import { getSafeCallbackUrl } from "@/lib/auth/callback-url";
-import { cacheAppPages } from "@/app/providers/ServiceWorkerProvider";
-import logoTransWhite from "@/public/images/rungset-logo-full.png";
 
 interface AuthFormProps {
   mode: "signin" | "signup";
@@ -29,15 +27,16 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasStartedNavigation = useRef(false);
   const { data: session, isPending } = useSession();
   const searchParams = useSearchParams();
   const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
   const goToApp = useCallback(() => {
+    if (hasStartedNavigation.current) return;
+
+    hasStartedNavigation.current = true;
     sessionStorage.removeItem('goalgenius-logged-out');
-    void cacheAppPages().catch((cacheError) => {
-      console.warn("Offline app cache could not be refreshed yet:", cacheError);
-    });
     window.location.replace(callbackUrl);
   }, [callbackUrl]);
 
@@ -134,9 +133,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <main className="auth-page">
       <section className="auth-panel" aria-labelledby="auth-title">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <Image src={logoTransWhite} alt="Rungset" width={142} height={40} className="auth-logo" priority />
-          <Link href="/" className="text-xs font-semibold text-[var(--text-muted)] hover:text-white">Back to home</Link>
+        <div className="mb-8 flex items-center gap-2.5">
+          <AppLogoMark className="shrink-0" />
+          <span className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Rungset</span>
         </div>
 
         <h1 id="auth-title" className="text-2xl font-semibold tracking-tight text-white">
@@ -192,7 +191,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         </form>
 
         <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
-          {mode === "signin" ? <>Don&apos;t have an account? <Link href="/auth/signup" className="font-semibold text-[var(--brand-primary)] hover:text-white hover:underline">Sign up</Link></> : <>Already have an account? <Link href="/auth/signin" className="font-semibold text-[var(--brand-primary)] hover:text-white hover:underline">Sign in</Link></>}
+          {mode === "signin" ? <>Don&apos;t have an account? <Link href="/auth/signup" prefetch={false} className="font-semibold text-[var(--brand-primary)] hover:text-white hover:underline">Sign up</Link></> : <>Already have an account? <Link href="/auth/signin" prefetch={false} className="font-semibold text-[var(--brand-primary)] hover:text-white hover:underline">Sign in</Link></>}
         </p>
       </section>
     </main>

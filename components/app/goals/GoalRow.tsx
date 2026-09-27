@@ -50,6 +50,7 @@ export default function GoalRow({ model, today, onDelete, onUpdated }: GoalRowPr
           </div>
           <Link
             href={`/goals/${goal.id}`}
+            prefetch={false}
             className="mt-1 block truncate text-[15px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand-primary-hover)]"
           >
             {goal.title}
@@ -97,6 +98,7 @@ export default function GoalRow({ model, today, onDelete, onUpdated }: GoalRowPr
         <div className="col-start-2 row-start-1 flex items-center justify-end gap-1 md:col-auto md:row-auto">
           <Link
             href={`/goals/${goal.id}`}
+            prefetch={false}
             className="app-icon-button h-10 w-10 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             aria-label={`Open ${goal.title}`}
           >

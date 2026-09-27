@@ -70,7 +70,7 @@ export default function TaskRow({ goal, milestone, onDelete, onEdit, onToggle, p
         {description ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">{description}</p> : null}
         {(goal || milestone) ? (
           <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">
-            {goal ? <Link href={`/goals/${goal.id}`} className="hover:text-[var(--text-primary)] hover:underline">{goal.title}</Link> : null}
+            {goal ? <Link href={`/goals/${goal.id}`} prefetch={false} className="hover:text-[var(--text-primary)] hover:underline">{goal.title}</Link> : null}
             {goal && milestone ? <span className="px-1 text-[var(--text-muted)]" aria-hidden="true">·</span> : null}
             {milestone ? <span>{milestone.title}</span> : null}
           </p>

@@ -38,7 +38,7 @@ export default function UpcomingTasks({ groups, goalsById, onToggle, pendingTodo
     <section aria-labelledby="today-upcoming-heading">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 id="today-upcoming-heading" className="text-lg font-semibold text-[var(--text-primary)]">Upcoming</h2>
-        <Link href="/todos" className="app-button-ghost app-button-sm">
+        <Link href="/todos" prefetch={false} className="app-button-ghost app-button-sm">
           View all tasks <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </div>
@@ -77,7 +77,7 @@ export default function UpcomingTasks({ groups, goalsById, onToggle, pendingTodo
                         <p className="break-words text-sm font-medium text-[var(--text-primary)]">{todo.title}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                           {goal ? (
-                            <Link href={`/goals/${goal.id}`} className="truncate text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                            <Link href={`/goals/${goal.id}`} prefetch={false} className="truncate text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                               {goal.title}
                             </Link>
                           ) : null}

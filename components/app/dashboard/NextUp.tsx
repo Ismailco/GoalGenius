@@ -61,6 +61,7 @@ export default function NextUp({
                 {goal ? (
                   <Link
                     href={`/goals/${goal.id}`}
+                    prefetch={false}
                     className="inline-flex min-h-8 items-center gap-1.5 font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   >
                     <Target className="h-4 w-4 text-[var(--brand-primary)]" aria-hidden="true" />
@@ -122,7 +123,7 @@ export default function NextUp({
             <button type="button" className="app-button" onClick={onCreateTask}>
               Create task
             </button>
-            <Link href={hasTasks ? '/todos' : '/goals'} className="app-button-secondary">
+            <Link href={hasTasks ? '/todos' : '/goals'} prefetch={false} className="app-button-secondary">
               {hasTasks ? 'View tasks' : 'View goals'}
             </Link>
           </div>

@@ -113,6 +113,7 @@ export default function UserProfile({
       <div className="mt-2 space-y-1">
         <Link
           href="/settings"
+          prefetch={false}
           className="shell-nav-button min-h-[unset] !px-4 !py-3"
           role="menuitem"
           onClick={() => setIsMenuOpen(false)}

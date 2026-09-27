@@ -7,6 +7,8 @@ import Sidebar from '@/components/app/shared/Sidebar';
 import { isPublicPath } from '@/components/app/shared/navigation';
 import { useSession } from '@/lib/auth/auth-client';
 
+const SESSION_CHECK_TIMEOUT_MS = 10_000;
+
 export default function AppShell({
   children,
 }: Readonly<{
@@ -17,6 +19,7 @@ export default function AppShell({
   const { data: session, isPending } = useSession();
   const [authCheckReady, setAuthCheckReady] = useState(false);
   const [logoutRequested, setLogoutRequested] = useState(false);
+  const [sessionCheckTimedOut, setSessionCheckTimedOut] = useState(false);
 
   useEffect(() => {
     if (isPublicRoute) {
@@ -43,7 +46,36 @@ export default function AppShell({
     );
   }, [isPending, isPublicRoute, logoutRequested, pathname, session]);
 
+  useEffect(() => {
+    if (isPublicRoute || !isPending) {
+      setSessionCheckTimedOut(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(
+      () => setSessionCheckTimedOut(true),
+      SESSION_CHECK_TIMEOUT_MS,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [isPending, isPublicRoute]);
+
   if (!isPublicRoute && (!authCheckReady || isPending || logoutRequested || !session)) {
+    if (sessionCheckTimedOut) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-[var(--bg-canvas)] p-6">
+          <div className="max-w-sm text-center">
+            <h1 className="text-lg font-semibold text-[var(--text-primary)]">We couldn’t verify your session.</h1>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+              Check your connection and try again.
+            </p>
+            <button type="button" className="app-button mt-5" onClick={() => window.location.reload()}>
+              Retry
+            </button>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--bg-canvas)] p-6">
         <div className="text-sm text-[var(--text-secondary)]" role="status">
