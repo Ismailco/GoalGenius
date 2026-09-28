@@ -39,11 +39,12 @@ function isSameOrigin(url) {
 
 function shouldSkipRequest(request) {
   const url = new URL(request.url);
+  const isSessionRequest = url.pathname === '/api/auth/get-session';
 
   return (
     request.method !== 'GET' ||
     !isSameOrigin(url) ||
-    url.pathname.startsWith('/api/') ||
+    (url.pathname.startsWith('/api/') && !isSessionRequest) ||
     url.pathname.startsWith('/_next/webpack-hmr') ||
     (IS_LOCAL_HOST && url.pathname.startsWith('/_next/')) ||
     request.headers.has('authorization')
@@ -230,6 +231,11 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  if (url.pathname === '/api/auth/get-session') {
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 
