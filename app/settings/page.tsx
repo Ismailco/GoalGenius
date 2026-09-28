@@ -466,7 +466,7 @@ export default function SettingsPage() {
                 <p className="truncate text-sm text-[var(--text-secondary)]">
                   {session?.user?.email || 'No email available'}
                 </p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <p className="mt-1 break-all text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">
                   User ID: {session?.user?.id || 'Unavailable'}
                 </p>
               </div>
@@ -524,7 +524,7 @@ export default function SettingsPage() {
             />
 
             <div className="rounded-[20px] border border-white/10 bg-[rgba(8,17,30,0.42)] px-4 py-4">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-white">
                     Default priority for new tasks
@@ -534,7 +534,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
-                <div className="w-40 shrink-0">
+                <div className="w-full shrink-0 sm:w-40">
                   <select
                     value={settings.defaultTodoPriority}
                     onChange={(event) =>

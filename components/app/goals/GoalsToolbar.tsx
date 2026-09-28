@@ -36,7 +36,7 @@ export default function GoalsToolbar({
           placeholder="Search goals..."
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="app-field pl-9 pr-10"
+          className="app-field !pl-10 !pr-10"
         />
         {searchTerm ? (
           <button

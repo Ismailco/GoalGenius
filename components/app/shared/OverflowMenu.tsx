@@ -55,7 +55,7 @@ export default function OverflowMenu({ ariaLabel, children }: OverflowMenuProps)
 
       {isOpen ? (
         <div
-          className="absolute right-0 top-11 z-20 min-w-40 rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--bg-surface-elevated)] p-1 shadow-[var(--shadow-md)]"
+          className="absolute right-0 bottom-11 z-[70] min-w-40 rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--bg-surface-elevated)] p-1 shadow-[var(--shadow-md)] lg:top-11 lg:bottom-auto lg:z-20"
           role="menu"
           aria-label={ariaLabel}
           onClick={(event) => {

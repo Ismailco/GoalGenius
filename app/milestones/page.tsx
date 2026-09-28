@@ -43,7 +43,7 @@ export default function MilestonesPage() {
               placeholder="Search milestones..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="app-field pr-11"
+              className="app-field !pr-11"
             />
             <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[var(--text-muted)]">
               <Search className="h-4 w-4" />

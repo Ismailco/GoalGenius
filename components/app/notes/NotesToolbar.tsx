@@ -33,7 +33,7 @@ export default function NotesToolbar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Search notes"
-            className="app-field pl-10"
+            className="app-field !pl-10"
           />
         </div>
       </div>

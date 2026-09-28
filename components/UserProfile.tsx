@@ -91,7 +91,7 @@ export default function UserProfile({
   const menu = isMenuOpen ? (
     <div
       id={menuId}
-      className={`surface-panel absolute z-[90] p-2 ${
+      className={`surface-panel !absolute z-[90] p-2 ${
         menuPlacement === 'below' ? 'top-full mt-2' : 'bottom-full mb-3'
       } ${
         isMenuButton
