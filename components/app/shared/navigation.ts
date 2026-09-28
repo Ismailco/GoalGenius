@@ -1,7 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  BarChart3,
-  CalendarDays,
   CircleCheckBig,
   ListTodo,
   NotebookPen,
@@ -34,8 +32,6 @@ export const APP_NAV_ITEMS: AppNavigationItem[] = [
     mobilePrimary: true,
     name: 'Check-ins',
   },
-  { href: '/calendar', icon: CalendarDays, name: 'Calendar' },
-  { href: '/analytics', icon: BarChart3, name: 'Analytics' },
   { href: '/notes', icon: NotebookPen, name: 'Notes' },
 ];
 
