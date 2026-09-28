@@ -48,7 +48,7 @@ export default function ActivityGrid({
   return (
     <div className="overflow-x-auto pb-1" aria-label={rangeLabel}>
       <div className="min-w-max">
-        <div className="mb-2 flex pl-12 text-[0.65rem] text-[var(--text-muted)]">
+        <div className="mb-2 flex gap-1 pl-12 text-[0.65rem] text-[var(--text-muted)]">
           {weeks.map((week, weekIndex) => (
             <div key={week[0]} className="w-5 shrink-0 text-center">
               {getMonthLabel(week[0], weeks[weekIndex - 1]?.[0])}

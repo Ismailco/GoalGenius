@@ -55,7 +55,7 @@ export default function TasksToolbar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Search tasks..."
-            className="app-field pl-10 pr-10"
+            className="app-field !pl-10 !pr-10"
           />
           {query ? (
             <button

@@ -216,7 +216,7 @@ export default function TasksPage() {
         statusFilter={statusFilter}
       />
 
-      <section aria-label="Task groups" className="surface-panel px-4 py-3 md:px-6">
+      <section aria-label="Task groups" className="surface-panel !overflow-visible px-4 py-3 md:px-6">
         <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
           <p className="text-sm text-[var(--text-secondary)]">
             {filteredTodos.length} {statusFilter === 'completed' ? 'completed' : statusFilter === 'all' ? 'matching' : 'open'} {filteredTodos.length === 1 ? 'task' : 'tasks'}
