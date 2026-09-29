@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.rungset.app",
+      "sha256_cert_fingerprints": [
+        "32:D0:53:94:6D:F8:46:ED:14:65:A7:66:9A:0F:DA:C6:55:F9:CD:13:9C:9C:71:47:BE:78:DE:2C:FD:2E:88:2C",
+        "70:1C:33:7E:38:54:1F:89:DA:68:BC:A9:FA:83:4C:2F:9E:4D:41:BB:50:D6:8D:70:8E:75:01:83:9B:7B:25:C8"
+      ]
+    }
+  }
+]
