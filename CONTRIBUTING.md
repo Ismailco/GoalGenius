@@ -4,13 +4,8 @@ Rungset is a focused beta. Keep contributions centered on the goal → milestone
 
 ## Code of Conduct
 
-By participating in this project, you are expected to uphold our Code of Conduct:
-
-- Use welcoming and inclusive language
-- Be respectful of differing viewpoints and experiences
-- Gracefully accept constructive criticism
-- Focus on what is best for the community
-- Show empathy towards other community members
+Please read and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Reports can be
+sent privately using the contact method described there.
 
 ## How Can I Contribute?
 
@@ -25,6 +20,10 @@ Before creating bug reports, please check the existing issues as you might find 
 * **Explain which behavior you expected to see instead and why**
 * **Include screenshots or animated GIFs** if possible
 * **Include your environment details** (OS, browser version, etc.)
+* **Remove secrets, credentials, personal data, and workspace content before posting**
+
+Do not file a public issue for a suspected security vulnerability. See
+[SECURITY.md](SECURITY.md) instead.
 
 ### Suggesting Enhancements
 
@@ -43,7 +42,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 2. If you've added code that should be tested, add tests
 3. Ensure the test suite passes
 4. Make sure your code follows the existing style guidelines
-5. Make sure your commits are signed
+5. Sign commits if you already use commit signing; unsigned commits are accepted unless a repository policy says otherwise
 
 ### Development Process
 
@@ -132,6 +131,7 @@ When adding tests, prioritize authorization, ownership checks, progress calculat
 - Tag issues appropriately
 - Reference related issues in your PRs
 - Close issues with PRs when applicable
+- Look for issues labelled `good first issue` or `help wanted` when starting out
 
 ## Project Structure
 

@@ -4,8 +4,8 @@ async function signUp(page: Page, name: string, email: string) {
   await page.goto('/auth/signup');
   await page.getByLabel('Full Name').fill(name);
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password', { exact: true }).fill('GoalGenius-e2e-2026');
-  await page.getByLabel('Confirm Password').fill('GoalGenius-e2e-2026');
+  await page.getByLabel('Password', { exact: true }).fill('Rungset-e2e-2026');
+  await page.getByLabel('Confirm Password').fill('Rungset-e2e-2026');
   const signUpResponse = page.waitForResponse((response) => (
     response.url().includes('/api/auth/sign-up/email') && response.request().method() === 'POST'
   ));

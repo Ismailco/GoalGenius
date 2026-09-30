@@ -27,8 +27,8 @@ test('a user can execute, review, preserve, and export a goal plan', async ({ pa
   const suffix = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   await page.getByLabel('Full Name').fill('Browser Tester');
   await page.getByLabel('Email').fill(`browser-${suffix}@example.com`);
-  await page.getByLabel('Password', { exact: true }).fill('GoalGenius-e2e-2026');
-  await page.getByLabel('Confirm Password').fill('GoalGenius-e2e-2026');
+  await page.getByLabel('Password', { exact: true }).fill('Rungset-e2e-2026');
+  await page.getByLabel('Confirm Password').fill('Rungset-e2e-2026');
   await page.getByRole('button', { name: 'Sign up', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();

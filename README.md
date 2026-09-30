@@ -8,6 +8,7 @@
   <p>
     <a href="https://app.rungset.com">Open the app</a>
     · <a href="https://rungset.com">Website</a>
+    · <a href="https://play.google.com/store/apps/details?id=com.rungset.app">Android app</a>
     · <a href="https://github.com/Ismailco/Rungset-website">Website repository</a>
     · <a href="LICENSE">AGPL-3.0</a>
   </p>
@@ -32,11 +33,12 @@ Rungset gives goals a practical rhythm: define the outcome, break it into milest
 - Progress check-ins for recording momentum, blockers, and next steps.
 - Notes and user-scoped JSON export.
 - Offline caching for continuity between connections.
+- Android app available through Google Play as a wrapper around the hosted workspace.
 - Email/password and social sign-in with user-scoped data access.
 
 ## Beta scope
 
-Rungset is intentionally focused. Calendar synchronization, analytics, team features, native apps, AI features, and external reminder delivery are not presented as shipped capabilities. Reminder configuration currently provides in-app due and overdue guidance.
+Rungset is intentionally focused. Calendar synchronization, analytics, team features, an iOS app, AI features, and external reminder delivery are not presented as shipped capabilities. The Android app opens the same hosted workspace; reminder configuration currently provides in-app due and overdue guidance.
 
 ## Technology
 

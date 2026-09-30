@@ -2,6 +2,29 @@
 
 All notable changes to Rungset are documented here.
 
+## Unreleased
+
+### Added
+
+- Public contributor guidance covering community conduct, security reporting,
+  privacy-safe issue reports, and newcomer-friendly issue discovery.
+- Documentation for the published Android app and the canonical hosted origins.
+
+### Changed
+
+- Updated the public repository identity and migration documentation for Rungset
+  while preserving deployment and data-compatibility identifiers.
+- Updated the Next.js, OpenNext, Wrangler, and Workers runtime toolchain and
+  migrated request protection to the Next 16 `proxy.ts` convention.
+- Clarified the beta scope: Android is available through the hosted workspace;
+  iOS, analytics, calendar synchronization, AI, and external reminder delivery
+  remain outside the shipped product.
+
+### Fixed
+
+- Removed stale product branding and deployment-specific details from public
+  contributor-facing documentation.
+
 ## [0.1.0-beta.1] - 2026-09-05
 
 ### Added
@@ -28,15 +51,3 @@ All notable changes to Rungset are documented here.
 
 - Protected operations derive ownership from validated Better Auth sessions.
 - Cross-user and cross-goal relationship isolation is covered by integration tests.
-
-## Unreleased
-
-### Changed
-
-- Completed the Rungset product rebrand across the app shell, navigation, visual system, and public documentation.
-- Replaced combined mark-and-text treatments with the full Rungset wordmark where space allows.
-- Reduced automatic client route prefetching to keep navigation work bounded during longer sessions.
-
-### Fixed
-
-- Scoped offline workspace data is cleared when the active account changes, preventing one account's cached work from appearing for another.

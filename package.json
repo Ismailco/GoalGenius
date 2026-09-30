@@ -1,5 +1,5 @@
 {
-  "name": "goalgenius",
+  "name": "rungset",
   "version": "0.1.0-beta.1",
   "private": true,
   "scripts": {
@@ -30,7 +30,7 @@
     "framer-motion": "^12.38.0",
     "kysely-d1": "^0.4.0",
     "lucide-react": "^1.7.0",
-    "next": "16.3.3",
+    "next": "16.3.7",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "sqlite3": "^6.0.1",
@@ -40,18 +40,18 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260722.1",
+    "@cloudflare/workers-types": "^5.20260930.2",
     "@libsql/client": "^0.17.2",
-    "@opennextjs/cloudflare": "^1.20.2",
+    "@opennextjs/cloudflare": "^1.20.7",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
-    "eslint-config-next": "16.3.3",
+    "eslint-config-next": "16.3.7",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "wrangler": "^4.115.0"
+    "wrangler": "^4.145.0"
   }
 }

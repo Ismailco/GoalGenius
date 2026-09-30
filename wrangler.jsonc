@@ -6,7 +6,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "rungset",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-03-01",
+  "compatibility_date": "2026-09-30",
   "compatibility_flags": ["nodejs_compat"],
   "routes": [
     {

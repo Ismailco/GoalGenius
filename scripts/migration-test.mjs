@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
 const root = process.cwd();
-const tempRoot = await mkdtemp(join(tmpdir(), 'goalgenius-migrations-'));
+const tempRoot = await mkdtemp(join(tmpdir(), 'rungset-migrations-'));
 const migrationsDir = join(tempRoot, 'drizzle');
 const persistDir = join(tempRoot, 'persist');
 const configPath = join(tempRoot, 'wrangler.jsonc');
@@ -24,7 +24,7 @@ function run(args) {
 
 function migrationConfig() {
   return JSON.stringify({
-    name: 'goalgenius-migration-test',
+    name: 'rungset-migration-test',
     d1_databases: [{
       binding: 'DB',
       database_name: 'goalgenius_db',

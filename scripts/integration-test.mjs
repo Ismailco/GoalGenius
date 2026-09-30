@@ -54,7 +54,7 @@ async function waitForServer() {
   throw new Error('Timed out waiting for the local Cloudflare Worker');
 }
 
-const persistDir = await mkdtemp(join(tmpdir(), 'goalgenius-integration-'));
+const persistDir = await mkdtemp(join(tmpdir(), 'rungset-integration-'));
 let worker;
 try {
   run('pnpm', ['exec', 'wrangler', 'd1', 'migrations', 'apply', 'goalgenius_db', '--local', '--persist-to', persistDir, '--config', 'wrangler.jsonc']);
@@ -71,8 +71,8 @@ try {
 
   const userA = new Client();
   const userB = new Client();
-  const password = 'GoalGenius-test-password-2026';
-  for (const [client, email, name] of [[userA, 'goalgenius-a@example.com', 'User A'], [userB, 'goalgenius-b@example.com', 'User B']]) {
+  const password = 'Rungset-test-password-2026';
+  for (const [client, email, name] of [[userA, 'rungset-a@example.com', 'User A'], [userB, 'rungset-b@example.com', 'User B']]) {
     await client.expect('/api/auth/sign-up/email', 200, { method: 'POST', body: { name, email, password } });
     await client.expect('/api/auth/sign-in/email', 200, { method: 'POST', body: { email, password } });
   }

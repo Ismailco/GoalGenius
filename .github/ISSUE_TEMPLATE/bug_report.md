@@ -15,3 +15,10 @@ labels: bug
 
 - Browser / version:
 - Device:
+
+## Privacy reminder
+
+Remove passwords, tokens, personal information, and workspace content from
+logs, screenshots, and recordings. For suspected security vulnerabilities, use
+the private process in [SECURITY.md](../../SECURITY.md) instead of opening a
+public issue.

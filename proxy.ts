@@ -70,7 +70,7 @@ async function hasValidCachedSession(request: NextRequest) {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const hasSession = await hasValidCachedSession(request);
 
   if (hasSession) {

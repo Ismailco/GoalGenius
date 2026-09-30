@@ -13,8 +13,8 @@ test('global Tasks supports finding, grouping, managing, and completing work', a
   await page.goto('/auth/signup');
   await page.getByLabel('Full Name').fill('Tasks Workspace Tester');
   await page.getByLabel('Email').fill(`tasks-${suffix}@example.com`);
-  await page.getByLabel('Password', { exact: true }).fill('GoalGenius-e2e-2026');
-  await page.getByLabel('Confirm Password').fill('GoalGenius-e2e-2026');
+  await page.getByLabel('Password', { exact: true }).fill('Rungset-e2e-2026');
+  await page.getByLabel('Confirm Password').fill('Rungset-e2e-2026');
   await page.getByRole('button', { name: 'Sign up', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 
